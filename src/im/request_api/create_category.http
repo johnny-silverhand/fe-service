@@ -1,0 +1,38 @@
+POST http://localhost:8065/api/v4/categories
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{   "name":"root" }
+
+<> 2019-08-19T050427.404.txt
+<> 2019-08-19T050332.404.txt
+<> 2019-08-19T050252.404.txt
+
+###
+POST http://localhost:8065/api/v4/categories
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{   "name":"child 3", "parent_id": "x7xq9egjetdburxhj997insodh" }
+
+###
+
+GET http://localhost:8065/api/v4/categories
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{   "name":"child 3", "parent_id": "x7xq9egjetdburxhj997insodh" }
+
+###
+
+GET http://localhost:8065/api/v4/categories/x7xq9egjetdburxhj997insodh
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{   "name":"child 3", "parent_id": "x7xq9egjetdburxhj997insodh" }
+
+###
