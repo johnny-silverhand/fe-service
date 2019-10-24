@@ -116,6 +116,9 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 	if newCategory.ParentId != category.ParentId {
 		newCategory.ParentId = category.ParentId
 	}
+	if newCategory.Depth != category.Depth {
+		newCategory.Depth = category.Depth
+	}
 	/*if !safeUpdate {
 
 	}*/

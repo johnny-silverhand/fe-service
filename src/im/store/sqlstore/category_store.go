@@ -145,8 +145,7 @@ FROM Categories AS Parent
                  SELECT ParentId, COUNT(Id) AS CountChildren
                  FROM Categories
                  WHERE ParentId IS NOT NULL
-                 GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId
-ORDER BY Parent.UpdateAt ASC
+                 GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId ORDER BY Parent.UpdateAt ASC
 					 LIMIT :Limit
 					 OFFSET :Offset`
 		var categories []*model.Category
@@ -170,7 +169,7 @@ FROM Categories AS Parent
                  GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId
 
 					 WHERE Parent.ClientId = :ClientId
-					 ORDER BY Parent.Depth ASC`
+					 ORDER BY Parent.UpdateAt ASC`
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
 			query, map[string]interface{}{"ClientId": clientId}); err != nil {
@@ -192,7 +191,7 @@ FROM Categories AS Parent
                  GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId
 					 WHERE Parent.ClientId = :ClientId
 					 where ClientId = :ClientId
-				ORDER BY Parent.Depth ASC
+				ORDER BY Parent.UpdateAt ASC
 					 LIMIT :Limit
 					 OFFSET :Offset`
 		var categories []*model.Category
@@ -224,7 +223,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 			`SELECT *
 					FROM Categories
 					WHERE ParentId = :ParentId
-					ORDER BY Depth ASC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
+					ORDER BY UpdateAt ASC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = descendants
@@ -235,7 +234,7 @@ func (s SqlCategoryStore) GetWithChildren(categoryId string) store.StoreChannel 
 	return store.Do(func(result *store.StoreResult) {
 		var childrens []*model.Category
 		if _, err := s.GetReplica().Select(&childrens,
-			`SELECT Child.Id, Child.Name, Child.ParentId, Child.Depth, Child.Lft, Child.Rgt FROM Categories AS Child, Categories AS Parent WHERE Parent.Id=:ParentId AND Child.Lft BETWEEN Parent.Lft AND Parent.Rgt ORDER BY Child.Depth ASC`, map[string]interface{}{"ParentId": categoryId}); err != nil {
+			`SELECT Child.Id, Child.Name, Child.ParentId, Child.Depth, Child.Lft, Child.Rgt FROM Categories AS Child, Categories AS Parent WHERE Parent.Id=:ParentId AND Child.Lft BETWEEN Parent.Lft AND Parent.Rgt ORDER BY Child.UpdateAt ASC`, map[string]interface{}{"ParentId": categoryId}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = childrens
