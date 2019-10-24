@@ -5659,3 +5659,10 @@
 {"level":"info","ts":1571924563.2786758,"caller":"app/web_hub.go:71","msg":"Starting 12 websocket hubs"}
 {"level":"error","ts":1571924681.6242802,"caller":"mlog/log.go:169","msg":"Invalid or missing category_id parameter in request URL","path":"/api/v4/categories/products","request_id":"me4raufz57dn9xnyxhb41651jr","ip_addr":"::1","user_id":"qbo8zjqmb38jfgcagigc7ucwta","method":"GET","err_where":"Context","http_code":400,"err_details":""}
 {"level":"error","ts":1571924861.714603,"caller":"mlog/log.go:169","msg":"Invalid or missing category_id parameter in request URL","path":"/api/v4/categories/products","request_id":"oo7xpn59ojrtffryrtpwkwyy4c","ip_addr":"::1","user_id":"qbo8zjqmb38jfgcagigc7ucwta","method":"GET","err_where":"Context","http_code":400,"err_details":""}
+{"level":"info","ts":1571926825.9593267,"caller":"app/server.go:276","msg":"Stopping Server..."}
+{"level":"info","ts":1571926825.9593267,"caller":"app/web_hub.go:116","msg":"stopping websocket hub connections"}
+{"level":"info","ts":1571926825.96232,"caller":"sqlstore/supplier.go:900","msg":"Closing SqlStore"}
+{"level":"info","ts":1571926825.963317,"caller":"jobs/workers.go:136","msg":"Stopped workers"}
+{"level":"info","ts":1571926825.963317,"caller":"jobs/schedulers.go:119","msg":"Stopping schedulers."}
+{"level":"info","ts":1571926825.963317,"caller":"jobs/schedulers.go:54","msg":"Schedulers stopped."}
+{"level":"info","ts":1571926825.963317,"caller":"app/server.go:306","msg":"Server stopped"}

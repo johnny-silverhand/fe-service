@@ -234,7 +234,12 @@ func (s SqlCategoryStore) GetWithChildren(categoryId string) store.StoreChannel 
 	return store.Do(func(result *store.StoreResult) {
 		var childrens []*model.Category
 		if _, err := s.GetReplica().Select(&childrens,
-			`SELECT Child.Id, Child.Name, Child.ParentId, Child.Depth, Child.Lft, Child.Rgt FROM Categories AS Child, Categories AS Parent WHERE Parent.Id=:ParentId AND Child.Lft BETWEEN Parent.Lft AND Parent.Rgt ORDER BY Child.UpdateAt ASC`, map[string]interface{}{"ParentId": categoryId}); err != nil {
+			`
+					SELECT Child.Id, Child.Name, Child.ParentId, Child.Depth, Child.Lft, Child.Rgt 
+					FROM Categories AS Child, 
+					Categories AS Parent WHERE Parent.Id=:ParentId 
+					AND Child.Lft BETWEEN Parent.Lft AND Parent.Rgt ORDER BY Child.UpdateAt ASC`,
+					map[string]interface{}{"ParentId": categoryId}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = childrens
