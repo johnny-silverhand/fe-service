@@ -1,13 +1,13 @@
 package app
 
 import (
-	"im/model"
-	smsaero "im/utils"
 	"fmt"
 	"im/mlog"
+	"im/model"
+	smsaero "im/utils"
 )
 
-func (a *App) SendVerifySms(phone, locale,  msg string) *model.AppError {
+func (a *App) SendVerifySms(phone, locale, msg string) *model.AppError {
 
 	message := model.SmsNotification{
 		Phone:   phone,
@@ -15,22 +15,21 @@ func (a *App) SendVerifySms(phone, locale,  msg string) *model.AppError {
 	}
 
 	a.Srv.Go(func() {
-		a.sendToSmsProxy(message)
+		print(message.Message)
+		fmt.Println(message)
+		//a.sendToSmsProxy(message)
 	})
 
 	return nil
 }
-
-
-
 
 func (a *App) sendToSmsProxy(msg model.SmsNotification) {
 
 	client := smsaero.NewClient("ivan@russianit.ru", "mmRjD5mOoMkvVsuIAMiVwX6i9czQ", "", "")
 	msgAero := smsaero.MessageRequest{
 		Numbers: []string{msg.Phone},
-		Sign: "RSIT",
-		Text: msg.Message,
+		Sign:    "RSIT",
+		Text:    msg.Message,
 		Channel: smsaero.ChannelDirect,
 	}
 	resp, err := client.Send(msgAero)

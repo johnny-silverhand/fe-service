@@ -100,9 +100,6 @@ func (s *SqlCategoryStore) Update(newCategory *model.Category) store.StoreChanne
 		newCategory.UpdateAt = model.GetMillis()
 		newCategory.PreCommit()
 
-
-
-
 		if _, err := s.GetMaster().Update(newCategory); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.Update", "store.sql_post.update.app_error", nil, "id="+newCategory.Id+", "+err.Error(), http.StatusInternalServerError)
 		} else {
@@ -124,7 +121,7 @@ FROM Categories AS Parent
                  WHERE ParentId IS NOT NULL
                  GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId
 				WHERE Id = :Id
-				ORDER BY Parent.Depth ASC
+				ORDER BY Parent.UpdateAt ASC
 `
 
 		if err := s.GetReplica().SelectOne(&category,
@@ -149,7 +146,7 @@ FROM Categories AS Parent
                  FROM Categories
                  WHERE ParentId IS NOT NULL
                  GROUP BY ParentId ) AS Children ON Parent.Id = Children.ParentId
-ORDER BY Parent.Depth ASC
+ORDER BY Parent.UpdateAt ASC
 					 LIMIT :Limit
 					 OFFSET :Offset`
 		var categories []*model.Category
