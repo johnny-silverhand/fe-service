@@ -4,7 +4,6 @@ import (
 	"im/model"
 )
 
-
 func (a *App) GetSingleCategory(categoryId string) (*model.Post, *model.AppError) {
 	//todo single
 	result := <-a.Srv.Store.Category().Get(categoryId)
@@ -60,11 +59,12 @@ func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.A
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	descendants, _ := a.GetDescendants(category)
-	for _, descendant := range descendants {
-		a.DeleteCategory(descendant)
-	}
-	return result.Data.(map[string]int), nil
+	/*
+		descendants, _ := a.GetDescendants(category)
+			for _, descendant := range descendants {
+				a.DeleteCategory(descendant)
+		}*/
+	return nil, nil
 }
 
 func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *model.AppError) {

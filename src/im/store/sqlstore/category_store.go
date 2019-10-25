@@ -31,6 +31,12 @@ func (t *CategorySQL) SelectSQL() string {
 	return "SELECT `Id`, `Name`, `ParentId`, `Depth`, `Lft`, `Rgt` FROM " +
 		t.tblName + " WHERE `ClientId`=" + t.clientId + " AND "
 }
+
+func (t *CategorySQL) SelectSQL2() string {
+	return "SELECT `Id`, `Name`, `ParentId`, `Depth`, `Lft`, `Rgt` FROM " +
+		t.tblName + " WHERE "
+}
+
 func (t *CategorySQL) SelectChildrenSQL() string {
 	return "SELECT `Children`.`Id`, `Children`.`Name`, `Children`.`ParentId`, `Children`.`Depth`, `Children`.`Lft`, `Children`.`Rgt` FROM " +
 		t.tblName + " AS `Children`, " + t.tblName + " AS `Parent` WHERE `Children`.`ClientId`=" + t.clientId +
@@ -95,7 +101,7 @@ func NewSqlCategoryStore(sqlStore SqlStore) store.CategoryStore {
 		table.ColMap("ParentId").SetMaxSize(26)
 		table.ColMap("CreateAt").SetMaxSize(26)
 		table.ColMap("UpdateAt").SetMaxSize(26)
-		table.ColMap("DeleteAt").SetMaxSize(26)
+		//table.ColMap("DeleteAt").SetMaxSize(26)
 
 	}
 
@@ -106,7 +112,7 @@ func (s SqlCategoryStore) CreateIndexesIfNotExists() {
 	s.CreateIndexIfNotExists("idx_categories_client_id", "Categories", "ClientId")
 	s.CreateIndexIfNotExists("idx_categories_update_at", "Categories", "UpdateAt")
 	s.CreateIndexIfNotExists("idx_categories_create_at", "Categories", "CreateAt")
-	s.CreateIndexIfNotExists("idx_categories_delete_at", "Categories", "DeleteAt")
+	//s.CreateIndexIfNotExists("idx_categories_delete_at", "Categories", "DeleteAt")
 }
 
 func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
@@ -135,25 +141,17 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 		category.Lft = *node.Lft
 		category.Rgt = *node.Rgt
 		result.Data = category
-		//cp := category.NewCp(node.ID, node.Name)
-		//result.Data = cp
 	})
 }
 
 func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var query = `select c.*, childs.cnt as CntChild
-					 from categories c 
-					 left join (
-						select ParentId, count(Id) cnt
-						from categories
-						where ParentId is not null
-						group by ParentId ) childs on c.Id = childs.ParentId
+		var query = `select c.* from categories c 
 					 where Id = :Id`
 
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
-			query, map[string]interface{}{"Id": id, "Table": categorySQL.tblName}); err != nil {
+			query, map[string]interface{}{"Id": id}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlCategoryStore.Get",
 					"store.sql_category.get.app_error", nil, err.Error(), http.StatusNotFound)
@@ -236,14 +234,20 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 }
 
 func (s SqlCategoryStore) Delete(category *model.Category) store.StoreChannel {
+
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := s.GetMaster().Exec(`UPDATE categories
-												SET DeleteAt = :DeleteAt
-	 		  					   				WHERE Id = :Id`, map[string]interface{}{"Id": category.Id, "DeleteAt": time.Now().Unix()}); err != nil {
-			result.Err = model.NewAppError("SqlCategoryStore.Delete", "store.sql_category.delete.app_error", nil, err.Error(), http.StatusInternalServerError)
-		} else {
-			result.Data = map[string]int{"status": http.StatusOK}
-		}
+		db := s.GetMaster().Db
+		categorySQL.clientId = category.ClientId
+		categorySQL.RemoveNodeAndDescendants(db, category.Id)
+
+		/*
+				if _, err := s.GetMaster().Exec(`UPDATE categories
+														SET DeleteAt = :DeleteAt
+			 		  					   				WHERE Id = :Id`, map[string]interface{}{"Id": category.Id, "DeleteAt": time.Now().Unix()}); err != nil {
+					result.Err = model.NewAppError("SqlCategoryStore.Delete", "store.sql_category.delete.app_error", nil, err.Error(), http.StatusInternalServerError)
+				} else {
+					result.Data = map[string]int{"status": http.StatusOK}
+				}*/
 	})
 }
 
@@ -329,7 +333,7 @@ func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*string, error) {
 }
 
 // GetChildren returns all immediate children of node
-func (t *CategorySQL) GetChildren(db *sql.DB, id int) ([]Node, error) {
+func (t *CategorySQL) GetChildren(db *sql.DB, id string) ([]Node, error) {
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectSQL())
 	sql.WriteString("`ParentId`=?")
@@ -442,7 +446,7 @@ func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) 
 }
 
 // RemoveNodeAndDescendants removes node and all its descendants -- it removes the whole subtree.
-func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id int64) error {
+func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id string) error {
 	// query deleting node
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectSQL())

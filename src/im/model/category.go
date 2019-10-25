@@ -13,7 +13,6 @@ type Category struct {
 	ParentId      string      `json:"parent_id"`
 	CreateAt      int64       `json:"create_at"`
 	UpdateAt      int64       `json:"update_at"`
-	DeleteAt      int64       `json:"delete_at"`
 	Lft           int         `json:"lft"`
 	Rgt           int         `json:"rgt"`
 	Depth         int         `json:"depth"`

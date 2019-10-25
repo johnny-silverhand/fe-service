@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"im/model"
 	"net/http"
-	"strconv"
 )
 
 func (api *API) InitCategory() {
@@ -140,10 +139,14 @@ func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	result, err := c.App.DeleteCategory(category)
-	if err != nil {
-		c.Err = err
-		return
-	}
-	w.Write([]byte(model.MapToJson(map[string]string{"status": strconv.Itoa(result["status"])})))
+	c.App.DeleteCategory(category)
+	/*
+		if err != nil {
+			c.Err = err
+			ReturnStatusOK(w)
+		}
+	*/
+	ReturnStatusOK(w)
+
+	//w.Write([]byte(model.MapToJson(map[string]string{"status": strconv.Itoa(result["status"])})))
 }
