@@ -29,19 +29,7 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte(category.ToJson()))
 }
-func getCategoryWithChildren(c *Context, w http.ResponseWriter, r *http.Request) {
 
-	c.RequireCategoryId()
-	if c.Err != nil {
-		return
-	}
-	categories, err := c.App.GetCategoryWithChildren(c.Params.CategoryId)
-	if err != nil {
-		c.Err = err
-		return
-	}
-	w.Write([]byte(model.CategoriesToJson(categories)))
-}
 func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	categories, err := c.App.GetCategoriesPage(c.Params.Page, c.Params.PerPage)
 	if err != nil {

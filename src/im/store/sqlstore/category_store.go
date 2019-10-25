@@ -67,7 +67,7 @@ func (t *CategorySQL) DeleteSQL() string {
 
 // Node detail with path from root to node
 type Node struct {
-	ID          int64
+	ID          string
 	Name        string
 	ParentID    int64
 	Depth       int
@@ -103,44 +103,6 @@ func NewSqlCategoryStore(sqlStore SqlStore) store.CategoryStore {
 		categoryPatch.ColMap("DeletedAt").SetMaxSize(26)
 	}
 
-	/*var time = time.Now().Unix()
-	  categorySQL.clientId = 2222
-	  categorySQL.createdAt = &time
-	  categorySQL.updatedAt = &time*/
-
-	//db := cs.GetMaster().Db
-	/*var rootId *int64
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Пиццы")
-	  categorySQL.AddNodeByParent(db, "Кальцоне", *rootId)
-	  categorySQL.AddNodeByParent(db, "С грибами", *rootId)
-	  categorySQL.AddNodeByParent(db, "С морепродуктами", *rootId)
-	  categorySQL.AddNodeByParent(db, "С мясом", *rootId)
-	  categorySQL.AddNodeByParent(db, "С курицей", *rootId)
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Комбо")
-	  rootId, _ = categorySQL.AddRootNode(db,"Закуски")
-	  rootId, _ = categorySQL.AddRootNode(db,"Десерты")
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Напитки")
-	  categorySQL.AddNodeByParent(db, "Безалкогольные", *rootId)
-	  categorySQL.AddNodeByParent(db, "Алкогольные", *rootId)
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Другие товары")
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Роллы")
-	  categorySQL.AddNodeByParent(db, "Сеты", *rootId)
-	  siblingId, _ := categorySQL.AddNodeByParent(db, "Горячие", *rootId)
-	  categorySQL.AddNodeByParent(db, "Запеченные", *siblingId)
-	  categorySQL.AddNodeByParent(db, "Жаренные", *siblingId)
-	  categorySQL.AddNodeByParent(db, "Европейские", *rootId)
-	  categorySQL.AddNodeByParent(db, "Классические", *rootId)
-
-	  rootId, _ = categorySQL.AddRootNode(db,"Салаты")*/
-
-	/*categorySQL.clientId = 2222
-	  categorySQL.RemoveNodeAndDescendants(db, 254)*/
-
 	return cs
 }
 
@@ -170,12 +132,12 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	node, _ = categorySQL.GetNodeDetail(db, *id)
 
 	return store.Do(func(result *store.StoreResult) {
-		cp := category.NewCp(int(node.ID), node.Name)
+		cp := category.NewCp(node.ID, node.Name)
 		result.Data = cp
 	})
 }
 
-func (s SqlCategoryStore) Get(id int) store.StoreChannel {
+func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
 					 from category c 
@@ -223,7 +185,7 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
 	})
 }
 
-func (s SqlCategoryStore) GetAllByClientId(clientId int) store.StoreChannel {
+func (s SqlCategoryStore) GetAllByClientId(clientId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
 					 from category c 
@@ -244,7 +206,7 @@ func (s SqlCategoryStore) GetAllByClientId(clientId int) store.StoreChannel {
 	})
 }
 
-func (s SqlCategoryStore) GetAllByClientIdPage(clientId int, offset int, limit int) store.StoreChannel {
+func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limit int) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
 					 from category c 
@@ -318,7 +280,7 @@ func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
 	r := rows[len(rows)-1]
 
 	node := &Node{
-		ID:          atoi64(r["Id"]),
+		ID:          r["Id"],
 		Name:        r["Name"],
 		ParentID:    atoi64(r["ParentId"]),
 		Depth:       atoi(r["Depth"]),
@@ -370,7 +332,7 @@ func (t *CategorySQL) GetChildren(db *sql.DB, id int) ([]Node, error) {
 	children := make([]Node, 0, len(rows))
 	for _, r := range rows {
 		children = append(children, Node{
-			ID:          atoi64(r["Id"]),
+			ID:          r["Id"],
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),
@@ -394,7 +356,7 @@ func (t *CategorySQL) GetDescendants(db *sql.DB, id int) ([]Node, error) {
 	descendants := make([]Node, 0, len(rows))
 	for _, r := range rows {
 		descendants = append(descendants, Node{
-			ID:          atoi64(r["Id"]),
+			ID:          r["Id"],
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),
@@ -417,7 +379,7 @@ func (t *CategorySQL) GetNodesByDepth(db *sql.DB, depth int) ([]Node, error) {
 	nodes := make([]Node, 0, len(rows))
 	for _, r := range rows {
 		nodes = append(nodes, Node{
-			ID:          atoi64(r["Id"]),
+			ID:          r["Id"],
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),

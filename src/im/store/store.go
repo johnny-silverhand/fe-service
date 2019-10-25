@@ -501,10 +501,10 @@ type ProductStore interface {
 type CategoryStore interface {
 
 	Save(category *model.Category) StoreChannel
-	Get(categoryId int) StoreChannel
+	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel
-	GetAllByClientId(clientId int) StoreChannel
-	GetAllByClientIdPage(clientId int, offset int, limit int) StoreChannel
+	GetAllByClientId(clientId string) StoreChannel
+	GetAllByClientIdPage(clientId string, offset int, limit int) StoreChannel
 	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
 }

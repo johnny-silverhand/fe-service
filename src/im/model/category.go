@@ -17,22 +17,22 @@ type Category struct {
 	Lft      		int         		`json:"lft"`
 	Rgt      		int         		`json:"rgt"`
 	Depth    		int         		`json:"depth"`
-	Children 		[]*Category 		`db:"-" json:"count_children"`
+	Children 		[]*Category 		`db:"-" json:"children"`
 	CountChildren 	int        			`db:"-" json:"count_children"`
 	//Products  []*Products `json:"Products"`
 }
 
 type CategoryPatch struct {
-	Id        string    `db:"Id, primarykey, autoincrement"`
+	Id        string    `db:"Id"`
 	ClientId  string    `db:"ClientId"`
-	Name      string `db:"Name"`
-	ParentId  string   `db:"ParentId"`
-	CreatedAt *int64 `db:"CreatedAt"`
-	UpdatedAt *int64 `db:"UpdatedAt"`
-	DeletedAt *int64 `db:"DeletedAt"`
+	Name      string 	`db:"Name"`
+	ParentId  string   	`db:"ParentId"`
+	CreatedAt *int64 	`db:"CreatedAt"`
+	UpdatedAt *int64 	`db:"UpdatedAt"`
+	DeletedAt *int64 	`db:"DeletedAt"`
 }
 
-func (c *Category) NewCp(id int, name string) *CategoryPatch {
+func (c *Category) NewCp(id string, name string) *CategoryPatch {
 
 	cp := CategoryPatch{}
 	cp.Id = id

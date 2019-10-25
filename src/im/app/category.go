@@ -2,24 +2,8 @@ package app
 
 import (
 	"im/model"
-	"net/http"
 )
 
-func (a *App) GetCategoryWithChildren(categoryId string) ([]*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().GetWithChildren(categoryId)
-	if result.Err != nil {
-		return nil, result.Err
-	}
-
-	/*	rcat := result.Data.(*model.Category)
-		if (rcat.CountChildren > 0) {
-			result := <-a.Srv.Store.Category().GetWithChildren(rcat.Id)
-			if result.Err == nil {
-				rcat.Children = result.Data.([]*model.Category)
-			}
-		}*/
-	return result.Data.([]*model.Category), nil
-}
 
 func (a *App) GetSingleCategory(categoryId string) (*model.Post, *model.AppError) {
 	//todo single
@@ -68,7 +52,7 @@ func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.
 }
 
 func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.AppError) {
-	result := <-a.Srv.Store.Category().Delete(category.Id)
+	result := <-a.Srv.Store.Category().Delete(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -90,6 +74,7 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
 	//category.SanitizeProps()
 
+	/*
 	result := <-a.Srv.Store.Category().Get(category.Id)
 	if result.Err != nil {
 		return nil, result.Err
@@ -126,14 +111,18 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 	/*if !safeUpdate {
 
 	}*/
+
+	/*
 	result = <-a.Srv.Store.Category().Update(newCategory)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 
+
 	rcategory := result.Data.(*model.Category)
+	*/
 
 	//a.InvalidateCacheForChannelCategorys(rcategory.ChannelId)
 
-	return rcategory, nil
+	return category, nil
 }
