@@ -20,6 +20,7 @@ func init() {
 
 type CategorySQL struct {
 	tblName   string
+	Id        string
 	clientId  string
 	createdAt *int64
 	updatedAt *int64
@@ -58,8 +59,8 @@ func (t *CategorySQL) UpdateParentIdSQL() string {
 		" AND `Children`.`ParentId`=`Parent`.`Id` AND `Children`.`Lft` BETWEEN ? AND ?"
 }
 func (t *CategorySQL) InsertSQL() string {
-	return "INSERT INTO " + t.tblName + "(`Name`, `ParentId`, `Depth`, `Lft`, `Rgt`, `ClientId`, `CreateAt`, `UpdateAt`) " +
-		"VALUES(?,?,?,?,?," + t.clientId + "," + strconv.FormatInt(*t.createdAt, 10) + "," + strconv.FormatInt(*t.updatedAt, 10) + ")"
+	return "INSERT INTO " + t.tblName + "(`Id` ,`Name`, `ParentId`, `Depth`, `Lft`, `Rgt`, `ClientId`, `CreateAt`, `UpdateAt`) " +
+		"VALUES(" + t.Id + ",?,?,?,?,?," + t.clientId + "," + strconv.FormatInt(*t.createdAt, 10) + "," + strconv.FormatInt(*t.updatedAt, 10) + ")"
 }
 func (t *CategorySQL) DeleteSQL() string {
 	return "DELETE FROM " + t.tblName + " WHERE `ClientId`=" + t.clientId + " AND "
@@ -74,6 +75,8 @@ type Node struct {
 	Path        []int
 	PathName    []string
 	NumChildren int
+	Lft         *int
+	Rgt         *int
 }
 
 type SqlCategoryStore struct {
@@ -108,13 +111,14 @@ func (s SqlCategoryStore) CreateIndexesIfNotExists() {
 
 func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	var (
-		id   *int64
+		id   *string
 		node *Node
 		time = time.Now().Unix()
 	)
 
 	db := s.GetMaster().Db
 
+	categorySQL.Id = category.Id
 	categorySQL.clientId = category.ClientId
 	categorySQL.createdAt = &time
 	categorySQL.updatedAt = &time
@@ -128,8 +132,11 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	node, _ = categorySQL.GetNodeDetail(db, *id)
 
 	return store.Do(func(result *store.StoreResult) {
-		cp := category.NewCp(node.ID, node.Name)
-		result.Data = cp
+		category.Lft = *node.Lft
+		category.Rgt = *node.Rgt
+		result.Data = category
+		//cp := category.NewCp(node.ID, node.Name)
+		//result.Data = cp
 	})
 }
 
@@ -255,7 +262,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 	})
 }
 
-func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
+func (t *CategorySQL) GetNodeDetail(db *sql.DB, id string) (*Node, error) {
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectParentsSQL())
 	sql.WriteString("`Children`.`Id`=? AND `Children`.`Lft` BETWEEN `Parent`.`Lft` AND `Parent`.`Rgt` ORDER BY `Lft` ASC")
@@ -278,6 +285,9 @@ func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
 
 	r := rows[len(rows)-1]
 
+	left := atoi(r["Lft"])
+	rigth := atoi(r["Rgt"])
+
 	node := &Node{
 		ID:          r["Id"],
 		Name:        r["Name"],
@@ -286,12 +296,14 @@ func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
 		Path:        path,
 		PathName:    pathName,
 		NumChildren: (atoi(r["Rgt"]) - atoi(r["Lft"]) - 1) / 2,
+		Lft:         &left,
+		Rgt:         &rigth,
 	}
 
 	return node, nil
 }
 
-func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*int64, error) {
+func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*string, error) {
 	// move all other nodes to right, if exits
 	var sql bytes.Buffer
 	sql.WriteString(t.MoveOnAddSQL())
@@ -313,8 +325,7 @@ func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*int64, error) {
 	if affected < 1 {
 		return nil, errors.New("nested: inserting root affected none")
 	}
-	id, err := result.LastInsertId()
-	return &id, err
+	return &t.Id, err
 }
 
 // GetChildren returns all immediate children of node
@@ -389,7 +400,7 @@ func (t *CategorySQL) GetNodesByDepth(db *sql.DB, depth int) ([]Node, error) {
 }
 
 // AddNodeByParent adds a new node with certain parent, new node will be the last child of the parent.
-func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) (*int64, error) {
+func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) (*string, error) {
 	// query parent
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectSQL())
@@ -427,53 +438,7 @@ func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) 
 	if row != 1 {
 		return nil, errors.New("nested: inserting affected none")
 	}
-	id, err := r.LastInsertId()
-	return &id, err
-}
-
-// AddNodeBySibling add a new node right after sibling
-func (t *CategorySQL) AddNodeBySibling(db *sql.DB, name string, siblingID int64) (*int64, error) {
-	var sql bytes.Buffer
-
-	// query sibling
-	sql.WriteString(t.SelectSQL())
-	sql.WriteString("`Id`=?")
-
-	rows, err := query(db, sql.String(), siblingID)
-	if err != nil {
-		return nil, err
-	}
-	if len(rows) < 1 {
-		return nil, errors.New("nested: adding node with sibling does not exist")
-	}
-	siblingRight := atoi(rows[0]["Rgt"])
-	siblingDepth := atoi(rows[0]["Depth"])
-	parentID := atoi(rows[0]["ParentId"])
-	sql.Reset()
-
-	// moves nodes on the right to right by 2
-	sql.WriteString(t.MoveOnAddSQL())
-
-	_, err = db.Exec(sql.String(), siblingRight, siblingRight)
-	if err != nil {
-		return nil, err
-	}
-	sql.Reset()
-
-	// insert new node
-	sql.WriteString(t.InsertSQL())
-	args := []interface{}{name, parentID, siblingDepth, siblingRight + 1, siblingRight + 2}
-
-	r, err := db.Exec(sql.String(), args...)
-	if err != nil {
-		return nil, err
-	}
-	row, _ := r.RowsAffected()
-	if row != 1 {
-		return nil, errors.New("nested: inserting affected none")
-	}
-	id, err := r.LastInsertId()
-	return &id, err
+	return &t.Id, err
 }
 
 // RemoveNodeAndDescendants removes node and all its descendants -- it removes the whole subtree.

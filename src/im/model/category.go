@@ -22,21 +22,19 @@ type Category struct {
 }
 
 type CategoryPatch struct {
-	Id       	string `db:"Id"`
-	ClientId 	string `db:"ClientId"`
-	Name     	string `db:"Name"`
-	ParentId 	string `db:"ParentId"`
-	CreateAt 	*int64 `db:"CreateAt"`
-	UpdateAt 	*int64 `db:"UpdateAt"`
-	DeleteAt 	*int64 `db:"DeleteAt"`
+	Id       string `db:"Id"`
+	ClientId string `db:"ClientId"`
+	Name     string `db:"Name"`
+	ParentId string `db:"ParentId"`
+	CreateAt *int64 `db:"CreateAt"`
+	UpdateAt *int64 `db:"UpdateAt"`
+	DeleteAt *int64 `db:"DeleteAt"`
 }
 
 func (c *Category) NewCp(id string, name string) *CategoryPatch {
-
 	cp := CategoryPatch{}
 	cp.Id = id
 	cp.Name = name
-
 	return &cp
 }
 
