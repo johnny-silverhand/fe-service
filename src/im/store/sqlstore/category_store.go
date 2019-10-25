@@ -140,14 +140,14 @@ func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
-						from category
+						from categories
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
 					 where Id = :Id`
 
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
-			query, map[string]interface{}{"Id": id}); err != nil {
+			query, map[string]interface{}{"Id": id, "Table" : categorySQL.tblName}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlCategoryStore.Get",
 					"store.sql_category.get.app_error", nil, err.Error(), http.StatusNotFound)
@@ -162,20 +162,22 @@ func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 }
 
 func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
+
 	return store.Do(func(result *store.StoreResult) {
-		var query = `select c.*, childs.cnt as CntChild
-					 from categories c 
+		var query = `select c.*, childs.cnt as CntChild 
+					from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
-						from category
+						from categories
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
 					 order by UpdateAt Desc, Id Desc
 					 limit :Limit
 					 offset :Offset`
+
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
-			query, map[string]interface{}{"Limit": limit, "Offset": offset}); err != nil {
+			query, map[string]interface{}{ "Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllPage", "store.sql_category.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = categories
@@ -189,14 +191,14 @@ func (s SqlCategoryStore) GetAllByClientId(clientId string) store.StoreChannel {
 					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
-						from category
+						from categories
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
 					 where ClientId = :ClientId
 					 order by UpdateAt Desc, Id Desc`
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
-			query, map[string]interface{}{"ClientId": clientId}); err != nil {
+			query, map[string]interface{}{ "ClientId": clientId }); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllByClientId", "store.sql_category.get_all_by_client_id.app_error", nil, err.Error(), http.StatusNotFound)
 		} else {
 			result.Data = category
@@ -210,7 +212,7 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
-						from category
+						from categories
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
 					 where ClientId = :ClientId
@@ -219,7 +221,7 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 					 offset :Offset`
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
-			query, map[string]interface{}{"ClientId": clientId, "Limit": limit, "Offset": offset}); err != nil {
+			query, map[string]interface{}{"ClientId": clientId, "Limit": limit, "Offset": offset }); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllByClientIdPage", "store.sql_category.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = categories
@@ -246,7 +248,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 			`SELECT *
 					FROM categories
 					WHERE ParentId = :ParentId
-					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
+					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id }); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = descendants
