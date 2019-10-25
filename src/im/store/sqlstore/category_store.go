@@ -15,7 +15,7 @@ import (
 var categorySQL CategorySQL
 
 func init() {
-	categorySQL.tblName = "category"
+	categorySQL.tblName = "categories"
 }
 
 type CategorySQL struct {
@@ -83,8 +83,9 @@ type SqlCategoryStore struct {
 func NewSqlCategoryStore(sqlStore SqlStore) store.CategoryStore {
 	cs := &SqlCategoryStore{SqlStore: sqlStore}
 
+
 	for _, db := range sqlStore.GetAllConns() {
-		table := db.AddTableWithName(model.Category{}, "Category").SetKeys(true, "Id")
+		table := db.AddTableWithName(model.Category{}, "Categories").SetKeys(false, "Id")
 
 		table.ColMap("Id").SetMaxSize(26)
 		table.ColMap("ClientId").SetMaxSize(32)
@@ -94,20 +95,16 @@ func NewSqlCategoryStore(sqlStore SqlStore) store.CategoryStore {
 		table.ColMap("UpdateAt").SetMaxSize(26)
 		table.ColMap("DeleteAt").SetMaxSize(26)
 
-		categoryPatch := db.AddTableWithName(model.CategoryPatch{}, "Category").SetKeys(true, "Id")
-		categoryPatch.ColMap("ClientId")
-		categoryPatch.ColMap("Name")
-		categoryPatch.ColMap("ParentId")
-		categoryPatch.ColMap("CreateAt").SetMaxSize(26)
-		categoryPatch.ColMap("UpdateAt").SetMaxSize(26)
-		categoryPatch.ColMap("DeleteAt").SetMaxSize(26)
 	}
 
 	return cs
 }
 
 func (s SqlCategoryStore) CreateIndexesIfNotExists() {
-	//s.CreateIndexIfNotExists("idx_category_clientid", "Category", "ClientId")
+	s.CreateIndexIfNotExists("idx_categories_client_id", "Categories", "ClientId")
+	s.CreateIndexIfNotExists("idx_categories_update_at", "Categories", "UpdateAt")
+	s.CreateIndexIfNotExists("idx_categories_create_at", "Categories", "CreateAt")
+	s.CreateIndexIfNotExists("idx_categories_delete_at", "Categories", "DeleteAt")
 }
 
 func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
@@ -140,13 +137,14 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
-					 from category c 
+					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
 						from category
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
 					 where Id = :Id`
+
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
 			query, map[string]interface{}{"Id": id}); err != nil {
@@ -166,7 +164,7 @@ func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
-					 from category c 
+					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
 						from category
@@ -188,7 +186,7 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
 func (s SqlCategoryStore) GetAllByClientId(clientId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
-					 from category c 
+					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
 						from category
@@ -209,7 +207,7 @@ func (s SqlCategoryStore) GetAllByClientId(clientId string) store.StoreChannel {
 func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limit int) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.*, childs.cnt as CntChild
-					 from category c 
+					 from categories c 
 					 left join (
 						select ParentId, count(Id) cnt
 						from category
@@ -231,7 +229,7 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 
 func (s SqlCategoryStore) Delete(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := s.GetMaster().Exec(`UPDATE Category
+		if _, err := s.GetMaster().Exec(`UPDATE categories
 												SET DeleteAt = :DeleteAt
 	 		  					   				WHERE Id = :Id`, map[string]interface{}{"Id": category.Id, "DeleteAt": time.Now().Unix()}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.Delete", "store.sql_category.delete.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -246,7 +244,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 		var descendants []*model.Category
 		if _, err := s.GetReplica().Select(&descendants,
 			`SELECT *
-					FROM Category
+					FROM categories
 					WHERE ParentId = :ParentId
 					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
