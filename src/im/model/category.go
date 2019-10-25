@@ -7,29 +7,28 @@ import (
 )
 
 type Category struct {
-	Id       		string      		`json:"id"`
-	ClientId 		string      		`json:"client_id"`
-	Name     		string      		`json:"name"`
-	ParentId 		string     			`json:"parent_id"`
-	CreateAt 		int64       		`json:"create_at"`
-	UpdateAt 		int64       		`json:"update_at"`
-	DeleteAt 		int64       		`json:"delete_at"`
-	Lft      		int         		`json:"lft"`
-	Rgt      		int         		`json:"rgt"`
-	Depth    		int         		`json:"depth"`
-	Children 		[]*Category 		`db:"-" json:"children"`
-	CountChildren 	int        			`db:"-" json:"count_children"`
-	//Products  []*Products `json:"Products"`
+	Id            string      `json:"id"`
+	ClientId      string      `json:"client_id"`
+	Name          string      `json:"name"`
+	ParentId      string      `json:"parent_id"`
+	CreateAt      int64       `json:"create_at"`
+	UpdateAt      int64       `json:"update_at"`
+	DeleteAt      int64       `json:"delete_at"`
+	Lft           int         `json:"lft"`
+	Rgt           int         `json:"rgt"`
+	Depth         int         `json:"depth"`
+	CountChildren int         `db:"-" json:"count_children"`
+	Children      []*Category `db:"-" json:"children"`
 }
 
 type CategoryPatch struct {
-	Id        string    `db:"Id"`
-	ClientId  string    `db:"ClientId"`
-	Name      string 	`db:"Name"`
-	ParentId  string   	`db:"ParentId"`
-	CreatedAt *int64 	`db:"CreatedAt"`
-	UpdatedAt *int64 	`db:"UpdatedAt"`
-	DeletedAt *int64 	`db:"DeletedAt"`
+	Id       	string `db:"Id"`
+	ClientId 	string `db:"ClientId"`
+	Name     	string `db:"Name"`
+	ParentId 	string `db:"ParentId"`
+	CreateAt 	*int64 `db:"CreateAt"`
+	UpdateAt 	*int64 `db:"UpdateAt"`
+	DeleteAt 	*int64 `db:"DeleteAt"`
 }
 
 func (c *Category) NewCp(id string, name string) *CategoryPatch {
