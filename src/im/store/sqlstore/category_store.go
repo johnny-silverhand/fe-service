@@ -19,46 +19,46 @@ func init() {
 }
 
 type CategorySQL struct {
-	tblName  string
-	clientId string
+	tblName   string
+	clientId  string
 	createdAt *int64
 	updatedAt *int64
 	deletedAt *int64
 }
 
 func (t *CategorySQL) SelectSQL() string {
-	return "SELECT `Id`, `Name`, `ParentId`, `Depth`, `Left`, `Right` FROM " +
+	return "SELECT `Id`, `Name`, `ParentId`, `Depth`, `Lft`, `Rgt` FROM " +
 		t.tblName + " WHERE `ClientId`=" + t.clientId + " AND "
 }
 func (t *CategorySQL) SelectChildrenSQL() string {
-	return "SELECT `Children`.`Id`, `Children`.`Name`, `Children`.`ParentId`, `Children`.`Depth`, `Children`.`Left`, `Children`.`Right` FROM " +
+	return "SELECT `Children`.`Id`, `Children`.`Name`, `Children`.`ParentId`, `Children`.`Depth`, `Children`.`Lft`, `Children`.`Rgt` FROM " +
 		t.tblName + " AS `Children`, " + t.tblName + " AS `Parent` WHERE `Children`.`ClientId`=" + t.clientId +
 		" AND `Parent`.`ClientId`=" + t.clientId + " AND "
 }
 func (t *CategorySQL) SelectParentsSQL() string {
-	return "SELECT `Parent`.`Id`, `Parent`.`Name`, `Parent`.`ParentId`, `Parent`.`Depth`, `Parent`.`Left`, `Parent`.`Right` FROM " +
+	return "SELECT `Parent`.`Id`, `Parent`.`Name`, `Parent`.`ParentId`, `Parent`.`Depth`, `Parent`.`Lft`, `Parent`.`Rgt` FROM " +
 		t.tblName + " AS `Children`, " + t.tblName + " AS `Parent` WHERE `Children`.`ClientId`=" + t.clientId +
 		" AND `Parent`.`ClientId`=" + t.clientId + " AND "
 }
 func (t *CategorySQL) MoveOnAddSQL() string {
-	return "UPDATE " + t.tblName + " SET `Left`=CASE WHEN `Left`>? THEN `Left`+2 ELSE `Left` END, `Right`=CASE WHEN `Right`>? " +
-		"THEN `Right`+2 ELSE `Right` END WHERE `ClientId`=" + t.clientId
+	return "UPDATE " + t.tblName + " SET `Lft`=CASE WHEN `Lft`>? THEN `Lft`+2 ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
+		"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`=" + t.clientId
 }
 func (t *CategorySQL) MoveOnDeleteSQL() string {
-	return "UPDATE " + t.tblName + " SET `Left`=CASE WHEN `Left`>? THEN `Left`-? ELSE `Left` END, `Right`=CASE WHEN `Right`>? " +
-		"THEN `Right`-? ELSE `Right` END WHERE `ClientId`=" + t.clientId
+	return "UPDATE " + t.tblName + " SET `Lft`=CASE WHEN `Lft`>? THEN `Lft`-? ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
+		"THEN `Rgt`-? ELSE `Rgt` END WHERE `ClientId`=" + t.clientId
 }
 func (t *CategorySQL) MoveOnLevelUpSQL() string {
-	return "UPDATE " + t.tblName + " SET `Left`=`Left`-1, `Right`=`Right`-1, `Depth`=`Depth`-1 WHERE `ClientId`=" + t.clientId +
-		" AND `Left` BETWEEN ? AND ?"
+	return "UPDATE " + t.tblName + " SET `Lft`=`Lft`-1, `Rgt`=`Rgt`-1, `Depth`=`Depth`-1 WHERE `ClientId`=" + t.clientId +
+		" AND `Lft` BETWEEN ? AND ?"
 }
 func (t *CategorySQL) UpdateParentIdSQL() string {
 	return "UPDATE " + t.tblName + " AS `Children`, " + t.tblName + " AS `Parent` SET `Children`.`ParentId`=`Parent`.`ParentId` " +
 		"WHERE `Children`.`ClientId`=" + t.clientId + " AND `Parent`.`ClientId`=" + t.clientId +
-		" AND `Children`.`ParentId`=`Parent`.`Id` AND `Children`.`Left` BETWEEN ? AND ?"
+		" AND `Children`.`ParentId`=`Parent`.`Id` AND `Children`.`Lft` BETWEEN ? AND ?"
 }
 func (t *CategorySQL) InsertSQL() string {
-	return "INSERT INTO " + t.tblName + "(`Name`, `ParentId`, `Depth`, `Left`, `Right`, `ClientId`, `CreateAt`, `UpdateAt`) " +
+	return "INSERT INTO " + t.tblName + "(`Name`, `ParentId`, `Depth`, `Lft`, `Rgt`, `ClientId`, `CreateAt`, `UpdateAt`) " +
 		"VALUES(?,?,?,?,?," + t.clientId + "," + strconv.FormatInt(*t.createdAt, 10) + "," + strconv.FormatInt(*t.updatedAt, 10) + ")"
 }
 func (t *CategorySQL) DeleteSQL() string {
@@ -82,7 +82,6 @@ type SqlCategoryStore struct {
 
 func NewSqlCategoryStore(sqlStore SqlStore) store.CategoryStore {
 	cs := &SqlCategoryStore{SqlStore: sqlStore}
-
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Category{}, "Categories").SetKeys(false, "Id")
@@ -147,7 +146,7 @@ func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
-			query, map[string]interface{}{"Id": id, "Table" : categorySQL.tblName}); err != nil {
+			query, map[string]interface{}{"Id": id, "Table": categorySQL.tblName}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlCategoryStore.Get",
 					"store.sql_category.get.app_error", nil, err.Error(), http.StatusNotFound)
@@ -177,7 +176,7 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
 
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
-			query, map[string]interface{}{ "Limit": limit, "Offset": offset}); err != nil {
+			query, map[string]interface{}{"Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllPage", "store.sql_category.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = categories
@@ -198,7 +197,7 @@ func (s SqlCategoryStore) GetAllByClientId(clientId string) store.StoreChannel {
 					 order by UpdateAt Desc, Id Desc`
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
-			query, map[string]interface{}{ "ClientId": clientId }); err != nil {
+			query, map[string]interface{}{"ClientId": clientId}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllByClientId", "store.sql_category.get_all_by_client_id.app_error", nil, err.Error(), http.StatusNotFound)
 		} else {
 			result.Data = category
@@ -221,7 +220,7 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 					 offset :Offset`
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
-			query, map[string]interface{}{"ClientId": clientId, "Limit": limit, "Offset": offset }); err != nil {
+			query, map[string]interface{}{"ClientId": clientId, "Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllByClientIdPage", "store.sql_category.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = categories
@@ -248,7 +247,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 			`SELECT *
 					FROM categories
 					WHERE ParentId = :ParentId
-					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id }); err != nil {
+					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = descendants
@@ -259,7 +258,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectParentsSQL())
-	sql.WriteString("`Children`.`Id`=? AND `Children`.`Left` BETWEEN `Parent`.`Left` AND `Parent`.`Right` ORDER BY `Left` ASC")
+	sql.WriteString("`Children`.`Id`=? AND `Children`.`Lft` BETWEEN `Parent`.`Lft` AND `Parent`.`Rgt` ORDER BY `Lft` ASC")
 
 	rows, err := query(db, sql.String(), id)
 
@@ -286,7 +285,7 @@ func (t *CategorySQL) GetNodeDetail(db *sql.DB, id int64) (*Node, error) {
 		Depth:       atoi(r["Depth"]),
 		Path:        path,
 		PathName:    pathName,
-		NumChildren: (atoi(r["Right"]) - atoi(r["Left"]) - 1) / 2,
+		NumChildren: (atoi(r["Rgt"]) - atoi(r["Lft"]) - 1) / 2,
 	}
 
 	return node, nil
@@ -336,7 +335,7 @@ func (t *CategorySQL) GetChildren(db *sql.DB, id int) ([]Node, error) {
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),
-			NumChildren: (atoi(r["Right"]) - atoi(r["Left"]) - 1) / 2,
+			NumChildren: (atoi(r["Rgt"]) - atoi(r["Lft"]) - 1) / 2,
 		})
 	}
 	return children, nil
@@ -346,7 +345,7 @@ func (t *CategorySQL) GetChildren(db *sql.DB, id int) ([]Node, error) {
 func (t *CategorySQL) GetDescendants(db *sql.DB, id int) ([]Node, error) {
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectChildrenSQL())
-	sql.WriteString("`Parent`.`Id`=? AND `Children`.`Left` BETWEEN `Parent`.`Left` AND `Parent`.`Right`")
+	sql.WriteString("`Parent`.`Id`=? AND `Children`.`Lft` BETWEEN `Parent`.`Lft` AND `Parent`.`Rgt`")
 
 	rows, err := query(db, sql.String(), id)
 	if err != nil {
@@ -360,7 +359,7 @@ func (t *CategorySQL) GetDescendants(db *sql.DB, id int) ([]Node, error) {
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),
-			NumChildren: (atoi(r["Right"]) - atoi(r["Left"]) - 1) / 2,
+			NumChildren: (atoi(r["Rgt"]) - atoi(r["Lft"]) - 1) / 2,
 		})
 	}
 	return descendants, nil
@@ -383,7 +382,7 @@ func (t *CategorySQL) GetNodesByDepth(db *sql.DB, depth int) ([]Node, error) {
 			Name:        r["Name"],
 			ParentID:    atoi64(r["ParentId"]),
 			Depth:       atoi(r["Depth"]),
-			NumChildren: (atoi(r["Right"]) - atoi(r["Left"]) - 1) / 2,
+			NumChildren: (atoi(r["Rgt"]) - atoi(r["Lft"]) - 1) / 2,
 		})
 	}
 	return nodes, nil
@@ -403,7 +402,7 @@ func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) 
 	if len(rows) < 1 {
 		return nil, errors.New("nested: adding node with parent does not exist")
 	}
-	parentRight := atoi(rows[0]["Right"])
+	parentRight := atoi(rows[0]["Rgt"])
 	parentDepth := atoi(rows[0]["Depth"])
 	sql.Reset()
 
@@ -447,7 +446,7 @@ func (t *CategorySQL) AddNodeBySibling(db *sql.DB, name string, siblingID int64)
 	if len(rows) < 1 {
 		return nil, errors.New("nested: adding node with sibling does not exist")
 	}
-	siblingRight := atoi(rows[0]["Right"])
+	siblingRight := atoi(rows[0]["Rgt"])
 	siblingDepth := atoi(rows[0]["Depth"])
 	parentID := atoi(rows[0]["ParentId"])
 	sql.Reset()
@@ -492,14 +491,14 @@ func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id int64) error {
 		return errors.New("nested: deleting node does not exist")
 	}
 
-	left := atoi(rows[0]["Left"])
-	right := atoi(rows[0]["Right"])
+	left := atoi(rows[0]["Lft"])
+	right := atoi(rows[0]["Rgt"])
 	width := right - left + 1
 	sql.Reset()
 
 	// delete node and all its descendants
 	sql.WriteString(t.DeleteSQL())
-	sql.WriteString("`Left` BETWEEN ? AND ?")
+	sql.WriteString("`Lft` BETWEEN ? AND ?")
 
 	result, err := db.Exec(sql.String(), left, right)
 	if err != nil {
@@ -537,8 +536,8 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id int64) error {
 	}
 	sql.Reset()
 
-	left := atoi(rows[0]["Left"])
-	right := atoi(rows[0]["Right"])
+	left := atoi(rows[0]["Lft"])
+	right := atoi(rows[0]["Rgt"])
 
 	// update pid of its descendants
 	sql.WriteString(t.UpdateParentIdSQL())
@@ -572,7 +571,7 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id int64) error {
 	}
 	sql.Reset()
 
-	// move all other nodes on the right to left by 2 steps
+	// move all other nodes on the rgt to left by 2 steps
 	sql.WriteString(t.MoveOnDeleteSQL())
 
 	_, err = db.Exec(sql.String(), right, 2, right, 2) // could affect none
