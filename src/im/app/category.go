@@ -14,6 +14,17 @@ func (a *App) GetSingleCategory(categoryId string) (*model.Post, *model.AppError
 	return result.Data.(*model.Post), nil
 }
 
+func (a *App) GetCategoriesByClientIdPage(clientId string, page int, perPage int) ([]*model.Category, *model.AppError) {
+	return a.GetCategoriesByClientId(clientId, page*perPage, perPage)
+}
+func (a *App) GetCategoriesByClientId(clientId string, offset int, limit int) ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetAllByClientIdPage(clientId, offset, limit)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.Category), nil
+}
+
 func (a *App) GetCategory(categoryId string) (*model.Category, *model.AppError) {
 	result := <-a.Srv.Store.Category().Get(categoryId)
 	if result.Err != nil {

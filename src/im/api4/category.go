@@ -39,6 +39,19 @@ func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(model.CategoriesToJson(categories)))
 }
 
+func getCategoriesByClient(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireClientId()
+	if c.Err != nil {
+		return
+	}
+	categories, err := c.App.GetCategoriesByClientIdPage(c.Params.ClientId, c.Params.Page, c.Params.PerPage)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	w.Write([]byte(model.CategoriesToJson(categories)))
+}
+
 func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category := model.CategoryFromJson(r.Body)
 	if category == nil {

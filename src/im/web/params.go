@@ -24,6 +24,7 @@ type Params struct {
 	ChannelId        string
 	ProductId        string
 	CategoryId       string
+	ClientId		 string
 	CategoryParentId string
 	CategoryDepth    string
 	PostId           string
