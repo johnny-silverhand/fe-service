@@ -7,26 +7,46 @@ import (
 )
 
 type Category struct {
-	Id            string      `json:"id"`
-	ClientId      string      `json:"client_id"`
-	Name          string      `json:"name"`
-	ParentId      string      `json:"parent_id"`
-	CreateAt      int64       `json:"create_at"`
-	UpdateAt      int64       `json:"update_at"`
-	DeleteAt      int64       `json:"delete_at"`
-	Lft           int         `json:"lft"`
-	Rgt           int         `json:"rgt"`
-	Depth         int         `json:"depth"`
-	CountChildren int         `db:"-" json:"count_children"`
-	Children      []*Category `db:"-" json:"children"`
-
-
-	//Products []*Products `json:"products"`
+	Id       		string      		`json:"id"`
+	ClientId 		string      		`json:"client_id"`
+	Name     		string      		`json:"name"`
+	ParentId 		string     			`json:"parent_id"`
+	CreateAt 		int64       		`json:"create_at"`
+	UpdateAt 		int64       		`json:"update_at"`
+	DeleteAt 		int64       		`json:"delete_at"`
+	Lft      		int         		`json:"lft"`
+	Rgt      		int         		`json:"rgt"`
+	Depth    		int         		`json:"depth"`
+	Children 		[]*Category 		`db:"-" json:"count_children"`
+	CountChildren 	int        			`db:"-" json:"count_children"`
+	//Products  []*Products `json:"Products"`
 }
 
 type CategoryPatch struct {
-	Name     string `json:"name"`
-	ParentId *int   `json:"parent_id"`
+	Id        string    `db:"Id, primarykey, autoincrement"`
+	ClientId  string    `db:"ClientId"`
+	Name      string `db:"Name"`
+	ParentId  string   `db:"ParentId"`
+	CreatedAt *int64 `db:"CreatedAt"`
+	UpdatedAt *int64 `db:"UpdatedAt"`
+	DeletedAt *int64 `db:"DeletedAt"`
+}
+
+func (c *Category) NewCp(id int, name string) *CategoryPatch {
+
+	cp := CategoryPatch{}
+	cp.Id = id
+	cp.Name = name
+
+	return &cp
+}
+
+func (category *Category) SetPatch() *CategoryPatch {
+	patch := CategoryPatch{}
+	patch.ClientId = category.ClientId
+	patch.ParentId = category.ParentId
+	patch.Name = category.Name
+	return &patch
 }
 
 func (category *Category) ToJson() string {
@@ -67,25 +87,4 @@ func CategoryFromJson(data io.Reader) *Category {
 	var category *Category
 	json.NewDecoder(data).Decode(&category)
 	return category
-}
-
-func (o *Category) PreSave() {
-	if o.Id == "" {
-		o.Id = NewId()
-	}
-
-	if o.CreateAt == 0 {
-		o.CreateAt = GetMillis()
-	}
-
-	o.UpdateAt = o.CreateAt
-	o.PreCommit()
-}
-
-func (o *Category) PreCommit() {
-
-}
-
-func (o *Category) MakeNonNil() {
-
 }

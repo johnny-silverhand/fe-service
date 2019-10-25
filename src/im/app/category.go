@@ -119,6 +119,10 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 	if newCategory.Depth != category.Depth {
 		newCategory.Depth = category.Depth
 	}
+	if newCategory.UpdateAt != category.UpdateAt {
+		newCategory.UpdateAt = category.UpdateAt
+	}
+
 	/*if !safeUpdate {
 
 	}*/
