@@ -9,7 +9,6 @@ import (
 	"im/store"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 var categorySQL CategorySQL
@@ -24,7 +23,7 @@ type CategorySQL struct {
 	clientId  string
 	createdAt *int64
 	updatedAt *int64
-	deletedAt *int64
+	//deletedAt *int64
 }
 
 func (t *CategorySQL) SelectSQL() string {
@@ -49,11 +48,11 @@ func (t *CategorySQL) SelectParentsSQL() string {
 }
 func (t *CategorySQL) MoveOnAddSQL() string {
 	return "UPDATE " + t.tblName + " SET `Lft`=CASE WHEN `Lft`>? THEN `Lft`+2 ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
-		"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`=" + t.clientId
+		"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`='" + t.clientId + "'"
 }
 func (t *CategorySQL) MoveOnDeleteSQL() string {
 	return "UPDATE " + t.tblName + " SET `Lft`=CASE WHEN `Lft`>? THEN `Lft`-? ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
-		"THEN `Rgt`-? ELSE `Rgt` END WHERE `ClientId`=" + t.clientId
+		"THEN `Rgt`-? ELSE `Rgt` END WHERE `ClientId`='" + t.clientId + "'"
 }
 func (t *CategorySQL) MoveOnLevelUpSQL() string {
 	return "UPDATE " + t.tblName + " SET `Lft`=`Lft`-1, `Rgt`=`Rgt`-1, `Depth`=`Depth`-1 WHERE `ClientId`=" + t.clientId +
@@ -66,10 +65,11 @@ func (t *CategorySQL) UpdateParentIdSQL() string {
 }
 func (t *CategorySQL) InsertSQL() string {
 	return "INSERT INTO " + t.tblName + "(`Id` ,`Name`, `ParentId`, `Depth`, `Lft`, `Rgt`, `ClientId`, `CreateAt`, `UpdateAt`) " +
-		"VALUES(" + t.Id + ",?,?,?,?,?," + t.clientId + "," + strconv.FormatInt(*t.createdAt, 10) + "," + strconv.FormatInt(*t.updatedAt, 10) + ")"
+		"VALUES(?,?,?,?,?,?,?," + strconv.FormatInt(*t.createdAt, 10) + "," + strconv.FormatInt(*t.updatedAt, 10) + ")"
 }
+
 func (t *CategorySQL) DeleteSQL() string {
-	return "DELETE FROM " + t.tblName + " WHERE `ClientId`=" + t.clientId + " AND "
+	return "DELETE FROM " + t.tblName + " WHERE `ClientId`='" + t.clientId + "' AND "
 }
 
 // Node detail with path from root to node
@@ -119,15 +119,16 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	var (
 		id   *string
 		node *Node
-		time = time.Now().Unix()
+		//time = time.Now().Unix()
 	)
 
 	db := s.GetMaster().Db
 
+	category.PreSave()
 	categorySQL.Id = category.Id
 	categorySQL.clientId = category.ClientId
-	categorySQL.createdAt = &time
-	categorySQL.updatedAt = &time
+	categorySQL.createdAt = &category.CreateAt
+	categorySQL.updatedAt = &category.UpdateAt
 
 	if len(category.ParentId) > 0 {
 		id, _ = categorySQL.AddNodeByParent(db, category.Name, category.ParentId)
@@ -319,7 +320,7 @@ func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*string, error) {
 
 	// insert root
 	sql.WriteString(t.InsertSQL())
-	args := []interface{}{name, nil, 1, 1, 2} // parentID is nil
+	args := []interface{}{t.Id, name, nil, 1, 1, 2, t.clientId} // parentID is nil
 
 	result, err := db.Exec(sql.String(), args...)
 	if err != nil {

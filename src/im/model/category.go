@@ -79,6 +79,23 @@ func CategoriesToJson(categories []*Category) string {
 	return string(outdata)
 }
 
+func (o *Category) PreSave() {
+	if o.Id == "" {
+		o.Id = NewId()
+	}
+
+	if o.CreateAt == 0 {
+		o.CreateAt = GetMillis()
+	}
+
+	o.UpdateAt = o.CreateAt
+	o.PreCommit()
+}
+
+func (o *Category) PreCommit() {
+
+}
+
 func CategoryFromJson(data io.Reader) *Category {
 	var category *Category
 	json.NewDecoder(data).Decode(&category)
