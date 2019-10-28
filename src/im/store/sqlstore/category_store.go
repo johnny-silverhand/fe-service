@@ -286,6 +286,92 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 	})
 }
 
+
+func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *model.Category ) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		var (
+			node_id = category.Id
+			node_pos_left = category.Lft
+			node_pos_right = category.Rgt
+			parent_id = parentCategory.Id
+			parent_pos_right = parentCategory.Rgt
+			node_size = node_pos_right - node_pos_left + 1
+		)
+
+		_, err := s.GetMaster().Exec(`
+			UPDATE categories
+			SET Lft = 0-(Lft), Rgt = 0-(Rgt)
+			WHERE Lft >= :node_pos_left AND Rgt <= :node_pos_right;`, map[string]interface{}{
+				"node_pos_left" : node_pos_left,
+				"node_pos_right" : node_pos_right,
+			}); if err != nil { }
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET Lft = Lft - :node_size
+			WHERE Lft > :node_pos_right;`,
+			map[string]interface{}{
+			"node_size" : node_size,
+			"node_pos_right" : node_pos_right,
+		}); if err != nil { }
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET Rgt = Rgt - :node_size
+			WHERE Rgt > :node_pos_right;`,
+			map[string]interface{}{
+				"node_size" : node_size,
+				"node_pos_right" : node_pos_right,
+			}); if err != nil { }
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET Lft = Lft + :node_size
+			WHERE Lft >= IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_size, :parent_pos_right);`,
+			map[string]interface{}{
+				"node_size" : node_size,
+				"parent_pos_right" : parent_pos_right,
+				"node_pos_right" : node_pos_right,
+			}); if err != nil { }
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET Rgt = Rgt + :node_size
+			WHERE Rgt >= IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_size, :parent_pos_right);`,
+			map[string]interface{}{
+				"node_size" : node_size,
+				"parent_pos_right" : parent_pos_right,
+				"node_pos_right" : node_pos_right,
+			}); if err != nil { }
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET
+				Lft = 0-(Lft)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size),
+				Rgt = 0-(Rgt)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size)
+			
+			WHERE Lft <= 0-:node_pos_left AND Rgt >= 0-:node_pos_right;`,
+			map[string]interface{}{
+				"node_size" : node_size,
+				"parent_pos_right" : parent_pos_right,
+				"node_pos_right" : node_pos_right,
+				"node_pos_left" : node_pos_left,
+			}); if err != nil {  }
+
+
+		_, err = s.GetMaster().Exec(`
+			UPDATE categories
+			SET ParentId = :parent_id
+			WHERE Id = :node_id;`,
+			map[string]interface{}{
+				"parent_id" : parent_id,
+				"node_id" : node_id,
+			}); if err != nil { }
+
+	})
+}
+
 func (t *CategorySQL) GetNodeDetail(db *sql.DB, id string) (*Node, error) {
 	var sql bytes.Buffer
 	sql.WriteString(t.SelectParentsSQL())
@@ -330,7 +416,13 @@ func (t *CategorySQL) GetNodeDetail(db *sql.DB, id string) (*Node, error) {
 func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*string, error) {
 	// move all other nodes to right, if exits
 	var sql bytes.Buffer
+
 	sql.WriteString(t.MoveOnAddSQL())
+
+	/*
+	return "UPDATE Categories SET `Lft`= CASE WHEN `Lft`> 0 THEN `Lft`+2 ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
+		"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`= ClientId"
+	*/
 	_, err := db.Exec(sql.String(), 0, 0)
 	if err != nil {
 		return nil, err
@@ -508,6 +600,7 @@ func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id string) error {
 	}
 	return nil
 }
+
 
 // RemoveOneNode removes one node and move all its descentants 1 level up -- it removes the certain node from the tree only.
 func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {

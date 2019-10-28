@@ -90,6 +90,11 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 	return result.Data.([]*model.Category), nil
 }
 
+func (a *App) MoveClientCategory (category *model.Category, parentCategory *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().MoveCategory(category,parentCategory)
+	return result.Err
+}
+
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
 	//category.SanitizeProps()
 

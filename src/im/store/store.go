@@ -501,6 +501,7 @@ type ProductStore interface {
 type CategoryStore interface {
 	Save(category *model.Category) StoreChannel
 	Update(category *model.Category) StoreChannel
+	MoveCategory(category *model.Category,parentCategory *model.Category ) StoreChannel
 	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel
 	GetAllByClientId(clientId string) StoreChannel

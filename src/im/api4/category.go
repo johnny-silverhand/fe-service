@@ -9,11 +9,42 @@ import (
 func (api *API) InitCategory() {
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
-
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(updateCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
+	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
+	api.BaseRoutes.MoveCategory.Handle("", api.ApiHandler(moveCategory)).Methods("PUT")
 }
+func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+
+	var (
+		category 	*model.Category
+		parent 		*model.Category
+		err 		*model.AppError
+		pid string
+	)
+
+	category =  model.CategoryFromJson(r.Body)
+	pid = category.ParentId
+
+	if category, err = c.App.GetCategory(category.Id); err != nil {
+		c.Err = err
+		return
+	}
+
+	if parent, _ = c.App.GetCategory(pid); parent != nil {
+		err = c.App.MoveClientCategory(category, parent)
+	} else {
+		c.App.DeleteOneCategory(category)
+		/*category.ParentId = pid
+		c.App.CreateCategory(category)*/
+	}
+}
+
 
 func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
@@ -84,18 +115,6 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Updating the file_ids of a post is not a supported operation and will be ignored
-
-	/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
-
-	/*originalCategory, err := c.App.GetSingleCategory(c.Params.CategoryId)
-	if err != nil {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
 
 	category.Id = c.Params.CategoryId
 
@@ -108,30 +127,7 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(rcategory.ToJson()))
 }
 
-func _deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
-	c.RequireCategoryId()
-	if c.Err != nil {
-		return
-	}
 
-	category, err := c.App.GetCategory(c.Params.CategoryId)
-	if err != nil {
-		c.Err = err
-		return
-	}
-	// The post being updated in the payload must be the same one as indicated in the URL.
-	if category.Id != c.Params.CategoryId {
-		c.SetInvalidParam("id")
-		return
-	}
-
-	if _, err := c.App.DeleteCategory(category); err != nil {
-		c.Err = err
-		return
-	}
-
-	ReturnStatusOK(w)
-}
 
 func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category, err := c.App.GetCategory(c.Params.CategoryId)
