@@ -136,6 +136,7 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	categorySQL.createdAt = &category.CreateAt
 	categorySQL.updatedAt = &category.UpdateAt
 
+
 	if len(category.ParentId) > 0 {
 		id, _ = categorySQL.AddNodeByParent(db, category.Name, category.ParentId)
 	} else {
@@ -254,16 +255,8 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 }
 
 func (s SqlCategoryStore) DeleteOneNode(category *model.Category) store.StoreChannel {
-
+	//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
 	return store.Do(func(result *store.StoreResult) {
-
-		// Updating rule
-
-		/*
-		SELECT Lft, Rgt, (Rgt - Lft), (Rgt - Lft + 1), ParentId
-		INTO new_lft, new_rgt, has_leafs, width, superior_parent
-		FROM categories WHERE id = '';
-		*/
 
 		var (
 			NewLft int = category.Lft
@@ -288,13 +281,6 @@ func (s SqlCategoryStore) DeleteOneNode(category *model.Category) store.StoreCha
 			}
 
 		} else {
-			/*
-			       DELETE FROM tree_map WHERE lft = new_lft;
-				   UPDATE tree_map SET rgt = rgt - 1, lft = lft - 1, parent_id = superior_parent
-				   WHERE lft BETWEEN new_lft AND new_rgt;
-				   UPDATE tree_map SET rgt = rgt - 2 WHERE rgt > new_rgt;
-				   UPDATE tree_map SET lft = lft - 2 WHERE lft > new_rgt;
-			*/
 			_, err := s.GetMaster().Exec(`DELETE FROM categories WHERE Lft = :NewLft;`,
 				map[string]interface{}{"NewLft" : NewLft})
 
@@ -313,7 +299,6 @@ func (s SqlCategoryStore) DeleteOneNode(category *model.Category) store.StoreCha
 			if err != nil {
 				fmt.Print(err.Error())
 			}
-
 		}
 
 	})

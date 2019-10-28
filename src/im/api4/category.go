@@ -42,6 +42,8 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		err = c.App.MoveClientCategory(category, parent)
 	} else {
 		c.App.DeleteOneCategory(category)
+		category.ParentId = pid
+		c.App.CreateCategory(category)
 		/*category.ParentId = pid
 		c.App.CreateCategory(category)*/
 	}
