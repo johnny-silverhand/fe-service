@@ -54,6 +54,20 @@ func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.
 	return result.Data.(*model.Category), nil
 }
 
+func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *model.AppError) {
+	result := <-a.Srv.Store.Category().DeleteOneNode(category)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	/*
+		descendants, _ := a.GetDescendants(category)
+			for _, descendant := range descendants {
+				a.DeleteCategory(descendant)
+		}*/
+	return nil, nil
+}
+
+
 func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.AppError) {
 	result := <-a.Srv.Store.Category().Delete(category)
 	if result.Err != nil {
@@ -76,5 +90,16 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 }
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
-	return category, nil
+
+	result := <-a.Srv.Store.Category().DeleteOneNode(category)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	result = <-a.Srv.Store.Category().Save(category)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.Category) ,nil
 }
