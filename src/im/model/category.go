@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"io"
+	"sort"
 )
 
 type Category struct {
@@ -50,7 +51,9 @@ func (category *Category) ToJson() string {
 }
 
 func CategoriesToJson(categories []*Category) string {
-
+	sort.Slice(categories, func(i, j int) bool {
+		return categories[i].CreateAt < categories[j].CreateAt
+	})
 	slice := make(map[string]*Category)
 	for i, _ := range categories {
 		slice[categories[i].Id] = categories[i]
@@ -66,7 +69,9 @@ func CategoriesToJson(categories []*Category) string {
 			tree = append(tree, category)
 		}
 	}
-
+	sort.Slice(tree, func(i, j int) bool {
+		return tree[i].CreateAt < tree[j].CreateAt
+	})
 	outdata, err := json.Marshal(tree)
 	if err != nil {
 		panic(err)
