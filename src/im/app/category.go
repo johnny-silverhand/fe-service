@@ -74,11 +74,10 @@ func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.A
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	/*
-		descendants, _ := a.GetDescendants(category)
-			for _, descendant := range descendants {
-				a.DeleteCategory(descendant)
-		}*/
+	descendants, _ := a.GetDescendants(category)
+		for _, descendant := range descendants {
+			a.DeleteCategory(descendant)
+		}
 	return nil, nil
 }
 

@@ -26,17 +26,19 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		parent 		*model.Category
 		err 		*model.AppError
 		pid string
+		depth int
 	)
 
 	category =  model.CategoryFromJson(r.Body)
 	pid = category.ParentId
-
+	depth = category.Depth
 	if category, err = c.App.GetCategory(category.Id); err != nil {
 		c.Err = err
 		return
 	}
 
 	if parent, _ = c.App.GetCategory(pid); parent != nil {
+		category.Depth = depth
 		err = c.App.MoveClientCategory(category, parent)
 	} else {
 		c.App.DeleteOneCategory(category)

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"im/model"
 	"im/store"
@@ -255,9 +256,66 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 func (s SqlCategoryStore) DeleteOneNode(category *model.Category) store.StoreChannel {
 
 	return store.Do(func(result *store.StoreResult) {
-		db := s.GetMaster().Db
-		categorySQL.clientId = category.ClientId
-		categorySQL.RemoveOneNode(db, category.Id)
+
+		// Updating rule
+
+		/*
+		SELECT Lft, Rgt, (Rgt - Lft), (Rgt - Lft + 1), ParentId
+		INTO new_lft, new_rgt, has_leafs, width, superior_parent
+		FROM categories WHERE id = '';
+		*/
+
+		var (
+			NewLft int = category.Lft
+			NewRgt int = category.Rgt
+			HasLeafs int = NewRgt - NewLft
+			Width int = NewRgt - NewLft + 1
+			SuperiorParent string =  category.ParentId
+		)
+
+		if HasLeafs == 1 {
+			 _, err := s.GetMaster().Exec(`DELETE FROM categories WHERE Id = :Id`,
+				map[string]interface{}{"Id" : category.Id})
+
+			_, err = s.GetMaster().Exec(`UPDATE categories SET Rgt = Rgt - :Width WHERE Rgt > :NewRgt;`,
+				map[string]interface{}{"Width" : Width, "NewRgt" : NewRgt })
+
+			_, err = s.GetMaster().Exec(`UPDATE categories SET Lft = Lft - :Width WHERE Lft > :NewRgt;`,
+				map[string]interface{}{"Width" : Width, "NewRgt" : NewRgt })
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+
+		} else {
+			/*
+			       DELETE FROM tree_map WHERE lft = new_lft;
+				   UPDATE tree_map SET rgt = rgt - 1, lft = lft - 1, parent_id = superior_parent
+				   WHERE lft BETWEEN new_lft AND new_rgt;
+				   UPDATE tree_map SET rgt = rgt - 2 WHERE rgt > new_rgt;
+				   UPDATE tree_map SET lft = lft - 2 WHERE lft > new_rgt;
+			*/
+			_, err := s.GetMaster().Exec(`DELETE FROM categories WHERE Lft = :NewLft;`,
+				map[string]interface{}{"NewLft" : NewLft})
+
+			_, err = s.GetMaster().Exec(`
+				   UPDATE categories SET Rgt = Rgt - 1, Lft = Lft - 1, ParentId = :SuperiorParent
+				   WHERE Lft BETWEEN :NewLft AND :NewRgt;
+				`,
+				map[string]interface{}{"SuperiorParent" : SuperiorParent, "NewLft" : NewLft, "NewRgt" : NewRgt })
+
+			_, err = s.GetMaster().Exec(`UPDATE categories SET Rgt = Rgt - 2 WHERE Rgt > :NewRgt;`,
+				map[string]interface{}{"NewRgt" : NewRgt })
+
+			_, err = s.GetMaster().Exec(`UPDATE categories SET Lft = Lft - 2 WHERE Lft > :NewRgt;`,
+				map[string]interface{}{"NewRgt" : NewRgt })
+
+			if err != nil {
+				fmt.Print(err.Error())
+			}
+
+		}
+
 	})
 }
 
@@ -297,6 +355,7 @@ func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *
 			parent_id = parentCategory.Id
 			parent_pos_right = parentCategory.Rgt
 			node_size = node_pos_right - node_pos_left + 1
+			parent_depth = category.Depth
 		)
 
 		_, err := s.GetMaster().Exec(`
@@ -350,7 +409,7 @@ func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *
 			SET
 				Lft = 0-(Lft)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size),
 				Rgt = 0-(Rgt)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size)
-			
+
 			WHERE Lft <= 0-:node_pos_left AND Rgt >= 0-:node_pos_right;`,
 			map[string]interface{}{
 				"node_size" : node_size,
@@ -362,12 +421,14 @@ func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *
 
 		_, err = s.GetMaster().Exec(`
 			UPDATE categories
-			SET ParentId = :parent_id
+			SET ParentId = :parent_id, Depth = :parent_depth
 			WHERE Id = :node_id;`,
 			map[string]interface{}{
 				"parent_id" : parent_id,
 				"node_id" : node_id,
+				"parent_depth" : parent_depth,
 			}); if err != nil { }
+
 
 	})
 }
