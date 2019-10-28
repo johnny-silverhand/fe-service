@@ -1,0 +1,49 @@
+{
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "bool": {
+                        "should": [
+                            {
+                                "multi_match": {
+                                    "query": "сообщения",
+                                    "fields": [
+                                        "message"
+                                    ],
+                                    "type": "best_fields",
+                                    "operator": "or"
+                                }
+                            },
+                            {
+                                "multi_match": {
+                                    "query": "сообщения",
+                                    "fields": [
+                                        "message"
+                                    ],
+                                    "type": "phrase_prefix",
+                                    "operator": "or"
+                                }
+                            }
+                        ],
+                        "minimum_should_match": ""
+                    }
+                }
+            ]
+        }
+    },
+    "highlight": {
+        "pre_tags": [
+            "\u003cmark\u003e"
+        ],
+        "post_tags": [
+            "\u003c/mark\u003e"
+        ],
+        "fields": {
+            "message": {}
+        },
+        "number_of_fragments": 0
+    },
+    "size": 50,
+    "from": 0
+}

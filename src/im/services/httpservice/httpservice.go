@@ -4,6 +4,8 @@
 package httpservice
 
 import (
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -17,7 +19,7 @@ import (
 type HTTPService interface {
 	// MakeClient returns an http client constructed with a RoundTripper as returned by MakeTransport.
 	MakeClient(trustURLs bool) *http.Client
-
+	ConsumeAndClose(r *http.Response)
 	// MakeTransport returns a RoundTripper that is suitable for making requests to external resources. The default
 	// implementation provides:
 	// - A shorter timeout for dial and TLS handshake (defined as constant "ConnectTimeout")
@@ -94,4 +96,11 @@ func (h *HTTPServiceImpl) MakeTransport(trustURLs bool) http.RoundTripper {
 	}
 
 	return NewTransport(insecure, allowHost, allowIP)
+}
+// This is required to re-use the underlying connection and not take up file descriptors
+func (h *HTTPServiceImpl) ConsumeAndClose(r *http.Response) {
+	if r.Body != nil {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}
 }

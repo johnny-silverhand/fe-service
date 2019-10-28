@@ -13,6 +13,8 @@ import (
 	"im/mlog"
 	"im/web"
 	"im/wsapi"
+
+	_ "im/impl"
 )
 
 const CONFIG_FILE_DNS = "default.json"

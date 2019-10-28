@@ -286,11 +286,11 @@
         "MaxUsersForStatistics": 2500
     },
     "ElasticsearchSettings": {
-        "ConnectionUrl": "http://dockerhost:9200",
-        "Username": "elastic",
-        "Password": "changeme",
-        "EnableIndexing": false,
-        "EnableSearching": false,
+        "ConnectionUrl": "http://localhost:9200",
+        "Username": "",
+        "Password": "",
+        "EnableIndexing": true,
+        "EnableSearching": true,
         "EnableAutocomplete": false,
         "Sniff": true,
         "PostIndexReplicas": 1,
@@ -301,7 +301,7 @@
         "UserIndexShards": 1,
         "AggregatePostsAfterDays": 365,
         "PostsAggregatorJobStartTime": "03:00",
-        "IndexPrefix": "",
+        "IndexPrefix": "fe",
         "LiveIndexingBatchSize": 1,
         "BulkIndexingTimeWindowSeconds": 3600,
         "RequestTimeoutSeconds": 30
