@@ -152,6 +152,14 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 
 func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		category.UpdateAt = model.GetMillis()
+		category.PreCommit()
+
+		if _, err := s.GetMaster().Update(category); err != nil {
+			result.Err = model.NewAppError("SqlCategoryStore.Update", "store.sql_post.update.app_error", nil, "id="+category.Id+", "+err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = category
+		}
 	})
 }
 
