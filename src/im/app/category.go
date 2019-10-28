@@ -2,6 +2,7 @@ package app
 
 import (
 	"im/model"
+	"net/http"
 )
 
 func (a *App) GetSingleCategory(categoryId string) (*model.Post, *model.AppError) {
@@ -90,16 +91,41 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 }
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
+	//category.SanitizeProps()
 
-	result := <-a.Srv.Store.Category().DeleteOneNode(category)
+	result := <-a.Srv.Store.Category().Get(category.Id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 
-	result = <-a.Srv.Store.Category().Save(category)
+	oldCategory := result.Data.(*model.Category)
+
+	if oldCategory == nil {
+		err := model.NewAppError("UpdateCategory",
+			"api.category.update_category.find.app_error", nil,
+			"id="+category.Id, http.StatusBadRequest)
+		return nil, err
+	}
+
+	newCategory := &model.Category{}
+	*newCategory = *oldCategory
+
+	if newCategory.Name != category.Name {
+		newCategory.Name = category.Name
+	}
+	if newCategory.ParentId != category.ParentId {
+		newCategory.ParentId = category.ParentId
+	}
+
+	result = <-a.Srv.Store.Category().Update(newCategory)
+
 	if result.Err != nil {
 		return nil, result.Err
 	}
 
-	return result.Data.(*model.Category) ,nil
+	payload := result.Data.(*model.Category)
+
+	//a.InvalidateCacheForChannelCategorys(payload.ChannelId)
+
+	return payload, nil
 }

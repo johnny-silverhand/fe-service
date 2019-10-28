@@ -150,6 +150,11 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	})
 }
 
+func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+	})
+}
+
 func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var query = `select c.* from categories c 
