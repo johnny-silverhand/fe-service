@@ -152,13 +152,39 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	})
 }
 
+/* Save by stored procedure */
+func (s SqlCategoryStore) SaveBySp(category *model.Category) store.StoreChannel {
+
+	if len(category.Id) == 0 {
+		category.PreSave()
+	}
+
+	//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
+	_,err := s.GetMaster().Exec(`
+			call r_tree_traversal('insert',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+		map[string]interface{}{
+			"Id" : category.Id,
+			"ClientID" : category.ClientId,
+			"ParentId" : category.ParentId,
+			"Name" : category.Name,
+			"CreateAt" : category.CreateAt,
+			"UpdateAt" : category.UpdateAt,
+		})
+	if err != nil {
+		fmt.Print("error")
+	}
+
+	return s.Get(category.Id)
+}
+
 func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		category.UpdateAt = model.GetMillis()
 		category.PreCommit()
 
 		if _, err := s.GetMaster().Update(category); err != nil {
-			result.Err = model.NewAppError("SqlCategoryStore.Update", "store.sql_post.update.app_error", nil, "id="+category.Id+", "+err.Error(), http.StatusInternalServerError)
+			result.Err = model.NewAppError("SqlCategoryStore.Update", "store.sql_post.update.app_error",
+				nil, "id="+category.Id+", "+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = category
 		}

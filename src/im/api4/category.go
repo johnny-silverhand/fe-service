@@ -92,7 +92,7 @@ func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = model.NewAppError("createCategory", "api.category", nil, "nil object", http.StatusForbidden)
 		return
 	}
-	result, err := c.App.CreateCategory(category)
+	result, err := c.App.CreateCategoryBySp(category)
 	if err != nil {
 		c.Err = err
 		return
