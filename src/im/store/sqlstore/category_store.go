@@ -152,30 +152,6 @@ func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
 	})
 }
 
-/* Save by stored procedure */
-func (s SqlCategoryStore) SaveBySp(category *model.Category) store.StoreChannel {
-
-	if len(category.Id) == 0 {
-		category.PreSave()
-	}
-
-	//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
-	_,err := s.GetMaster().Exec(`
-			call r_tree_traversal('insert',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
-		map[string]interface{}{
-			"Id" : category.Id,
-			"ClientID" : category.ClientId,
-			"ParentId" : category.ParentId,
-			"Name" : category.Name,
-			"CreateAt" : category.CreateAt,
-			"UpdateAt" : category.UpdateAt,
-		})
-	if err != nil {
-		fmt.Print("error")
-	}
-
-	return s.Get(category.Id)
-}
 
 func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -280,57 +256,6 @@ func (s SqlCategoryStore) GetAllByClientIdPage(clientId string, offset int, limi
 	})
 }
 
-func (s SqlCategoryStore) DeleteOneNode(category *model.Category) store.StoreChannel {
-	//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
-	return store.Do(func(result *store.StoreResult) {
-
-		var (
-			NewLft int = category.Lft
-			NewRgt int = category.Rgt
-			HasLeafs int = NewRgt - NewLft
-			Width int = NewRgt - NewLft + 1
-			SuperiorParent string =  category.ParentId
-		)
-
-		if HasLeafs == 1 {
-			 _, err := s.GetMaster().Exec(`DELETE FROM categories WHERE Id = :Id`,
-				map[string]interface{}{"Id" : category.Id})
-
-			_, err = s.GetMaster().Exec(`UPDATE categories SET Rgt = Rgt - :Width WHERE Rgt > :NewRgt;`,
-				map[string]interface{}{"Width" : Width, "NewRgt" : NewRgt })
-
-			_, err = s.GetMaster().Exec(`UPDATE categories SET Lft = Lft - :Width WHERE Lft > :NewRgt;`,
-				map[string]interface{}{"Width" : Width, "NewRgt" : NewRgt })
-
-			if err != nil {
-				fmt.Print(err.Error())
-			}
-
-		} else {
-			_, err := s.GetMaster().Exec(`DELETE FROM categories WHERE Lft = :NewLft;`,
-				map[string]interface{}{"NewLft" : NewLft})
-
-			_, err = s.GetMaster().Exec(`
-				   UPDATE categories SET Rgt = Rgt - 1, Lft = Lft - 1, ParentId = :SuperiorParent
-				   WHERE Lft BETWEEN :NewLft AND :NewRgt;
-				`,
-				map[string]interface{}{"SuperiorParent" : SuperiorParent, "NewLft" : NewLft, "NewRgt" : NewRgt })
-
-			_, err = s.GetMaster().Exec(`UPDATE categories SET Rgt = Rgt - 2 WHERE Rgt > :NewRgt;`,
-				map[string]interface{}{"NewRgt" : NewRgt })
-
-			_, err = s.GetMaster().Exec(`UPDATE categories SET Lft = Lft - 2 WHERE Lft > :NewRgt;`,
-				map[string]interface{}{"NewRgt" : NewRgt })
-
-			if err != nil {
-				fmt.Print(err.Error())
-			}
-		}
-
-	})
-}
-
-
 func (s SqlCategoryStore) Delete(category *model.Category) store.StoreChannel {
 
 	return store.Do(func(result *store.StoreResult) {
@@ -354,7 +279,6 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 		}
 	})
 }
-
 
 func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *model.Category ) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -735,3 +659,66 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 
 	return nil
 }
+
+
+/* *********** STORED PROCEDURE CALLS ************ */
+
+//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+func (s SqlCategoryStore) SaveBySp(category *model.Category) store.StoreChannel {
+
+	if len(category.Id) == 0 {
+		category.PreSave()
+	}
+
+	//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
+	_,err := s.GetMaster().Exec(`
+			call r_tree_traversal('insert',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+		map[string]interface{}{
+			"Id" : category.Id,
+			"ClientID" : category.ClientId,
+			"ParentId" : category.ParentId,
+			"Name" : 	 category.Name,
+			"CreateAt" : category.CreateAt,
+			"UpdateAt" : category.UpdateAt,
+		})
+	if err != nil {
+		fmt.Print("error")
+	}
+
+	return s.Get(category.Id)
+}
+
+//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+func (s SqlCategoryStore) DeleteOneNodeBySp(category *model.Category) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
+		_,err := s.GetMaster().Exec(`
+			call r_tree_traversal('delete',:Id, '', '','','','');`,
+			map[string]interface{}{ "Id" : category.Id })
+		if err != nil {
+			fmt.Print("error")
+		}
+	})
+}
+
+func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.StoreChannel {
+
+	return store.Do(func(result *store.StoreResult) {
+		_,err := s.GetMaster().Exec(`
+			call r_tree_traversal('move',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+			map[string]interface{}{
+				"Id" : category.Id,
+				"ClientID" : category.ClientId,
+				"ParentId" : category.ParentId,
+				"Name" : category.Name,
+				"CreateAt" : category.CreateAt,
+				"UpdateAt" : category.UpdateAt,
+			})
+		if err != nil {
+			fmt.Print("error")
+		}
+	})
+}
+
+
+

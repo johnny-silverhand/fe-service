@@ -63,7 +63,7 @@ func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *mo
 }
 
 func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *model.AppError) {
-	result := <-a.Srv.Store.Category().DeleteOneNode(category)
+	result := <-a.Srv.Store.Category().DeleteOneNodeBySp(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -92,9 +92,15 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 }
 
 func (a *App) MoveClientCategory (category *model.Category, parentCategory *model.Category) *model.AppError {
-	result := <-a.Srv.Store.Category().MoveCategory(category,parentCategory)
+	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
+func (a *App) MoveClientCategoryBySp (category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
+	return result.Err
+}
+
+
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
 	//category.SanitizeProps()

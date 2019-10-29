@@ -20,32 +20,17 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-
-	var (
-		category 	*model.Category
-		parent 		*model.Category
-		err 		*model.AppError
-		pid string
-		depth int
-	)
-
-	category =  model.CategoryFromJson(r.Body)
-	pid = category.ParentId
-	depth = category.Depth
-	if category, err = c.App.GetCategory(category.Id); err != nil {
-		c.Err = err
+	category :=  model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id); if err != nil {
 		return
-	}
 
-	if parent, _ = c.App.GetCategory(pid); parent != nil {
-		category.Depth = depth
-		err = c.App.MoveClientCategory(category, parent)
-	} else {
-		c.App.DeleteOneCategory(category)
-		category.ParentId = pid
-		c.App.CreateCategory(category)
-		/*category.ParentId = pid
-		c.App.CreateCategory(category)*/
+	}
+	storedCategory.ParentId = category.ParentId
+	if len(category.ParentId) > 0 {
+		err = c.App.MoveClientCategoryBySp(storedCategory)
+	}else{
+		_, err = c.App.DeleteOneCategory(storedCategory)
+		_, err = c.App.CreateCategoryBySp(storedCategory)
 	}
 }
 
@@ -73,18 +58,7 @@ func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(model.CategoriesToJson(categories)))
 }
 
-func getCategoriesByClient(c *Context, w http.ResponseWriter, r *http.Request) {
-	c.RequireClientId()
-	if c.Err != nil {
-		return
-	}
-	categories, err := c.App.GetCategoriesByClientIdPage(c.Params.ClientId, c.Params.Page, c.Params.PerPage)
-	if err != nil {
-		c.Err = err
-		return
-	}
-	w.Write([]byte(model.CategoriesToJson(categories)))
-}
+
 
 func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category := model.CategoryFromJson(r.Body)
