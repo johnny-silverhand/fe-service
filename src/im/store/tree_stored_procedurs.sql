@@ -127,10 +127,10 @@ BEGIN
                 CREATE TEMPORARY TABLE IF NOT EXISTS categories_temp LIKE categories;
 
                 INSERT INTO categories_temp (Id, Lft, Rgt, ParentId)
-                SELECT t1.Id,
-                       (t1.Lft - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Lft,
-                       (t1.Rgt - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Rgt,
-                       t1.ParentId
+                    SELECT t1.Id,
+                (t1.Lft - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Lft,
+                (t1.Rgt - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Rgt,
+                    t1.ParentId
                 FROM categories AS t1, categories AS t2
                 WHERE t1.Lft BETWEEN t2.Lft AND t2.Rgt AND t2.Id = node_id;
 
@@ -144,7 +144,7 @@ BEGIN
                 END IF;
 
                 IF(new_lft > old_lft) THEN -- move down
-                    UPDATE categories SET Rgt = Lft - width WHERE Lft > old_lft AND Lft < new_lft;
+                    UPDATE categories SET Lft = Lft - width WHERE Lft > old_lft AND Lft < new_lft;
                     UPDATE categories SET Rgt = Rgt - width WHERE Rgt > old_rgt AND Rgt < new_lft;
                     UPDATE categories_temp SET Lft = (new_lft - width) + Lft, Rgt = (new_lft - width) + Rgt;
                 END IF;
