@@ -47,7 +47,7 @@ func (a *App) GetCategories(offset int, limit int) ([]*model.Category, *model.Ap
 }
 
 func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().Save(category)
+	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}

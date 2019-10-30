@@ -475,7 +475,6 @@ func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id string) error {
 	return nil
 }
 
-
 // RemoveOneNode removes one node and move all its descentants 1 level up -- it removes the certain node from the tree only.
 func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 	// query deleting node
@@ -537,7 +536,6 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 
 	return nil
 }
-
 
 						/* STORED PROCEDURE CALLS  */
 //https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
