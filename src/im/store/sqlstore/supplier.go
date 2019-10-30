@@ -140,10 +140,8 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.job = NewSqlJobStore(supplier)
 	supplier.oldStores.userAccessToken = NewSqlUserAccessTokenStore(supplier)
 	supplier.oldStores.channelMemberHistory = NewSqlChannelMemberHistoryStore(supplier)
-
-	supplier.oldStores.product = NewSqlProductStore(supplier)
 	supplier.oldStores.category = NewSqlCategoryStore(supplier)
-
+	supplier.oldStores.product = NewSqlProductStore(supplier)
 	supplier.oldStores.linkMetadata = NewSqlLinkMetadataStore(supplier)
 
 	initSqlSupplierRoles(supplier)

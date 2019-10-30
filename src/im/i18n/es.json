@@ -228,7 +228,7 @@
     "translation": "Eres el último miembro que queda, intenta eliminar el Canal Privado en vez de salirte."
   },
   {
-    "id": "api.channel.leave.left",
+    "id": "api.channel.leave.Lft",
     "translation": "%v abandonó el canal."
   },
   {

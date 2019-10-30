@@ -499,14 +499,14 @@ type ProductStore interface {
 }
 
 type CategoryStore interface {
-	Save(category *model.Category) StoreChannel
-	Update(newCategory *model.Category) StoreChannel
-	Get(id string) StoreChannel
+	CreateCategoryBySp(category *model.Category) StoreChannel
+	MoveCategoryBySp(category *model.Category) StoreChannel
+	DeleteCategoryBySp(category *model.Category) StoreChannel
+	Update(category *model.Category) StoreChannel
+	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel
 	GetAllByClientId(clientId string) StoreChannel
 	GetAllByClientIdPage(clientId string, offset int, limit int) StoreChannel
-	Delete(categoryId string) StoreChannel
+	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
-	GetWithChildren(categoryId string) StoreChannel
-
 }

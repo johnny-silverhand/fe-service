@@ -1,4 +1,6 @@
 .idea
 .idea/
 src/im_front
+pkg/
+mattermost.log
 data/

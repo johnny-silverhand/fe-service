@@ -17,50 +17,53 @@ const (
 )
 
 type Params struct {
-	UserId         string
-	TeamId         string
-	InviteId       string
-	TokenId        string
-	ChannelId      string
-	ProductId      string
-	CategoryId      string
-	PostId         string
-	FileId         string
-	Filename       string
-	PluginId       string
-	CommandId      string
-	HookId         string
-	ReportId       string
-	EmojiId        string
-	AppId          string
-	Email          string
-	Username       string
-	TeamName       string
-	ChannelName    string
-	PreferenceName string
-	EmojiName      string
-	Category       string
-	Service        string
-	JobId          string
-	JobType        string
-	ActionId       string
-	RoleId         string
-	RoleName       string
-	SchemeId       string
-	Scope          string
-	GroupId        string
-	MessageId string
-	Page           int
-	PerPage        int
-	LogsPerPage    int
-	Permanent      bool
-	RemoteId       string
+	UserId           string
+	TeamId           string
+	InviteId         string
+	TokenId          string
+	ChannelId        string
+	ProductId        string
+	CategoryId       string
+	ClientId		 string
+	CategoryParentId string
+	CategoryDepth    string
+	PostId           string
+	FileId           string
+	Filename         string
+	PluginId         string
+	CommandId        string
+	HookId           string
+	ReportId         string
+	EmojiId          string
+	AppId            string
+	Email            string
+	Username         string
+	TeamName         string
+	ChannelName      string
+	PreferenceName   string
+	EmojiName        string
+	Category         string
+	Service          string
+	JobId            string
+	JobType          string
+	ActionId         string
+	RoleId           string
+	RoleName         string
+	SchemeId         string
+	Scope            string
+	GroupId          string
+	MessageId        string
+	Page             int
+	PerPage          int
+	LogsPerPage      int
+	Permanent        bool
+	RemoteId         string
 
-	Sort string
-	BotUserId      string
-	Q              string
-	IsLinked       *bool
-	IsConfigured   *bool
+	Sort         string
+	BotUserId    string
+	Q            string
+	IsLinked     *bool
+	IsConfigured *bool
 }
 
 func ParamsFromRequest(r *http.Request) *Params {
@@ -151,6 +154,12 @@ func ParamsFromRequest(r *http.Request) *Params {
 	}
 	if val, ok := props["category_id"]; ok {
 		params.CategoryId = val
+	}
+	if val, ok := props["parent_category_id"]; ok {
+		params.CategoryParentId = val
+	}
+	if val, ok := props["depth"]; ok {
+		params.CategoryDepth = val
 	}
 	if val, ok := props["category"]; ok {
 		params.Category = val

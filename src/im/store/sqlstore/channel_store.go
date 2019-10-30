@@ -32,12 +32,11 @@ const (
 	CHANNEL_MEMBERS_COUNTS_CACHE_SIZE = model.CHANNEL_CACHE_SIZE
 	CHANNEL_MEMBERS_COUNTS_CACHE_SEC  = 1800 // 30 mins
 
-	CHANNEL_CACHE_SEC = 900 // 15 mins
+	CHANNEL_CACHE_SEC = 900 // 15 minsF
 )
 
 type SqlChannelStore struct {
 	SqlStore
-
 }
 
 type channelMember struct {
@@ -717,7 +716,6 @@ func (s SqlChannelStore) get(id string, master bool, allowFromCache bool) store.
 			}
 		}
 
-
 		obj, err := db.Get(model.Channel{}, id)
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.Get", "store.sql_channel.get.find.app_error", nil, "id="+id+", "+err.Error(), http.StatusInternalServerError)
@@ -926,7 +924,7 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool) 
 			query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId  ORDER BY DisplayName"
 		}
 		data := &model.ChannelList{}
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{ "UserId": userId})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
@@ -1431,8 +1429,6 @@ func (s SqlChannelStore) IsUserInChannelUseCache(userId string, channelId string
 		return false
 	}
 
-
-
 	result := <-s.GetAllChannelMembersForUser(userId, true, false)
 	if result.Err != nil {
 		mlog.Error("SqlChannelStore.IsUserInChannelUseCache: " + result.Err.Error())
@@ -1493,7 +1489,6 @@ func (s SqlChannelStore) GetAllChannelMembersForUser(userId string, allowFromCac
 			}
 		}
 
-
 		var deletedClause string
 		if !includeDeleted {
 			deletedClause = "Channels.DeleteAt = 0 AND"
@@ -1553,7 +1548,6 @@ func (s SqlChannelStore) GetAllChannelMembersNotifyPropsForChannel(channelId str
 			}
 		}
 
-
 		var data []allChannelMemberNotifyProps
 		_, err := s.GetReplica().Select(&data, `
 			SELECT UserId, NotifyProps
@@ -1585,8 +1579,6 @@ func (s SqlChannelStore) GetMemberCountFromCache(channelId string) int64 {
 		return cacheItem.(int64)
 	}
 
-
-
 	result := <-s.GetMemberCount(channelId, true)
 	if result.Err != nil {
 		return 0
@@ -1604,7 +1596,6 @@ func (s SqlChannelStore) GetMemberCount(channelId string, allowFromCache bool) s
 				return
 			}
 		}
-
 
 		count, err := s.GetReplica().SelectInt(`
 			SELECT
@@ -2581,7 +2572,6 @@ func (s SqlChannelStore) GetChannelsBatchForIndexing(startTime, endTime int64, l
 	})
 }
 
-
 func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		channel := model.Channel{}
@@ -2599,14 +2589,12 @@ func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMemeber []string, nn int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
 		channel := new(model.Channel)
 
 		var name = utils.GenerateChannelName(user.Nickname, user.Phone)
-
 
 		channel.Name = name
 		channel.DisplayName = name
@@ -2662,7 +2650,7 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 						}
 					}
 
-					if (error) {
+					if error {
 						transaction.Rollback()
 						result.Err = model.NewAppError("SqlChannelStore.CreateUnresolvedChannel", "store.sql_channel.create_unresolved_channel.add_members.app_error", nil, details, http.StatusInternalServerError)
 					} else {
