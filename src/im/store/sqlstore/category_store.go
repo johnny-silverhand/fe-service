@@ -118,40 +118,6 @@ func (s SqlCategoryStore) CreateIndexesIfNotExists() {
 	//s.CreateIndexIfNotExists("idx_categories_delete_at", "Categories", "DeleteAt")
 }
 
-func (s SqlCategoryStore) Save(category *model.Category) store.StoreChannel {
-	var (
-		id   *string
-		node *Node
-		//time = time.Now().Unix()
-	)
-
-	db := s.GetMaster().Db
-
-	if len(category.Id) == 0 {
-		category.PreSave()
-	}
-
-	categorySQL.Id = category.Id
-	categorySQL.clientId = category.ClientId
-	categorySQL.createdAt = &category.CreateAt
-	categorySQL.updatedAt = &category.UpdateAt
-
-
-	if len(category.ParentId) > 0 {
-		id, _ = categorySQL.AddNodeByParent(db, category.Name, category.ParentId)
-	} else {
-		id, _ = categorySQL.AddRootNode(s.GetMaster().Db, category.Name)
-	}
-
-	node, _ = categorySQL.GetNodeDetail(db, *id)
-
-	return store.Do(func(result *store.StoreResult) {
-		category.Lft = *node.Lft
-		category.Rgt = *node.Rgt
-		result.Data = category
-	})
-}
-
 
 func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -277,94 +243,6 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 		} else {
 			result.Data = descendants
 		}
-	})
-}
-
-func (s SqlCategoryStore) MoveCategory(category *model.Category,parentCategory *model.Category ) store.StoreChannel {
-	return store.Do(func(result *store.StoreResult) {
-
-		var (
-			node_id = category.Id
-			node_pos_left = category.Lft
-			node_pos_right = category.Rgt
-			parent_id = parentCategory.Id
-			parent_pos_right = parentCategory.Rgt
-			node_size = node_pos_right - node_pos_left + 1
-			parent_depth = category.Depth
-		)
-
-		_, err := s.GetMaster().Exec(`
-			UPDATE categories
-			SET Lft = 0-(Lft), Rgt = 0-(Rgt)
-			WHERE Lft >= :node_pos_left AND Rgt <= :node_pos_right;`, map[string]interface{}{
-				"node_pos_left" : node_pos_left,
-				"node_pos_right" : node_pos_right,
-			}); if err != nil { }
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET Lft = Lft - :node_size
-			WHERE Lft > :node_pos_right;`,
-			map[string]interface{}{
-			"node_size" : node_size,
-			"node_pos_right" : node_pos_right,
-		}); if err != nil { }
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET Rgt = Rgt - :node_size
-			WHERE Rgt > :node_pos_right;`,
-			map[string]interface{}{
-				"node_size" : node_size,
-				"node_pos_right" : node_pos_right,
-			}); if err != nil { }
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET Lft = Lft + :node_size
-			WHERE Lft >= IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_size, :parent_pos_right);`,
-			map[string]interface{}{
-				"node_size" : node_size,
-				"parent_pos_right" : parent_pos_right,
-				"node_pos_right" : node_pos_right,
-			}); if err != nil { }
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET Rgt = Rgt + :node_size
-			WHERE Rgt >= IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_size, :parent_pos_right);`,
-			map[string]interface{}{
-				"node_size" : node_size,
-				"parent_pos_right" : parent_pos_right,
-				"node_pos_right" : node_pos_right,
-			}); if err != nil { }
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET
-				Lft = 0-(Lft)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size),
-				Rgt = 0-(Rgt)+IF(:parent_pos_right > :node_pos_right, :parent_pos_right - :node_pos_right - 1, :parent_pos_right - :node_pos_right - 1 + :node_size)
-
-			WHERE Lft <= 0-:node_pos_left AND Rgt >= 0-:node_pos_right;`,
-			map[string]interface{}{
-				"node_size" : node_size,
-				"parent_pos_right" : parent_pos_right,
-				"node_pos_right" : node_pos_right,
-				"node_pos_left" : node_pos_left,
-			}); if err != nil {  }
-
-
-		_, err = s.GetMaster().Exec(`
-			UPDATE categories
-			SET ParentId = :parent_id, Depth = :parent_depth
-			WHERE Id = :node_id;`,
-			map[string]interface{}{
-				"parent_id" : parent_id,
-				"node_id" : node_id,
-				"parent_depth" : parent_depth,
-			}); if err != nil { }
-
-
 	})
 }
 
@@ -661,10 +539,10 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 }
 
 
-/* *********** STORED PROCEDURE CALLS ************ */
-
+						/* STORED PROCEDURE CALLS  */
 //https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
-func (s SqlCategoryStore) SaveBySp(category *model.Category) store.StoreChannel {
+
+func (s SqlCategoryStore) CreateCategoryBySp(category *model.Category) store.StoreChannel {
 
 	if len(category.Id) == 0 {
 		category.PreSave()
@@ -688,8 +566,7 @@ func (s SqlCategoryStore) SaveBySp(category *model.Category) store.StoreChannel 
 	return s.Get(category.Id)
 }
 
-//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
-func (s SqlCategoryStore) DeleteOneNodeBySp(category *model.Category) store.StoreChannel {
+func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
 		_,err := s.GetMaster().Exec(`

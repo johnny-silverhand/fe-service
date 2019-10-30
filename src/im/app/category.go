@@ -55,7 +55,7 @@ func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.
 }
 
 func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *model.AppError) {
-	 result :=  <-a.Srv.Store.Category().SaveBySp(category)
+	 result :=  <-a.Srv.Store.Category().CreateCategoryBySp(category)
 	 if result.Err != nil {
 	 	return nil, result.Err
 	 }
@@ -63,7 +63,7 @@ func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *mo
 }
 
 func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *model.AppError) {
-	result := <-a.Srv.Store.Category().DeleteOneNodeBySp(category)
+	result := <-a.Srv.Store.Category().DeleteCategoryBySp(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}

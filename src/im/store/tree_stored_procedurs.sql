@@ -46,7 +46,7 @@ BEGIN
         END IF;
 
       WHEN 'delete' THEN
-		  -- DELETE OPERATION FOR CATEGORIES TABLE
+		  -- DELETE OPERATION FOR CATEGORIES TABLE2
 	      SELECT Lft, Rgt, (Lft - Rgt), (Rgt - Lft + 1), ParentId
 			  INTO new_lft, new_rgt, has_leafs, width, superior_parent
 			  FROM categories WHERE Id = node_id;
