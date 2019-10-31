@@ -540,6 +540,8 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 						/* STORED PROCEDURE CALLS  */
 //https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
 
+//TODO: Ниже дохера копипасты, каюсь. Поправим после показа. (с) Автор комита
+
 func (s SqlCategoryStore) CreateCategoryBySp(category *model.Category) store.StoreChannel {
 
 	if len(category.Id) == 0 {
@@ -594,6 +596,27 @@ func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.Store
 		}
 	})
 }
+
+func (s SqlCategoryStore) OrderCategoryBySp(category *model.Category) store.StoreChannel {
+
+	return store.Do(func(result *store.StoreResult) {
+		_,err := s.GetMaster().Exec(`
+			call r_tree_traversal('order',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+			map[string]interface{}{
+				"Id" : category.Id,
+				"ClientID" : category.ClientId,
+				"ParentId" : category.ParentId,
+				"Name" : category.Name,
+				"CreateAt" : category.CreateAt,
+				"UpdateAt" : category.UpdateAt,
+			})
+		if err != nil {
+			fmt.Print("error")
+		}
+	})
+}
+
+
 
 
 
