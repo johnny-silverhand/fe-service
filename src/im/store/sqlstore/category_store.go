@@ -583,7 +583,6 @@ func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.Sto
 }
 
 func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.StoreChannel {
-
 	return store.Do(func(result *store.StoreResult) {
 		_,err := s.GetMaster().Exec(`
 			call r_tree_traversal('move',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
@@ -602,7 +601,6 @@ func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.Store
 }
 
 func (s SqlCategoryStore) OrderCategoryBySp(category *model.Category) store.StoreChannel {
-
 	return store.Do(func(result *store.StoreResult) {
 		_,err := s.GetMaster().Exec(`
 			call r_tree_traversal('order',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,

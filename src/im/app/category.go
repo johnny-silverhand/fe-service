@@ -95,11 +95,16 @@ func (a *App) MoveClientCategory (category *model.Category, parentCategory *mode
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
+
 func (a *App) MoveClientCategoryBySp (category *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
 
+func (a *App) OrederClientCategoryBySp (category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().OrderCategoryBySp(category)
+	return result.Err
+}
 
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
