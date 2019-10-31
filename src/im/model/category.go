@@ -87,7 +87,7 @@ func CategoriesAllToJson(categories []*Category) string {
 
 func CategoriesToJson(categories []*Category) string {
 	sort.Slice(categories, func(i, j int) bool {
-		return categories[i].CreateAt < categories[j].CreateAt
+		return categories[i].Lft > categories[j].Lft
 	})
 	slice := make(map[string]*Category)
 	for i, _ := range categories {
@@ -105,7 +105,7 @@ func CategoriesToJson(categories []*Category) string {
 		}
 	}
 	sort.Slice(tree, func(i, j int) bool {
-		return tree[i].CreateAt < tree[j].CreateAt
+		return tree[i].Lft > tree[j].Lft
 	})
 	outdata, err := json.Marshal(tree)
 	if err != nil {

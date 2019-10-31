@@ -125,7 +125,7 @@
     },
     "SqlSettings": {
         "DriverName": "mysql",
-        "DataSource": "root:uskuzu@tcp(localhost:3306)/fe?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s\u0026multiStatements=true",
+        "DataSource": "root:root@tcp(192.168.12.17)/fe_server?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s\u0026multiStatements=true",
         "DataSourceReplicas": [],
         "DataSourceSearchReplicas": [],
         "MaxIdleConns": 20,
