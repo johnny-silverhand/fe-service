@@ -50,6 +50,35 @@ func (category *Category) ToJson() string {
 	return string(b)
 }
 
+func CategoriesAllToJson(categories []*Category) string {
+	sort.Slice(categories, func(i, j int) bool {
+		return categories[i].Lft < categories[j].Lft
+	})
+	slice := make(map[string]*Category)
+	for i, _ := range categories {
+		slice[categories[i].Id] = categories[i]
+	}
+	for i, category := range categories {
+		if len(category.ParentId) > 0 && slice[category.ParentId] != nil {
+			slice[category.ParentId].Children = append(slice[category.ParentId].Children, categories[i])
+		}
+	}
+	tree := []*Category{}
+	for _, category := range slice {
+		if len(category.ParentId) == 0 {
+			tree = append(tree, category)
+		}
+	}
+	sort.Slice(tree, func(i, j int) bool {
+		return tree[i].Lft < tree[j].Lft
+	})
+	outdata, err := json.Marshal(tree)
+	if err != nil {
+		panic(err)
+	}
+	return string(outdata)
+}
+
 func CategoriesToJson(categories []*Category) string {
 	sort.Slice(categories, func(i, j int) bool {
 		return categories[i].CreateAt < categories[j].CreateAt

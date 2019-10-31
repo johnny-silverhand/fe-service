@@ -34,6 +34,14 @@ func (a *App) GetCategory(categoryId string) (*model.Category, *model.AppError) 
 	return result.Data.(*model.Category), nil
 }
 
+func (a *App) GetAllCategories() ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetAll()
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.Category), nil
+}
+
 func (a *App) GetCategoriesPage(page int, perPage int) ([]*model.Category, *model.AppError) {
 	return a.GetCategories(page*perPage, perPage)
 }
@@ -47,7 +55,7 @@ func (a *App) GetCategories(offset int, limit int) ([]*model.Category, *model.Ap
 }
 
 func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().Save(category)
+	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -55,21 +63,17 @@ func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.
 }
 
 func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *model.AppError) {
-	 result :=  <-a.Srv.Store.Category().CreateCategoryBySp(category)
-	 if result.Err != nil {
-	 	return nil, result.Err
-	 }
-	return result.Data.(*model.Category), nil
-}
-
-func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *model.AppError) {
-	result := <-a.Srv.Store.Category().DeleteCategoryBySp(category)
+	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	return nil, nil
+	return result.Data.(*model.Category), nil
 }
 
+func (a *App) DeleteOneCategory(category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().DeleteCategoryBySp(category)
+	return result.Err
+}
 
 func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.AppError) {
 	result := <-a.Srv.Store.Category().Delete(category)
@@ -77,9 +81,9 @@ func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.A
 		return nil, result.Err
 	}
 	descendants, _ := a.GetDescendants(category)
-		for _, descendant := range descendants {
-			a.DeleteCategory(descendant)
-		}
+	for _, descendant := range descendants {
+		a.DeleteCategory(descendant)
+	}
 	return nil, nil
 }
 
@@ -91,16 +95,14 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 	return result.Data.([]*model.Category), nil
 }
 
-func (a *App) MoveClientCategory (category *model.Category, parentCategory *model.Category) *model.AppError {
+func (a *App) MoveClientCategory(category *model.Category, parentCategory *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
-func (a *App) MoveClientCategoryBySp (category *model.Category) *model.AppError {
+func (a *App) MoveClientCategoryBySp(category *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
-
-
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
 	//category.SanitizeProps()

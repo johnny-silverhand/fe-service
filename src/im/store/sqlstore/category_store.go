@@ -118,7 +118,6 @@ func (s SqlCategoryStore) CreateIndexesIfNotExists() {
 	//s.CreateIndexIfNotExists("idx_categories_delete_at", "Categories", "DeleteAt")
 }
 
-
 func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		category.UpdateAt = model.GetMillis()
@@ -294,8 +293,8 @@ func (t *CategorySQL) AddRootNode(db *sql.DB, name string) (*string, error) {
 	sql.WriteString(t.MoveOnAddSQL())
 
 	/*
-	return "UPDATE Categories SET `Lft`= CASE WHEN `Lft`> 0 THEN `Lft`+2 ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
-		"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`= ClientId"
+		return "UPDATE Categories SET `Lft`= CASE WHEN `Lft`> 0 THEN `Lft`+2 ELSE `Lft` END, `Rgt`=CASE WHEN `Rgt`>? " +
+			"THEN `Rgt`+2 ELSE `Rgt` END WHERE `ClientId`= ClientId"
 	*/
 	_, err := db.Exec(sql.String(), 0, 0)
 	if err != nil {
@@ -418,7 +417,7 @@ func (t *CategorySQL) AddNodeByParent(db *sql.DB, name string, parentID string) 
 
 	// insert new node
 	sql.WriteString(t.InsertSQL())
-	args := []interface{}{t.Id,name, parentID, parentDepth + 1, parentRight, parentRight + 1, t.clientId}
+	args := []interface{}{t.Id, name, parentID, parentDepth + 1, parentRight, parentRight + 1, t.clientId}
 
 	r, err := db.Exec(sql.String(), args...)
 	if err != nil {
@@ -474,7 +473,6 @@ func (t *CategorySQL) RemoveNodeAndDescendants(db *sql.DB, id string) error {
 	}
 	return nil
 }
-
 
 // RemoveOneNode removes one node and move all its descentants 1 level up -- it removes the certain node from the tree only.
 func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
@@ -538,42 +536,77 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 	return nil
 }
 
+func (s SqlCategoryStore) GetAll() store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var query = `select c.*, childs.cnt as count_children
+					 from categories c 
+					 left join (
+						select ParentId, count(Id) cnt
+						from categories
+						where ParentId is not null
+						group by ParentId
+					 ) childs on c.Id = childs.ParentId
+					 order by c.Rgt DESC`
 
-						/* STORED PROCEDURE CALLS  */
+		var categories []*model.Category
+		if _, err := s.GetMaster().Select(&categories, query); err != nil {
+			result.Err = model.NewAppError("SqlCategoryStore.GetAll", "store.sql_category.get_all.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		result.Data = categories
+	})
+}
+
+/* STORED PROCEDURE CALLS  */
 //https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
 
 func (s SqlCategoryStore) CreateCategoryBySp(category *model.Category) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if len(category.Id) == 0 {
+			category.PreSave()
+		}
 
-	if len(category.Id) == 0 {
-		category.PreSave()
-	}
+		//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
+		if _, err := s.GetMaster().Exec(`call r_tree_traversal('insert', :Id, :ClientID, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			map[string]interface{}{
+				"Id":       category.Id,
+				"ClientID": category.ClientId,
+				"ParentId": category.ParentId,
+				"Name":     category.Name,
+				"CreateAt": category.CreateAt,
+				"UpdateAt": category.UpdateAt,
+			}); err != nil {
+			result.Err = model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
-	_,err := s.GetMaster().Exec(`
-			call r_tree_traversal('insert',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
-		map[string]interface{}{
-			"Id" : category.Id,
-			"ClientID" : category.ClientId,
-			"ParentId" : category.ParentId,
-			"Name" : 	 category.Name,
-			"CreateAt" : category.CreateAt,
-			"UpdateAt" : category.UpdateAt,
-		})
-	if err != nil {
-		fmt.Print("error")
-	}
-
-	return s.Get(category.Id)
+		if err := s.GetMaster().SelectOne(category, `select * from categories where Id = :Id`, map[string]interface{}{"Id": category.Id}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlCategoryStore.CreateCategoryBySp",
+					"store.sql_category.create_category_by_sp.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlCategoryStore.CreateCategoryBySp", "store.sql_category.create_category_by_sp.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = category
+		}
+	})
 }
 
 func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
-		_,err := s.GetMaster().Exec(`
-			call r_tree_traversal('delete',:Id, '', '','','','');`,
-			map[string]interface{}{ "Id" : category.Id })
-		if err != nil {
-			fmt.Print("error")
+		if _, err := s.GetMaster().Exec(`call r_tree_traversal('delete', :Id, :ClientID, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			map[string]interface{}{
+				"Id":       category.Id,
+				"ClientID": category.ClientId,
+				"ParentId": category.ParentId,
+				"Name":     category.Name,
+				"CreateAt": category.CreateAt,
+				"UpdateAt": category.UpdateAt,
+			}); err != nil {
+			result.Err = model.NewAppError("SqlCategoryStore.DeleteCategoryBySp", "store.sql_category.delete_category_by_sp.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 	})
 }
@@ -581,21 +614,18 @@ func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.Sto
 func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.StoreChannel {
 
 	return store.Do(func(result *store.StoreResult) {
-		_,err := s.GetMaster().Exec(`
+		_, err := s.GetMaster().Exec(`
 			call r_tree_traversal('move',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
 			map[string]interface{}{
-				"Id" : category.Id,
-				"ClientID" : category.ClientId,
-				"ParentId" : category.ParentId,
-				"Name" : category.Name,
-				"CreateAt" : category.CreateAt,
-				"UpdateAt" : category.UpdateAt,
+				"Id":       category.Id,
+				"ClientID": category.ClientId,
+				"ParentId": category.ParentId,
+				"Name":     category.Name,
+				"CreateAt": category.CreateAt,
+				"UpdateAt": category.UpdateAt,
 			})
 		if err != nil {
 			fmt.Print("error")
 		}
 	})
 }
-
-
-

@@ -7,11 +7,10 @@ import (
 )
 
 func (api *API) InitCategory() {
-	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getCategories)).Methods("GET")
+	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getAllCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(updateCategory)).Methods("PUT")
-	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
 	api.BaseRoutes.MoveCategory.Handle("", api.ApiHandler(moveCategory)).Methods("PUT")
 }
@@ -20,20 +19,20 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	category :=  model.CategoryFromJson(r.Body)
-	storedCategory, err := c.App.GetCategory(category.Id); if err != nil {
+	category := model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id)
+	if err != nil {
 		return
 
 	}
 	storedCategory.ParentId = category.ParentId
 	if len(category.ParentId) > 0 {
 		err = c.App.MoveClientCategoryBySp(storedCategory)
-	}else{
-		_, err = c.App.DeleteOneCategory(storedCategory)
+	} else {
+		c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
 	}
 }
-
 
 func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
@@ -49,6 +48,15 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(category.ToJson()))
 }
 
+func getAllCategories(c *Context, w http.ResponseWriter, r *http.Request) {
+	if categories, err := c.App.GetAllCategories(); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(model.CategoriesAllToJson(categories)))
+	}
+}
+
 func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	categories, err := c.App.GetCategoriesPage(0, c.Params.PerPage)
 	if err != nil {
@@ -57,8 +65,6 @@ func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(model.CategoriesToJson(categories)))
 }
-
-
 
 func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category := model.CategoryFromJson(r.Body)
@@ -93,7 +99,6 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	category.Id = c.Params.CategoryId
 
 	rcategory, err := c.App.UpdateCategory(category, false)
@@ -105,15 +110,17 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(rcategory.ToJson()))
 }
 
-
-
 func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
-	category, err := c.App.GetCategory(c.Params.CategoryId)
-	if err != nil {
+	if category, err := c.App.GetCategory(c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
+	} else {
+		if r := c.App.DeleteOneCategory(category); r != nil {
+			c.Err = r
+			return
+		}
 	}
-	c.App.DeleteCategory(category)
+
 	/*
 		if err != nil {
 			c.Err = err
