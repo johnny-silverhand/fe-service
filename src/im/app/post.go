@@ -205,10 +205,6 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 		return nil, err
 	}
 
-
-
-
-
 	result := <-a.Srv.Store.Post().Save(post)
 	if result.Err != nil {
 		return nil, result.Err
@@ -219,8 +215,6 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 	// might be duplicating requests.
 	a.Srv.seenPendingPostIdsCache.AddWithExpiresInSecs(post.PendingPostId, rpost.Id, int64(PENDING_POST_IDS_CACHE_TTL.Seconds()))
 
-
-
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 		a.Srv.Go(func() {
@@ -230,13 +224,10 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 		})
 	}
 
-
-
 	if len(post.FileIds) > 0 {
 		if err := a.attachFilesToPost(post); err != nil {
 			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", post.Id), mlog.Any("file_ids", post.FileIds), mlog.Err(result.Err))
 		}
-
 
 	}
 
@@ -336,8 +327,6 @@ func (a *App) handlePostEvents(post *model.Post, user *model.User, channel *mode
 		return err
 	}
 
-
-
 	return nil
 }
 
@@ -355,7 +344,6 @@ func (a *App) SendEphemeralPost(userId string, post *model.Post) *model.Post {
 		post.Props = model.StringInterface{}
 	}
 
-
 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_EPHEMERAL_MESSAGE, "", post.ChannelId, userId, nil)
 	post = a.PreparePostForClient(post, true)
 
@@ -372,7 +360,6 @@ func (a *App) UpdateEphemeralPost(userId string, post *model.Post) *model.Post {
 	if post.Props == nil {
 		post.Props = model.StringInterface{}
 	}
-
 
 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, userId, nil)
 	post = a.PreparePostForClient(post, true)
@@ -454,14 +441,11 @@ func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model
 		return nil, err
 	}
 
-
 	result = <-a.Srv.Store.Post().Update(newPost, oldPost)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 	rpost := result.Data.(*model.Post)
-
-
 
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -737,6 +721,35 @@ func (a *App) parseAndFetchChannelIdByNameFromInFilter(channelName, userId, team
 	}
 	return channel, nil
 }
+func (a *App) searchPosts(userId string, paramsList []*model.SearchParams, modifierFun func(*model.SearchParams)) (*model.PostList, *model.AppError) {
+	channels := []store.StoreChannel{}
+
+	var teamId string
+	if teams, err := a.GetTeamsForUser(userId); err == nil {
+		teamId = teams[0].Id
+	}
+	for _, params := range paramsList {
+		// Don't allow users to search for everything.
+		if params.Terms == "*" {
+			continue
+		}
+		modifierFun(params)
+		channels = append(channels, a.Srv.Store.Post().Search(teamId, userId, params))
+	}
+
+	posts := model.NewPostList()
+	for _, channel := range channels {
+		result := <-channel
+		if result.Err != nil {
+			return nil, result.Err
+		}
+		data := result.Data.(*model.PostList)
+		posts.Extend(data)
+	}
+
+	posts.SortByCreateAt()
+	return posts, nil
+}
 
 func (a *App) searchPostsInTeam(teamId string, userId string, paramsList []*model.SearchParams, modifierFun func(*model.SearchParams)) (*model.PostList, *model.AppError) {
 	channels := []store.StoreChannel{}
@@ -772,10 +785,131 @@ func (a *App) SearchPostsInTeam(teamId string, paramsList []*model.SearchParams)
 		params.SearchWithoutUserId = true
 	})
 }
+func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, includeDeletedChannels bool, timeZoneOffset int, page, perPage int) (*model.ChannelSearchResultList, *model.AppError) {
+	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
+	//includeDeleted := includeDeletedChannels && *a.Config().TeamSettings.ExperimentalViewArchivedChannels
 
-func (a *App) SearchPostsInTeamForUser(terms string, userId string, teamId string, isOrSearch bool, includeDeletedChannels bool, timeZoneOffset int, page, perPage int) (*model.PostSearchResults, *model.AppError) {
+	esInterface := a.Elasticsearch
+	//var teamId string
+
+	/*	if teams, err := a.GetTeamsForUser(userId); err == nil {
+			teamId = teams[0].Id
+		}*/
+
+	resultList := model.NewChannelSearchResultList()
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableSearching {
+		finalParamsList := []*model.SearchParams{}
+
+		for _, params := range paramsList {
+			params.OrTerms = isOrSearch
+			// Don't allow users to search for "*"
+			/*if params.Terms != "*" {
+				// Convert channel names to channel IDs
+				for idx, channelName := range params.InChannels {
+					channel, err := a.parseAndFetchChannelIdByNameFromInFilter(channelName, userId, teamId, includeDeletedChannels)
+					if err != nil {
+						mlog.Error(fmt.Sprint(err))
+						continue
+					}
+					params.InChannels[idx] = channel.Id
+				}
+
+				// Convert usernames to user IDs
+				for idx, username := range params.FromUsers {
+					if user, err := a.GetUserByUsername(username); err != nil {
+						mlog.Error(fmt.Sprint(err))
+					} else {
+						params.FromUsers[idx] = user.Id
+					}
+				}
+
+
+			}*/
+			finalParamsList = append(finalParamsList, params)
+		}
+
+		// If the processed search params are empty, return empty search results.
+		if len(finalParamsList) == 0 {
+			return model.NewChannelSearchResultList(), nil
+		}
+
+		// We only allow the user to search in channels they are a member of.
+		/*userChannels, err := a.GetAllChannelsForUser( userId, includeDeleted)
+		if err != nil {
+			mlog.Error(fmt.Sprint(err))
+			return nil, err
+		}
+*/
+		posts, err := a.Elasticsearch.SearchPostsHint(finalParamsList, page, perPage)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(posts) > 0 {
+
+			var channelIds []string
+			for _, post := range posts {
+				channelIds = append(channelIds, post.ChannelId)
+			}
+
+			presult := <-a.Srv.Store.Channel().GetChannelsByIds(channelIds)
+			if presult.Err != nil {
+				return nil, presult.Err
+			}
+
+			channels := make(map[string]*model.Channel)
+
+			for _, c := range presult.Data.([]*model.Channel) {
+
+					channels[c.Id] = c
+
+			}
+			for _, p := range posts {
+				if p.DeleteAt == 0 && channels[p.ChannelId] != nil {
+					resultList.AddMatch(p, channels[p.ChannelId])
+					resultList.AddOrder(p.Id)
+				}
+			}
+		}
+
+	}
+
+	/*if !*a.Config().ServiceSettings.EnablePostSearch {
+		return nil, model.NewAppError("SearchPostsInTeamForUser", "store.sql_post.search.disabled", nil, fmt.Sprintf("teamId=%v userId=%v", teamId, userId), http.StatusNotImplemented)
+	}
+
+	// Since we don't support paging we just return nothing for later pages
+	if page > 0 {
+		return model.MakePostSearchResults(model.NewPostList(), nil), nil
+	}
+
+	posts, err := a.searchPostsInTeam(teamId, userId, paramsList, func(params *model.SearchParams) {
+		params.IncludeDeletedChannels = includeDeleted
+		params.OrTerms = isOrSearch
+		for idx, channelName := range params.InChannels {
+			if strings.HasPrefix(channelName, "@") {
+				channel, err := a.parseAndFetchChannelIdByNameFromInFilter(channelName, userId, teamId, includeDeletedChannels)
+				if err != nil {
+					mlog.Error(fmt.Sprint(err))
+					continue
+				}
+				params.InChannels[idx] = channel.Name
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}*/
+	return resultList, nil
+}
+
+func (a *App) SearchPostsInTeamForUser(terms string, userId string, isOrSearch bool, includeDeletedChannels bool, timeZoneOffset int, page, perPage int) (*model.PostSearchResults, *model.AppError) {
 	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
 	includeDeleted := includeDeletedChannels && *a.Config().TeamSettings.ExperimentalViewArchivedChannels
+	var teamId string
+	if teams, err := a.GetTeamsForUser(userId); err == nil {
+		teamId = teams[0].Id
+	}
 
 	esInterface := a.Elasticsearch
 
@@ -958,15 +1092,11 @@ func (a *App) MaxPostSize() int {
 	return result.Data.(int)
 }
 
-
-
-
 func (a *App) GetAllMessagesBeforeMessage(userId, postId string, page, perPage int) (*model.MessageArray, *model.AppError) {
 
 	var limitMin int64
 
 	limitMin = 90 * 24 * 60 * 60000
-
 
 	if result := <-a.Srv.Store.Post().GetAllMessagesBefore(userId, postId, perPage, page*perPage, limitMin); result.Err != nil {
 		return nil, result.Err
@@ -979,7 +1109,6 @@ func (a *App) GetAllMessagesAfterMessage(userId, postId string, page, perPage in
 
 	var limitMin int64
 	limitMin = 90 * 24 * 60 * 60000
-
 
 	if result := <-a.Srv.Store.Post().GetAllMessagesAfter(userId, postId, perPage, page*perPage, limitMin); result.Err != nil {
 		return nil, result.Err
@@ -1028,8 +1157,6 @@ func (a *App) GetAllMessagesPage(userId string, page int, perPage int) (*model.M
 	}
 }
 
-
-
 func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppError) {
 	// Check that channel has not been deleted
 	var channel *model.Channel
@@ -1049,7 +1176,6 @@ func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppErr
 		err := model.NewAppError("createPost", "api.post.create_post.can_not_post_to_deleted.error", nil, "", http.StatusBadRequest)
 		return nil, err
 	}
-
 
 	if rp, err := a.CreatePost(post, channel, true); err != nil {
 		if err.Id == "api.post.create_post.root_id.app_error" ||

@@ -11,6 +11,9 @@ type ElasticsearchInterface interface {
 	Stop() *model.AppError
 	IndexPost(post *model.Post, teamId string) *model.AppError
 	SearchPosts(channels *model.ChannelList, searchParams []*model.SearchParams, page, perPage int) ([]string, model.PostSearchMatches, *model.AppError)
+	
+	SearchPostsHint( searchParams []*model.SearchParams, page, perPage int) ([]*model.Post, *model.AppError)
+
 	DeletePost(post *model.Post) *model.AppError
 	IndexChannel(channel *model.Channel) *model.AppError
 	SearchChannels(teamId, term string) ([]string, *model.AppError)

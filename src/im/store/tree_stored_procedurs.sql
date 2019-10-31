@@ -1,4 +1,3 @@
-use fe;
 drop procedure if exists `r_tree_traversal`;
 
 -- --------------------------------------------------------------------------------
@@ -127,15 +126,15 @@ BEGIN
                 CREATE TEMPORARY TABLE IF NOT EXISTS categories_temp LIKE categories;
 
                 INSERT INTO categories_temp (Id, Lft, Rgt, ParentId, ClientId, Depth, Name, CreateAt, UpdateAt)
-                    SELECT t1.Id,
-                (t1.Lft - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Lft,
-                (t1.Rgt - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Rgt,
-                    t1.ParentId,
-                    t1.ClientId,
-                    t1.Depth,
-                    t1.Name,
-                    t1.CreateAt,
-                    t1.UpdateAt
+                SELECT t1.Id,
+                       (t1.Lft - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Lft,
+                       (t1.Rgt - (SELECT MIN(Lft) FROM categories WHERE Id = node_id)) AS Rgt,
+                       t1.ParentId,
+                       t1.ClientId,
+                       t1.Depth,
+                       t1.Name,
+                       t1.CreateAt,
+                       t1.UpdateAt
                 FROM categories AS t1, categories AS t2
                 WHERE t1.Lft BETWEEN t2.Lft AND t2.Rgt AND t2.Id = node_id;
 

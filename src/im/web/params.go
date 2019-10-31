@@ -24,10 +24,10 @@ type Params struct {
 	ChannelId        string
 	ProductId        string
 	CategoryId       string
-	ClientId		 string
+	ClientId         string
 	CategoryParentId string
 	CategoryDepth    string
-	DestinationId  	 string
+	DestinationId    string
 	PostId           string
 	FileId           string
 	Filename         string

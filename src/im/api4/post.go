@@ -17,7 +17,7 @@ func (api *API) InitPost() {
 	api.BaseRoutes.PostsForChannel.Handle("", api.ApiSessionRequired(getPostsForChannel)).Methods("GET")
 	api.BaseRoutes.PostsForUser.Handle("/flagged", api.ApiSessionRequired(getFlaggedPostsForUser)).Methods("GET")
 
-	api.BaseRoutes.Team.Handle("/posts/search", api.ApiSessionRequired(searchPosts)).Methods("POST")
+	api.BaseRoutes.Posts.Handle("/search", api.ApiHandler(searchPosts)).Methods("POST")
 	api.BaseRoutes.Post.Handle("", api.ApiSessionRequired(updatePost)).Methods("PUT")
 	api.BaseRoutes.Post.Handle("/patch", api.ApiSessionRequired(patchPost)).Methods("PUT")
 	api.BaseRoutes.Post.Handle("/pin", api.ApiSessionRequired(pinPost)).Methods("POST")
@@ -346,15 +346,15 @@ func getPostThread(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
-	c.RequireTeamId()
+
 	if c.Err != nil {
 		return
 	}
 
-	if !c.App.SessionHasPermissionToTeam(c.App.Session, c.Params.TeamId, model.PERMISSION_VIEW_TEAM) {
+/*	if !c.App.SessionHasPermissionToTeam(c.App.Session, c.Params.TeamId, model.PERMISSION_VIEW_TEAM) {
 		c.SetPermissionError(model.PERMISSION_VIEW_TEAM)
 		return
-	}
+	}*/
 
 	params := model.SearchParameterFromJson(r.Body)
 
@@ -390,7 +390,7 @@ func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	results, err := c.App.SearchPostsInTeamForUser(terms, c.App.Session.UserId, c.Params.TeamId, isOrSearch, includeDeletedChannels, int(timeZoneOffset), page, perPage)
+	results, err := c.App.SearchPostsForUser(terms, c.App.Session.UserId, isOrSearch, includeDeletedChannels, int(timeZoneOffset), page, perPage)
 
 
 	if err != nil {
@@ -398,9 +398,9 @@ func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	clientPostList := c.App.PreparePostListForClient(results.PostList)
+	//clientPostList := c.App.PreparePostListForClient(results.PostList)
 
-	results = model.MakePostSearchResults(clientPostList, results.Matches)
+	//results = model.MakePostSearchResults(clientPostList, results.Matches)
 
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Write([]byte(results.ToJson()))
