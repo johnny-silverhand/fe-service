@@ -143,3 +143,11 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 
 	return payload, nil
 }
+
+func (a *App) GetCategoryPath(categoryId string) ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetCategoryPath(categoryId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.Category), nil
+}

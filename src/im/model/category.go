@@ -18,6 +18,7 @@ type Category struct {
 	Depth         int         `json:"depth"`
 	CountChildren int         `db:"-" json:"count_children"`
 	Children      []*Category `db:"-" json:"children"`
+	Products      []*Product  `db:"-" json:"products"`
 }
 
 type CategoryPatch struct {
@@ -51,6 +52,10 @@ func (category *Category) ToJson() string {
 }
 
 func CategoriesAllToJson(categories []*Category) string {
+	if len(categories) < 2 {
+		m, _ := json.Marshal(categories)
+		return string(m)
+	}
 	sort.Slice(categories, func(i, j int) bool {
 		return categories[i].Lft < categories[j].Lft
 	})
@@ -60,6 +65,7 @@ func CategoriesAllToJson(categories []*Category) string {
 	}
 	for i, category := range categories {
 		if len(category.ParentId) > 0 && slice[category.ParentId] != nil {
+			slice[category.ParentId].CountChildren += 1
 			slice[category.ParentId].Children = append(slice[category.ParentId].Children, categories[i])
 		}
 	}

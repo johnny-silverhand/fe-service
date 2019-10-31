@@ -557,6 +557,28 @@ func (s SqlCategoryStore) GetAll() store.StoreChannel {
 	})
 }
 
+func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var categories []*model.Category
+		if _, err := s.GetMaster().Select(&categories, `
+			select *
+			from categories
+			where lft between (select lft from categories where id = :Id)
+			and (select rgt from categories where id = :Id)
+		`, map[string]interface{}{"Id": categoryId}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlCategoryStore.GetCategoryPath",
+					"store.sql_category.get_category_path.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlCategoryStore.GetCategoryPath", "store.sql_category.get_category_path.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = categories
+		}
+	})
+}
+
 /* STORED PROCEDURE CALLS  */
 //https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
 

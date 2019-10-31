@@ -39,13 +39,12 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	category, err := c.App.GetCategory(c.Params.CategoryId)
-	if err != nil {
+	if categories, err := c.App.GetCategoryPath(c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
+	} else {
+		w.Write([]byte(model.CategoriesAllToJson(categories)))
 	}
-
-	w.Write([]byte(category.ToJson()))
 }
 
 func getAllCategories(c *Context, w http.ResponseWriter, r *http.Request) {

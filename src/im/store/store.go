@@ -506,4 +506,5 @@ type CategoryStore interface {
 	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
 	GetAll() StoreChannel
+	GetCategoryPath(categoryId string) StoreChannel
 }
