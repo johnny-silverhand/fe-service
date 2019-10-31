@@ -7,6 +7,7 @@ import (
 )
 
 func (api *API) InitCategory() {
+	api.BaseRoutes.ApiRoot.Handle("/category/{category_id}", api.ApiHandler(getCategoryPath)).Methods("GET") // используется мобильщиками
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getAllCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
@@ -38,7 +39,7 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
 	if c.Err != nil {
 		return
@@ -48,6 +49,19 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.Write([]byte(model.CategoriesAllToJson(categories)))
+	}
+}
+
+func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	if category, err := c.App.GetCategory(c.Params.CategoryId); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(category.ToJson()))
 	}
 }
 
@@ -123,14 +137,5 @@ func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	/*
-		if err != nil {
-			c.Err = err
-			ReturnStatusOK(w)
-		}
-	*/
 	ReturnStatusOK(w)
-
-	//w.Write([]byte(model.MapToJson(map[string]string{"status": strconv.Itoa(result["status"])})))
 }
