@@ -31,10 +31,11 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	}else{
 		_, err = c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
-		destinationId := c.Params.DestinationId
-		if len(destinationId) > 0 {
-			_ = c.App.OrderCategoryBySp(category,c.Params.DestinationId)
-		}
+	}
+
+	if len(category.DestinationId) > 0 {
+		storedCategory.DestinationId = category.DestinationId
+		_ = c.App.OrderCategoryBySp(storedCategory)
 	}
 }
 

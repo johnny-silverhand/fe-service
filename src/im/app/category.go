@@ -101,8 +101,8 @@ func (a *App) MoveClientCategoryBySp (category *model.Category) *model.AppError 
 	return result.Err
 }
 
-func (a *App) OrderCategoryBySp(category *model.Category,destinationId string) *model.AppError {
-	result := <-a.Srv.Store.Category().OrderCategoryBySp(category,destinationId)
+func (a *App) OrderCategoryBySp(category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().OrderCategoryBySp(category)
 	return result.Err
 }
 
