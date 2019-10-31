@@ -99,8 +99,14 @@ func (a *App) MoveClientCategory(category *model.Category, parentCategory *model
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
+
 func (a *App) MoveClientCategoryBySp(category *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
+	return result.Err
+}
+
+func (a *App) OrderCategoryBySp(category *model.Category, destinationId string) *model.AppError {
+	result := <-a.Srv.Store.Category().OrderCategoryBySp(category, destinationId)
 	return result.Err
 }
 

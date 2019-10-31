@@ -23,14 +23,18 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	storedCategory, err := c.App.GetCategory(category.Id)
 	if err != nil {
 		return
-
 	}
+
 	storedCategory.ParentId = category.ParentId
 	if len(category.ParentId) > 0 {
 		err = c.App.MoveClientCategoryBySp(storedCategory)
 	} else {
 		c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
+		destinationId := c.Params.DestinationId
+		if len(destinationId) > 0 {
+			_ = c.App.OrderCategoryBySp(category, c.Params.DestinationId)
+		}
 	}
 }
 

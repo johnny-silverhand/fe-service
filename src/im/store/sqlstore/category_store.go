@@ -579,8 +579,14 @@ func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel 
 	})
 }
 
-/* STORED PROCEDURE CALLS  */
-//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+/*
+					*** STORED PROCEDURE CALLS ***
+ https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+		На всякий случай нужно проверить существует ли процедура в боевой базе. На момент
+		написани этого текста SQL Скрипты с процедурой лежали в store/
+*/
+
+//TODO: Ниже дохера копипасты, каюсь. Поправим после показа. (с) Автор комита
 
 func (s SqlCategoryStore) CreateCategoryBySp(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -634,7 +640,6 @@ func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.Sto
 }
 
 func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.StoreChannel {
-
 	return store.Do(func(result *store.StoreResult) {
 		_, err := s.GetMaster().Exec(`
 			call r_tree_traversal('move',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
@@ -642,6 +647,24 @@ func (s SqlCategoryStore) MoveCategoryBySp(category *model.Category) store.Store
 				"Id":       category.Id,
 				"ClientID": category.ClientId,
 				"ParentId": category.ParentId,
+				"Name":     category.Name,
+				"CreateAt": category.CreateAt,
+				"UpdateAt": category.UpdateAt,
+			})
+		if err != nil {
+			fmt.Print("error")
+		}
+	})
+}
+
+func (s SqlCategoryStore) OrderCategoryBySp(category *model.Category, destinationId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		_, err := s.GetMaster().Exec(`
+			call r_tree_traversal('order',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+			map[string]interface{}{
+				"Id":       category.Id,
+				"ClientID": category.ClientId,
+				"ParentId": destinationId,
 				"Name":     category.Name,
 				"CreateAt": category.CreateAt,
 				"UpdateAt": category.UpdateAt,
