@@ -63,7 +63,6 @@ type Store interface {
 	UserAccessToken() UserAccessTokenStore
 	ChannelMemberHistory() ChannelMemberHistoryStore
 
-
 	LinkMetadata() LinkMetadataStore
 	MarkSystemRanUnitTests()
 	Close()
@@ -142,7 +141,7 @@ type ChannelStore interface {
 	GetDeletedByName(team_id string, name string) StoreChannel
 	GetDeleted(team_id string, offset int, limit int) StoreChannel
 	GetChannels(teamId string, userId string, includeDeleted bool) StoreChannel
-	GetChannelsForUser( userId string, includeDeleted bool) StoreChannel
+	GetChannelsForUser(userId string, includeDeleted bool) StoreChannel
 	GetAllChannels(page, perPage int, includeDeleted bool) StoreChannel
 	GetMoreChannels(teamId string, userId string, offset int, limit int) StoreChannel
 	GetPublicChannelsForTeam(teamId string, offset int, limit int) StoreChannel
@@ -197,7 +196,7 @@ type ChannelStore interface {
 	GetChannelsBatchForIndexing(startTime, endTime int64, limit int) StoreChannel
 
 	FindOpennedChannel(userId string) StoreChannel
-	CreateUnresolvedChannel(user *model.User, additionalMemeber []string, nn int64)  StoreChannel
+	CreateUnresolvedChannel(user *model.User, additionalMemeber []string, nn int64) StoreChannel
 }
 
 type ChannelMemberHistoryStore interface {
@@ -240,12 +239,10 @@ type PostStore interface {
 	GetRepliesForExport(parentId string) StoreChannel
 	GetDirectPostParentsForExportAfter(limit int, afterId string) StoreChannel
 
-
 	GetAllMessages(userId string, offset int, limit int, allowFromCache bool, limitMin int64) StoreChannel
 	GetAllMessagesBefore(userId string, postId string, numMessages int, offset int, limitMin int64) StoreChannel
 	GetAllMessagesAfter(userId string, postId string, numMessages int, offset int, limitMin int64) StoreChannel
 	GetAllMessagesSince(userId string, time int64, allowFromCache bool, limitMin int64) StoreChannel
-
 }
 
 type UserStore interface {
@@ -483,7 +480,6 @@ type LinkMetadataStore interface {
 	Get(url string, timestamp int64) StoreChannel
 }
 
-
 type ProductStore interface {
 	Save(product *model.Product) StoreChannel
 	Get(productId string) StoreChannel
@@ -494,8 +490,8 @@ type ProductStore interface {
 	GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) StoreChannel
 	Update(newProduct *model.Product) StoreChannel
 	Overwrite(product *model.Product) StoreChannel
-/*	Publish(product *model.Product) StoreChannel
-	GetExtras(product *model.Product) StoreChannel*/
+	/*	Publish(product *model.Product) StoreChannel
+		GetExtras(product *model.Product) StoreChannel*/
 }
 
 type CategoryStore interface {
@@ -510,4 +506,5 @@ type CategoryStore interface {
 	GetAllByClientIdPage(clientId string, offset int, limit int) StoreChannel
 	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
+	GetCategoryPath(categoryId string) StoreChannel
 }

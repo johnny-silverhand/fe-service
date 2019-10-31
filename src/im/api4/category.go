@@ -7,6 +7,7 @@ import (
 )
 
 func (api *API) InitCategory() {
+	api.BaseRoutes.ApiRoot.Handle("/category/{category_id}", api.ApiHandler(getCategoryPath)).Methods("GET") // используется мобильщиками
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
@@ -20,15 +21,16 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	category :=  model.CategoryFromJson(r.Body)
-	storedCategory, err := c.App.GetCategory(category.Id); if err != nil {
+	category := model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id)
+	if err != nil {
 		return
 	}
 
 	storedCategory.ParentId = category.ParentId
 	if len(category.ParentId) > 0 {
 		err = c.App.MoveClientCategoryBySp(storedCategory)
-	}else{
+	} else {
 		_, err = c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
 	}
@@ -39,6 +41,18 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	if categories, err := c.App.GetCategoryPath(c.Params.CategoryId); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(model.CategoriesAllToJson(categories)))
+	}
+}
 
 func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
@@ -62,8 +76,6 @@ func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(model.CategoriesToJson(categories)))
 }
-
-
 
 func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category := model.CategoryFromJson(r.Body)
@@ -98,7 +110,6 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	category.Id = c.Params.CategoryId
 
 	rcategory, err := c.App.UpdateCategory(category, false)
@@ -109,8 +120,6 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte(rcategory.ToJson()))
 }
-
-
 
 func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	category, err := c.App.GetCategory(c.Params.CategoryId)

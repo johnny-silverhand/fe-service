@@ -55,10 +55,10 @@ func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.
 }
 
 func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *model.AppError) {
-	 result :=  <-a.Srv.Store.Category().CreateCategoryBySp(category)
-	 if result.Err != nil {
-	 	return nil, result.Err
-	 }
+	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
+	if result.Err != nil {
+		return nil, result.Err
+	}
 	return result.Data.(*model.Category), nil
 }
 
@@ -70,16 +70,15 @@ func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *mode
 	return nil, nil
 }
 
-
 func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.AppError) {
 	result := <-a.Srv.Store.Category().Delete(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 	descendants, _ := a.GetDescendants(category)
-		for _, descendant := range descendants {
-			a.DeleteCategory(descendant)
-		}
+	for _, descendant := range descendants {
+		a.DeleteCategory(descendant)
+	}
 	return nil, nil
 }
 
@@ -91,12 +90,12 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 	return result.Data.([]*model.Category), nil
 }
 
-func (a *App) MoveClientCategory (category *model.Category, parentCategory *model.Category) *model.AppError {
+func (a *App) MoveClientCategory(category *model.Category, parentCategory *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
 
-func (a *App) MoveClientCategoryBySp (category *model.Category) *model.AppError {
+func (a *App) MoveClientCategoryBySp(category *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
 	return result.Err
 }
@@ -105,7 +104,6 @@ func (a *App) OrderCategoryBySp(category *model.Category) *model.AppError {
 	result := <-a.Srv.Store.Category().OrderCategoryBySp(category)
 	return result.Err
 }
-
 
 func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.Category, *model.AppError) {
 	//category.SanitizeProps()
@@ -145,4 +143,12 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 	//a.InvalidateCacheForChannelCategorys(payload.ChannelId)
 
 	return payload, nil
+}
+
+func (a *App) GetCategoryPath(categoryId string) ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetCategoryPath(categoryId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.Category), nil
 }
