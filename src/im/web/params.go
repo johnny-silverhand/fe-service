@@ -27,6 +27,7 @@ type Params struct {
 	ClientId		 string
 	CategoryParentId string
 	CategoryDepth    string
+	DestinationId  	 string
 	PostId           string
 	FileId           string
 	Filename         string
@@ -160,6 +161,9 @@ func ParamsFromRequest(r *http.Request) *Params {
 	}
 	if val, ok := props["depth"]; ok {
 		params.CategoryDepth = val
+	}
+	if val, ok := props["destination_id"]; ok {
+		params.DestinationId = val
 	}
 	if val, ok := props["category"]; ok {
 		params.Category = val

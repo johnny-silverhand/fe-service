@@ -502,7 +502,7 @@ type CategoryStore interface {
 	CreateCategoryBySp(category *model.Category) StoreChannel
 	MoveCategoryBySp(category *model.Category) StoreChannel
 	DeleteCategoryBySp(category *model.Category) StoreChannel
-	OrderCategoryBySp(category *model.Category) StoreChannel
+	OrderCategoryBySp(category *model.Category,destinationId string) StoreChannel
 	Update(category *model.Category) StoreChannel
 	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel

@@ -18,6 +18,7 @@ type Category struct {
 	Depth         int         `json:"depth"`
 	CountChildren int         `db:"-" json:"count_children"`
 	Children      []*Category `db:"-" json:"children"`
+	//DestinationId *string 		`db:"-" json:"destination_id"`
 }
 
 type CategoryPatch struct {
