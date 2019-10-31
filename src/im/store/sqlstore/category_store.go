@@ -537,8 +537,12 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 	return nil
 }
 
-						/* STORED PROCEDURE CALLS  */
-//https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+/*
+					*** STORED PROCEDURE CALLS ***
+ https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
+		На всякий случай нужно проверить существует ли процедура в боевой базе. На момент
+		написани этого текста SQL Скрипты с процедурой лежали в store/
+*/
 
 //TODO: Ниже дохера копипасты, каюсь. Поправим после показа. (с) Автор комита
 
