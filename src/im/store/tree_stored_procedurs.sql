@@ -1,4 +1,3 @@
-use fe;
 drop procedure if exists `r_tree_traversal`;
 
 -- --------------------------------------------------------------------------------
@@ -99,7 +98,7 @@ BEGIN
 		             SELECT Id, Lft + parent_rgt, Rgt + parent_rgt, ParentId, Depth,Name,ClientId, CreateAt, UpdateAt
 		               FROM categories_temp;
 
-        		from `categories` union select `categories`.`Rgt` AS `Rgt` from `categories`;
+        		#from `categories` union select `categories`.`Rgt` AS `Rgt` from `categories`;
 
 				UPDATE categories
 		           SET Lft = (SELECT COUNT(*) FROM vw_lftrgt AS v WHERE v.Lft <= categories.Lft),
