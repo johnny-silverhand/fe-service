@@ -13,6 +13,7 @@ func (api *API) InitCategory() {
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(updateCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("/move", api.ApiHandler(moveCategory)).Methods("PUT")
+	api.BaseRoutes.Category.Handle("/order", api.ApiHandler(orderCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
 }
 
@@ -34,7 +35,20 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		_, err = c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
 	}
+}
 
+func orderCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	category := model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id)
+	if err != nil {
+		return
+	}
+
+	storedCategory.ParentId = category.ParentId
 	if len(category.DestinationId) > 0 {
 		storedCategory.DestinationId = category.DestinationId
 		_ = c.App.OrderCategoryBySp(storedCategory)
