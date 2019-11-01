@@ -35,6 +35,10 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		_, err = c.App.DeleteOneCategory(storedCategory)
 		_, err = c.App.CreateCategoryBySp(storedCategory)
 	}
+
+	if err == nil {
+		ReturnStatusOK(w)
+	}
 }
 
 func orderCategory(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -51,8 +55,13 @@ func orderCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	storedCategory.ParentId = category.ParentId
 	if len(category.DestinationId) > 0 {
 		storedCategory.DestinationId = category.DestinationId
-		_ = c.App.OrderCategoryBySp(storedCategory)
+		err = c.App.OrderCategoryBySp(storedCategory)
 	}
+
+	if err == nil {
+		ReturnStatusOK(w)
+	}
+
 }
 
 func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
