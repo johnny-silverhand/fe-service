@@ -4,3 +4,4 @@ src/im_front
 pkg/
 mattermost.log
 data/
+/src/im/config/default.json
