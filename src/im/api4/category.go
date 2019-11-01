@@ -7,15 +7,15 @@ import (
 )
 
 func (api *API) InitCategory() {
-	api.BaseRoutes.ApiRoot.Handle("/category/{category_id}", api.ApiHandler(getCategoryPath)).Methods("GET") // используется мобильщиками
+	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
+	api.BaseRoutes.Category.Handle("/path", api.ApiHandler(getCategoryPath)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
-	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(updateCategory)).Methods("PUT")
+	api.BaseRoutes.Category.Handle("/move", api.ApiHandler(moveCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
-	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
-	api.BaseRoutes.MoveCategory.Handle("", api.ApiHandler(moveCategory)).Methods("PUT")
 }
+
 func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
 	if c.Err != nil {
@@ -50,7 +50,15 @@ func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	} else {
-		w.Write([]byte(model.CategoriesAllToJson(categories)))
+
+		// load products for categories
+		for i, category := range categories {
+			if productList, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id); err == nil {
+				categories[i].ProductList = productList
+			}
+		}
+
+		w.Write([]byte(model.CategoriesToJson(categories)))
 	}
 }
 
@@ -59,13 +67,15 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	category, err := c.App.GetCategory(c.Params.CategoryId)
-	if err != nil {
+	if category, err := c.App.GetCategory(c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
-	}
+	} else {
+		productList, _ := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id)
+		category.ProductList = productList
 
-	w.Write([]byte(category.ToJson()))
+		w.Write([]byte(category.ToJson()))
+	}
 }
 
 func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {

@@ -6,12 +6,11 @@ import (
 )
 
 func (api *API) InitProduct() {
-
+	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET")
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(getProducts)).Methods("GET")
-	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET") // используется мобильщиками
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
-	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
+	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 }
 
 func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -30,26 +29,17 @@ func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
-
 	c.RequireCategoryId()
 	if c.Err != nil {
 		return
 	}
-	products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId)
 
-	if err != nil {
+	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
+	} else {
+		w.Write([]byte(products.ToJson()))
 	}
-	//// LOAD MEDIA GIVE IN ONE FUNCTION FOR RE-USE
-	/*for i, product := range products {
-		media, err := c.App.GetMediaByProduct(product)
-		if err == nil {
-			products[i].Media = media
-		}
-	}*/
-
-	w.Write([]byte(products.ToJson()))
 }
 
 func createProduct(c *Context, w http.ResponseWriter, r *http.Request) {

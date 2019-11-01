@@ -2,9 +2,9 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 	"im/model"
 	"im/store"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -27,8 +27,6 @@ func NewSqlProductStore(sqlStore SqlStore) store.ProductStore {
 
 		table.ColMap("CategoryId").SetMaxSize(26)
 		table.ColMap("FileIds").SetMaxSize(150)
-
-
 
 	}
 
@@ -99,7 +97,6 @@ func (s SqlProductStore) Publish(product *model.Product) store.StoreChannel {
 	})
 }
 
-
 func (s *SqlProductStore) Save(product *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if len(product.Id) > 0 {
@@ -121,8 +118,6 @@ func (s *SqlProductStore) Save(product *model.Product) store.StoreChannel {
 	})
 }
 
-
-
 func (s *SqlProductStore) Update(newProduct *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		newProduct.UpdateAt = model.GetMillis()
@@ -139,12 +134,10 @@ func (s *SqlProductStore) Update(newProduct *model.Product) store.StoreChannel {
 func (s *SqlProductStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var product *model.Product
-		if err := s.GetReplica().SelectOne(&product,
-			`SELECT *
-					FROM Products
-					WHERE Id = :Id  AND DeleteAt = 0`, map[string]interface{}{"Id": id}); err != nil {
+
+		if err := s.GetMaster().SelectOne(&product, "select * from products where id = :Id", map[string]interface{}{"Id": id}); err != nil {
 			if err == sql.ErrNoRows {
-				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.app_error", nil, err.Error(), http.StatusNotFound)
+				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.not_found", nil, err.Error(), http.StatusNotFound)
 			} else {
 				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 			}
@@ -153,7 +146,6 @@ func (s *SqlProductStore) Get(id string) store.StoreChannel {
 		}
 	})
 }
-
 
 func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -189,10 +181,6 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
                   WHERE CategoryId = :CategoryId
                   ORDER BY ` + order.Column + ` `
 
-		/*if order.Column == "price" { // cuz price is string
-			query += `+ 0 ` // hack for sorting string as integer
-		}*/
-
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
 		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"CategoryId": categoryId, "Limit": limit, "Offset": offset}); err != nil {
@@ -209,7 +197,6 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 			}
 
 			list.MakeNonNil()
-
 
 			result.Data = list
 		}
@@ -235,14 +222,12 @@ func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
 }
 
 func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
-
 
 	return store.Do(func(result *store.StoreResult) {
 
@@ -277,7 +262,6 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 			query += prefixSub
 		}
 
-
 		query += ` ORDER BY ` + order.Column + ` `
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
@@ -298,18 +282,12 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 
 		}
 
-
-
-
-
 	})
 }
-
 
 func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -324,8 +302,7 @@ func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 			result.Err = appErr(err.Error())
 		}
 
-		time:= model.GetMillis()
-
+		time := model.GetMillis()
 
 		_, err = s.GetMaster().Exec("UPDATE Products SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE Id = :Id", map[string]interface{}{"DeleteAt": time, "UpdateAt": time, "Id": productId})
 		if err != nil {
@@ -334,11 +311,9 @@ func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 	})
 }
 
-
 func (s *SqlProductStore) Overwrite(product *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		product.UpdateAt = model.GetMillis()
-
 
 		if result.Err = product.IsValid(); result.Err != nil {
 			return

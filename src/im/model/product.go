@@ -27,14 +27,17 @@ type Product struct {
 	//Category      *Category `json:"category"`
 	FileIds StringArray `json:"file_ids,omitempty"`
 
-	Image      *FileInfo   `json:"image,omitempty" db:"-"`
-	MoreImage      []*FileInfo   `json:"more_image,omitempty" db:"-"`
+	Image     *FileInfo   `json:"image,omitempty" db:"-"`
+	MoreImage []*FileInfo `json:"more_image,omitempty" db:"-"`
 
-	ImageId string `json:"image_id,omitempty"`
+	ImageId      string      `json:"image_id,omitempty"`
 	MoreImageIds StringArray `json:"more_image_ids,omitempty"`
 
-	Category *Category `json:"category,omitempty" db:"-"`
+	Category *Category        `json:"category,omitempty" db:"-"`
 	Metadata *ProductMetadata `json:"metadata,omitempty" db:"-"`
+
+	// TODO временное решение для формирования массива изображений для мобильной разработки
+	Media []*MobileFileInfo `db:"-" json:"media,omitempty"`
 }
 
 type ProductPatch struct {

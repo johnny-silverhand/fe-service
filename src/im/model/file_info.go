@@ -35,6 +35,12 @@ type FileInfo struct {
 	HasPreviewImage bool   `json:"has_preview_image,omitempty"`
 }
 
+// TODO временное решение для формирования массива изображений для мобильной разработки
+type MobileFileInfo struct {
+	Id     string `json:"id"`
+	FileId string `json:"file_id"`
+}
+
 func (info *FileInfo) ToJson() string {
 	b, _ := json.Marshal(info)
 	return string(b)

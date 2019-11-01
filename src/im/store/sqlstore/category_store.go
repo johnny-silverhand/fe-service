@@ -538,13 +538,27 @@ func (t *CategorySQL) RemoveOneNode(db *sql.DB, id string) error {
 
 func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var categories []*model.Category
+		var (
+			root       *model.Category
+			categories []*model.Category
+		)
+		rootQuery := `select * from categories where id = :Id`
+		if err := s.GetMaster().SelectOne(&root, rootQuery, map[string]interface{}{"Id": categoryId}); err != nil {
+			result.Err = model.NewAppError("SqlCategoryStore.GetCategoryPath",
+				"store.sql_category.get_category_path.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		if _, err := s.GetMaster().Select(&categories, `
-			select *
-			from categories
-			where lft between (select lft from categories where id = :Id)
-			and (select rgt from categories where id = :Id)
-		`, map[string]interface{}{"Id": categoryId}); err != nil {
+			select * 
+			from categories 
+			where lft >= :Lft and rgt <= :Rgt and clientId = :ClientId 
+			order by lft desc`,
+			map[string]interface{}{
+				"Lft":      root.Lft,
+				"Rgt":      root.Rgt,
+				"ClientId": root.ClientId,
+			}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlCategoryStore.GetCategoryPath",
 					"store.sql_category.get_category_path.app_error", nil, err.Error(), http.StatusNotFound)
