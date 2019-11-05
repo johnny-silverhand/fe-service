@@ -158,8 +158,11 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("positions")
 		return
 	}*/
+	
+	order.UserId = c.App.Session.UserId
 
 	result, err := c.App.CreateOrder(order)
+
 	if err != nil {
 		c.Err = err
 		return
