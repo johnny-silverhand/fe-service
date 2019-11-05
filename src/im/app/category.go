@@ -128,9 +128,6 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 	if newCategory.Name != category.Name {
 		newCategory.Name = category.Name
 	}
-	if newCategory.ParentId != category.ParentId {
-		newCategory.ParentId = category.ParentId
-	}
 
 	result = <-a.Srv.Store.Category().Update(newCategory)
 
