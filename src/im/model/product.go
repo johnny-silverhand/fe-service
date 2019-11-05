@@ -23,19 +23,9 @@ type Product struct {
 	DeleteAt      int64   `json:"delete_at"`
 	CategoryId    string  `json:"category_id"`
 	//Category      *Category `json:"category"`
-	FileIds StringArray `json:"file_ids,omitempty"`
-
-	Image     *FileInfo   `json:"image,omitempty" db:"-"`
-	MoreImage []*FileInfo `json:"more_image,omitempty" db:"-"`
-
-	ImageId      string      `json:"image_id,omitempty"`
-	MoreImageIds StringArray `json:"more_image_ids,omitempty"`
-
-	Category *Category        `json:"category,omitempty" db:"-"`
-	Metadata *ProductMetadata `json:"metadata,omitempty" db:"-"`
-
-	// TODO временное решение для формирования массива изображений для мобильной разработки
-	Media []*MobileFileInfo `db:"-" json:"media,omitempty"`
+	FileIds  StringArray `json:"file_ids,omitempty"`
+	Category *Category   `json:"category,omitempty" db:"-"`
+	Media    []*FileInfo `db:"-" json:"media,omitempty"`
 }
 
 type ProductPatch struct {

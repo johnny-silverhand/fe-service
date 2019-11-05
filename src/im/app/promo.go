@@ -1,6 +1,7 @@
 package app
 
 import (
+	"im/mlog"
 	"im/model"
 	"im/store"
 	"net/http"
@@ -74,10 +75,8 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 		newPromo.Name = promo.Name
 	}
 
-
 	newPromo.Preview = promo.Preview
 	newPromo.Description = promo.Description
-
 
 	result = <-a.Srv.Store.Promo().Update(newPromo)
 	if result.Err != nil {
@@ -95,19 +94,29 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 func (a *App) PreparePromoForClient(originalPromo *model.Promo, isNewPromo bool) *model.Promo {
 	promo := originalPromo.Clone()
 
+	if fileInfos, err := a.getMediaForPromo(originalPromo); err != nil {
+		mlog.Warn("Failed to get files for a product", mlog.String("product_id", originalPromo.Id), mlog.Any("err", err))
+	} else {
+		originalPromo.Media = fileInfos
 
-
-
-
+	}
 	//promo.Metadata.Images = a.getCategoryForPromo(promo)
 
 	return promo
 }
 
+func (a *App) getMediaForPromo(promo *model.Promo) ([]*model.FileInfo, *model.AppError) {
+	if len(promo.FileIds) == 0 {
+		return nil, nil
+	}
+
+	return a.GetFileInfosForMetadata(promo.Id)
+}
+
 func (a *App) PreparePromoListForClient(originalList *model.PromoList) *model.PromoList {
 	list := &model.PromoList{
 		Promos: make(map[string]*model.Promo, len(originalList.Promos)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:  originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalPromo := range originalList.Promos {
@@ -127,27 +136,23 @@ func (a *App) DeletePromo(promoId, deleteByID string) (*model.Promo, *model.AppE
 	}
 	promo := result.Data.(*model.Promo)
 
-
 	if result := <-a.Srv.Store.Promo().Delete(promoId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return promo, nil
 }
 
-
 func (a *App) GetAllPromosBeforePromo(promoId string, page, perPage int) (*model.PromoList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Promo().GetAllPromosBefore( promoId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Promo().GetAllPromosBefore(promoId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.PromoList), nil
 	}
 }
 
-func (a *App) GetAllPromosAfterPromo( promoId string, page, perPage int) (*model.PromoList, *model.AppError) {
-
+func (a *App) GetAllPromosAfterPromo(promoId string, page, perPage int) (*model.PromoList, *model.AppError) {
 
 	if result := <-a.Srv.Store.Promo().GetAllPromosAfter(promoId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err

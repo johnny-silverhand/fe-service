@@ -10,29 +10,26 @@ type Promo struct {
 	Id       string `json:"id"`
 	ClientId string `json:"client_id"`
 
-	Name        string  `json:"name"`
-	Preview     string  `json:"preview"`
-	Description string  `json:"description"`
-	
-	Active        bool    `json:"active"`
-	CreateAt      int64   `json:"create_at"`
-	UpdateAt      int64   `json:"update_at"`
-	DeleteAt      int64   `json:"delete_at"`
-	ProductId    string  `json:"promo_id"`
+	Name        string `json:"name"`
+	Preview     string `json:"preview"`
+	Description string `json:"description"`
 
-	Image      *FileInfo   `json:"image,omitempty" db:"-"`
-	MoreImage      []*FileInfo   `json:"more_image,omitempty" db:"-"`
+	Active    bool   `json:"active"`
+	CreateAt  int64  `json:"create_at"`
+	UpdateAt  int64  `json:"update_at"`
+	DeleteAt  int64  `json:"delete_at"`
+	ProductId string `json:"product_id"`
 
-	ImageId string `json:"image_id,omitempty"`
-	MoreImageIds StringArray `json:"more_image_ids,omitempty"`
+	FileIds StringArray `json:"file_ids,omitempty"`
+	Media   []*FileInfo `db:"-" json:"media,omitempty"`
 }
 
 type PromoPatch struct {
-	Name        *string      `json:"name"`
-	Preview     *string      `json:"preview"`
-	Description *string      `json:"description"`
-	ProductId  *string      `json:"promo_id"`
-	ImageId string `json:"image_id,omitempty"`
+	Name        *string `json:"name"`
+	Preview     *string `json:"preview"`
+	Description *string `json:"description"`
+	ProductId   *string `json:"promo_id"`
+	ImageId     string  `json:"image_id,omitempty"`
 }
 
 func (p *Promo) Patch(patch *PromoPatch) {
@@ -80,7 +77,6 @@ func (o *Promo) PreSave() {
 
 func (o *Promo) PreCommit() {
 
-
 }
 
 func (o *Promo) MakeNonNil() {
@@ -100,7 +96,6 @@ func (o *Promo) IsValid() *AppError {
 	if o.UpdateAt == 0 {
 		return NewAppError("Promo.IsValid", "model.promo.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
-
 
 	return nil
 }

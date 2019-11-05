@@ -3933,3 +3933,68 @@
 {"level":"info","ts":1572521976.142655,"caller":"mlog/log.go:160","msg":"Server is listening on [::]:8065"}
 {"level":"info","ts":1572521976.1596122,"caller":"mlog/log.go:160","msg":"Starting 8 websocket hubs"}
 {"level":"error","ts":1572591326.2199898,"caller":"mlog/log.go:168","msg":"Unable to cleanup token store."}
+{"level":"info","ts":1572947495.7515514,"caller":"mlog/log.go:160","msg":"Loaded system translations for 'en' from 'D:\\fe\\fe\\src\\im\\i18n\\en.json'"}
+{"level":"info","ts":1572947495.7515514,"caller":"mlog/log.go:160","msg":"Server is initializing..."}
+{"level":"info","ts":1572947495.8728669,"caller":"mlog/log.go:160","msg":"Pinging SQL master database"}
+{"level":"error","ts":1572947498.7418363,"caller":"mlog/log.go:168","msg":"SMTP server settings do not appear to be configured properly err=Failed to open connection details=dial tcp: lookup dockerhost: no such host"}
+{"level":"error","ts":1572947498.7418363,"caller":"mlog/log.go:168","msg":"SiteURL must be set. Some features will operate incorrectly if the SiteURL is not set. See documentation for details: http://about.mattermost.com/default-site-url"}
+{"level":"info","ts":1572947498.7485318,"caller":"mlog/log.go:160","msg":"Able to write files to local storage."}
+{"level":"info","ts":1572947498.753517,"caller":"mlog/log.go:160","msg":"Current version is 5.10.0 (///)"}
+{"level":"info","ts":1572947498.753517,"caller":"mlog/log.go:160","msg":"Enterprise Enabled: "}
+{"level":"info","ts":1572947498.753517,"caller":"mlog/log.go:160","msg":"Current working directory is D:\\fe\\fe"}
+{"level":"info","ts":1572947498.753517,"caller":"mlog/log.go:160","msg":"Loaded config","source":"file://D:\\fe\\fe\\src\\im\\config\\default.json"}
+{"level":"info","ts":1572947498.7739758,"caller":"mlog/log.go:160","msg":"Post.Message supports at most 16383 characters (65535 bytes)"}
+{"level":"info","ts":1572947498.8677254,"caller":"mlog/log.go:160","msg":"Starting workers"}
+{"level":"info","ts":1572947498.8677254,"caller":"mlog/log.go:160","msg":"Starting Server..."}
+{"level":"info","ts":1572947498.8687246,"caller":"mlog/log.go:160","msg":"Server is listening on [::]:8065"}
+{"level":"info","ts":1572947498.8687246,"caller":"mlog/log.go:160","msg":"Starting schedulers."}
+{"level":"info","ts":1572947498.8857143,"caller":"mlog/log.go:160","msg":"Starting 8 websocket hubs"}
+{"level":"info","ts":1572947533.8005764,"caller":"mlog/log.go:160","msg":"Loaded system translations for 'en' from 'D:\\fe\\fe\\src\\im\\i18n\\en.json'"}
+{"level":"info","ts":1572947533.8005764,"caller":"mlog/log.go:160","msg":"Server is initializing..."}
+{"level":"info","ts":1572947533.8085546,"caller":"mlog/log.go:160","msg":"Pinging SQL master database"}
+{"level":"error","ts":1572947536.9673033,"caller":"mlog/log.go:168","msg":"SMTP server settings do not appear to be configured properly err=Failed to open connection details=dial tcp: lookup dockerhost: no such host"}
+{"level":"error","ts":1572947536.9673033,"caller":"mlog/log.go:168","msg":"SiteURL must be set. Some features will operate incorrectly if the SiteURL is not set. See documentation for details: http://about.mattermost.com/default-site-url"}
+{"level":"info","ts":1572947536.9782743,"caller":"mlog/log.go:160","msg":"Able to write files to local storage."}
+{"level":"info","ts":1572947536.9912462,"caller":"mlog/log.go:160","msg":"Current version is 5.10.0 (///)"}
+{"level":"info","ts":1572947536.9912462,"caller":"mlog/log.go:160","msg":"Enterprise Enabled: "}
+{"level":"info","ts":1572947536.9912462,"caller":"mlog/log.go:160","msg":"Current working directory is D:\\fe\\fe"}
+{"level":"info","ts":1572947536.9912462,"caller":"mlog/log.go:160","msg":"Loaded config","source":"file://D:\\fe\\fe\\src\\im\\config\\default.json"}
+{"level":"info","ts":1572947537.070029,"caller":"mlog/log.go:160","msg":"Post.Message supports at most 16383 characters (65535 bytes)"}
+{"level":"info","ts":1572947537.343296,"caller":"mlog/log.go:160","msg":"Starting workers"}
+{"level":"info","ts":1572947537.343296,"caller":"mlog/log.go:160","msg":"Starting Server..."}
+{"level":"info","ts":1572947537.343296,"caller":"mlog/log.go:160","msg":"Server is listening on [::]:8065"}
+{"level":"info","ts":1572947537.3452916,"caller":"mlog/log.go:160","msg":"Starting schedulers."}
+{"level":"info","ts":1572947537.3602505,"caller":"mlog/log.go:160","msg":"Starting 8 websocket hubs"}
+{"level":"info","ts":1572948037.1002705,"caller":"mlog/log.go:160","msg":"Loaded system translations for 'en' from 'D:\\fe\\fe\\src\\im\\i18n\\en.json'"}
+{"level":"info","ts":1572948037.1002705,"caller":"mlog/log.go:160","msg":"Server is initializing..."}
+{"level":"info","ts":1572948037.110244,"caller":"mlog/log.go:160","msg":"Pinging SQL master database"}
+{"level":"error","ts":1572948039.8051949,"caller":"mlog/log.go:168","msg":"SMTP server settings do not appear to be configured properly err=Failed to open connection details=dial tcp: lookup dockerhost: no such host"}
+{"level":"error","ts":1572948039.8051949,"caller":"mlog/log.go:168","msg":"SiteURL must be set. Some features will operate incorrectly if the SiteURL is not set. See documentation for details: http://about.mattermost.com/default-site-url"}
+{"level":"info","ts":1572948039.808185,"caller":"mlog/log.go:160","msg":"Able to write files to local storage."}
+{"level":"info","ts":1572948039.8151662,"caller":"mlog/log.go:160","msg":"Current version is 5.10.0 (///)"}
+{"level":"info","ts":1572948039.8151662,"caller":"mlog/log.go:160","msg":"Enterprise Enabled: "}
+{"level":"info","ts":1572948039.8151662,"caller":"mlog/log.go:160","msg":"Current working directory is D:\\fe\\fe"}
+{"level":"info","ts":1572948039.8151662,"caller":"mlog/log.go:160","msg":"Loaded config","source":"file://D:\\fe\\fe\\src\\im\\config\\default.json"}
+{"level":"info","ts":1572948039.8281314,"caller":"mlog/log.go:160","msg":"Post.Message supports at most 16383 characters (65535 bytes)"}
+{"level":"info","ts":1572948039.9138994,"caller":"mlog/log.go:160","msg":"Starting workers"}
+{"level":"info","ts":1572948039.9138994,"caller":"mlog/log.go:160","msg":"Starting Server..."}
+{"level":"info","ts":1572948039.9138994,"caller":"mlog/log.go:160","msg":"Starting schedulers."}
+{"level":"info","ts":1572948039.9138994,"caller":"mlog/log.go:160","msg":"Server is listening on [::]:8065"}
+{"level":"info","ts":1572948039.928861,"caller":"mlog/log.go:160","msg":"Starting 8 websocket hubs"}
+{"level":"info","ts":1572948056.867473,"caller":"mlog/log.go:160","msg":"Loaded system translations for 'en' from 'D:\\fe\\fe\\src\\im\\i18n\\en.json'"}
+{"level":"info","ts":1572948056.867473,"caller":"mlog/log.go:160","msg":"Server is initializing..."}
+{"level":"info","ts":1572948056.8764496,"caller":"mlog/log.go:160","msg":"Pinging SQL master database"}
+{"level":"error","ts":1572948060.1326156,"caller":"mlog/log.go:168","msg":"SMTP server settings do not appear to be configured properly err=Failed to open connection details=dial tcp: lookup dockerhost: no such host"}
+{"level":"error","ts":1572948060.1326156,"caller":"mlog/log.go:168","msg":"SiteURL must be set. Some features will operate incorrectly if the SiteURL is not set. See documentation for details: http://about.mattermost.com/default-site-url"}
+{"level":"info","ts":1572948060.136339,"caller":"mlog/log.go:160","msg":"Able to write files to local storage."}
+{"level":"info","ts":1572948060.1413245,"caller":"mlog/log.go:160","msg":"Current version is 5.10.0 (///)"}
+{"level":"info","ts":1572948060.1413245,"caller":"mlog/log.go:160","msg":"Enterprise Enabled: "}
+{"level":"info","ts":1572948060.1413245,"caller":"mlog/log.go:160","msg":"Current working directory is D:\\fe\\fe"}
+{"level":"info","ts":1572948060.1413245,"caller":"mlog/log.go:160","msg":"Loaded config","source":"file://D:\\fe\\fe\\src\\im\\config\\default.json"}
+{"level":"info","ts":1572948060.160611,"caller":"mlog/log.go:160","msg":"Post.Message supports at most 16383 characters (65535 bytes)"}
+{"level":"info","ts":1572948060.260347,"caller":"mlog/log.go:160","msg":"Starting workers"}
+{"level":"info","ts":1572948060.260347,"caller":"mlog/log.go:160","msg":"Starting Server..."}
+{"level":"info","ts":1572948060.260347,"caller":"mlog/log.go:160","msg":"Starting schedulers."}
+{"level":"info","ts":1572948060.260347,"caller":"mlog/log.go:160","msg":"Server is listening on [::]:8065"}
+{"level":"info","ts":1572948060.2773006,"caller":"mlog/log.go:160","msg":"Starting 8 websocket hubs"}
+{"level":"error","ts":1572948071.3566093,"caller":"mlog/log.go:169","msg":"You do not have the appropriate permissions","path":"/api/v4/offices/iskwjjg1dbfkmb8o3f8wk839rw","request_id":"xg9nqeoimt8ybxeij5eaaia4ro","ip_addr":"127.0.0.1","user_id":"","method":"DELETE","err_where":"Permissions","http_code":403,"err_details":"userId=, permission=delete_post"}

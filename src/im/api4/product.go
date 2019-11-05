@@ -150,10 +150,6 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Updating the file_ids of a post is not a supported operation and will be ignored
-
-	product.MoreImageIds = nil
-
 	/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
 		c.SetPermissionError(model.PERMISSION_EDIT_POST)
 		return
