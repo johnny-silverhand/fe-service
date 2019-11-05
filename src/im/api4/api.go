@@ -1,4 +1,3 @@
-
 package api4
 
 import (
@@ -22,7 +21,6 @@ type Routes struct {
 	UserByUsername *mux.Router // 'api/v4/users/username/{username:[A-Za-z0-9_-\.]+}'
 	UserByEmail    *mux.Router // 'api/v4/users/email/{email}'
 
-
 	Teams              *mux.Router // 'api/v4/teams'
 	TeamsForUser       *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams'
 	Team               *mux.Router // 'api/v4/teams/{team_id:[A-Za-z0-9]+}'
@@ -41,7 +39,7 @@ type Routes struct {
 	ChannelMembers           *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/members'
 	ChannelMember            *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/members/{user_id:[A-Za-z0-9]+}'
 	ChannelMembersForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/teams/{team_id:[A-Za-z0-9]+}/channels/members'
-	ChannelAllMembersForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/channels/members'
+	ChannelAllMembersForUser *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/channels/members'
 
 	Posts           *mux.Router // 'api/v4/posts'
 	Post            *mux.Router // 'api/v4/posts/{post_id:[A-Za-z0-9]+}'
@@ -49,15 +47,14 @@ type Routes struct {
 	PostsForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/posts'
 	PostForUser     *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/posts/{post_id:[A-Za-z0-9]+}'
 
-
 	Messages           *mux.Router // 'api/v4/messages'
 	Message            *mux.Router // 'api/v4/messages/{message_id:[A-Za-z0-9]+}'
 	MessagesForChannel *mux.Router // 'api/v4/channels/{channel_id:[A-Za-z0-9]+}/messages'
 	MessagesForUser    *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/messages'
 	MessageForUser     *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/messages/{message_id:[A-Za-z0-9]+}'
 
-	Sections     *mux.Router // 'api/v4/sections'
-	Section     *mux.Router // 'api/v4/sections/{sections_id:[A-Za-z0-9]+}'
+	Sections *mux.Router // 'api/v4/sections'
+	Section  *mux.Router // 'api/v4/sections/{sections_id:[A-Za-z0-9]+}'
 
 	Files *mux.Router // 'api/v4/files'
 	File  *mux.Router // 'api/v4/files/{file_id:[A-Za-z0-9]+}'
@@ -67,21 +64,17 @@ type Routes struct {
 
 	PublicFile *mux.Router // 'files/{file_id:[A-Za-z0-9]+}/public'
 
-
-
 	OAuth     *mux.Router // 'api/v4/oauth'
 	OAuthApps *mux.Router // 'api/v4/oauth/apps'
 	OAuthApp  *mux.Router // 'api/v4/oauth/apps/{app_id:[A-Za-z0-9]+}'
 
 	OpenGraph *mux.Router // 'api/v4/opengraph'
 
-	Cluster    *mux.Router // 'api/v4/cluster'
+	Cluster *mux.Router // 'api/v4/cluster'
 
 	Image *mux.Router // 'api/v4/image'
 
-
 	Elasticsearch *mux.Router // 'api/v4/elasticsearch'
-
 
 	Brand *mux.Router // 'api/v4/brand'
 
@@ -91,46 +84,41 @@ type Routes struct {
 
 	Preferences *mux.Router // 'api/v4/users/{user_id:[A-Za-z0-9]+}/preferences'
 
-
 	Public *mux.Router // 'api/v4/public'
-
 
 	Roles   *mux.Router // 'api/v4/roles'
 	Schemes *mux.Router // 'api/v4/schemes'
-
 
 	Categories         *mux.Router // 'api/v4/categories'
 	Category           *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9_-]+}'
 	CategoriesByClient *mux.Router // 'api/v4/categories/client/{client_id:[A-Za-z0-9_-]+}'
 
-	MoveCategory 		*mux.Router // 'api/v4/categories/move/{category_id:[A-Za-z0-9_-]+}'
-
 	ProductsForCategory *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9]+}/products'
 
-	Products         *mux.Router // 'api/v4/products'
-	Product          *mux.Router // 'api/v4/products/{product_id:[A-Za-z0-9_-]+}'
+	Products *mux.Router // 'api/v4/products'
+	Product  *mux.Router // 'api/v4/products/{product_id:[A-Za-z0-9_-]+}'
 
 	ProductsByClient *mux.Router // 'api/v4/products/client/{client_id:[A-Za-z0-9_-]+}'
 
-	Promos          *mux.Router // 'api/v4/promos'
-	Promo          *mux.Router // 'api/v4/promos/{promo_id:[A-Za-z0-9_-]+}'
+	Promos *mux.Router // 'api/v4/promos'
+	Promo  *mux.Router // 'api/v4/promos/{promo_id:[A-Za-z0-9_-]+}'
 
-	Offices          *mux.Router // 'api/v4/offices'
-	Office          *mux.Router // 'api/v4/offices/{office_id:[A-Za-z0-9_-]+}'
+	Offices *mux.Router // 'api/v4/offices'
+	Office  *mux.Router // 'api/v4/offices/{office_id:[A-Za-z0-9_-]+}'
 
-	Orders          *mux.Router // 'api/v4/orders'
-	Order          *mux.Router // 'api/v4/orders/{order_id:[A-Za-z0-9_-]+}'
+	Orders *mux.Router // 'api/v4/orders'
+	Order  *mux.Router // 'api/v4/orders/{order_id:[A-Za-z0-9_-]+}'
 
-	Transactions          *mux.Router // 'api/v4/transactions'
-	Transaction          *mux.Router // 'api/v4/transactions/{transaction_id:[A-Za-z0-9_-]+}'
+	Transactions *mux.Router // 'api/v4/transactions'
+	Transaction  *mux.Router // 'api/v4/transactions/{transaction_id:[A-Za-z0-9_-]+}'
 
-	Basket          *mux.Router // 'api/v4/basket/{office_id:[A-Za-z0-9_-]+}'
+	Basket *mux.Router // 'api/v4/basket/{office_id:[A-Za-z0-9_-]+}'
 
-	Levels          *mux.Router // 'api/v4/levels'
-	Level          *mux.Router // 'api/v4/levels/{level_id:[A-Za-z0-9_-]+}'
+	Levels *mux.Router // 'api/v4/levels'
+	Level  *mux.Router // 'api/v4/levels/{level_id:[A-Za-z0-9_-]+}'
 
-	Extras          *mux.Router // 'api/v4/extras'
-	Extra          *mux.Router // 'api/v4/extras/{extra_id:[A-Za-z0-9_-]+}'
+	Extras *mux.Router // 'api/v4/extras'
+	Extra  *mux.Router // 'api/v4/extras/{extra_id:[A-Za-z0-9_-]+}'
 
 }
 
@@ -154,7 +142,6 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.User = api.BaseRoutes.ApiRoot.PathPrefix("/users/{user_id:[A-Za-z0-9]+}").Subrouter()
 	api.BaseRoutes.UserByUsername = api.BaseRoutes.Users.PathPrefix("/username/{username:[A-Za-z0-9\\_\\-\\.]+}").Subrouter()
 	api.BaseRoutes.UserByEmail = api.BaseRoutes.Users.PathPrefix("/email/{email}").Subrouter()
-
 
 	api.BaseRoutes.Teams = api.BaseRoutes.ApiRoot.PathPrefix("/teams").Subrouter()
 	api.BaseRoutes.TeamsForUser = api.BaseRoutes.User.PathPrefix("/teams").Subrouter()
@@ -189,7 +176,6 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Plugins = api.BaseRoutes.ApiRoot.PathPrefix("/plugins").Subrouter()
 	api.BaseRoutes.Plugin = api.BaseRoutes.Plugins.PathPrefix("/{plugin_id:[A-Za-z0-9\\_\\-\\.]+}").Subrouter()
 
-
 	api.BaseRoutes.OAuth = api.BaseRoutes.ApiRoot.PathPrefix("/oauth").Subrouter()
 	api.BaseRoutes.OAuthApps = api.BaseRoutes.OAuth.PathPrefix("/apps").Subrouter()
 	api.BaseRoutes.OAuthApp = api.BaseRoutes.OAuthApps.PathPrefix("/{app_id:[A-Za-z0-9]+}").Subrouter()
@@ -215,25 +201,18 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.MessagesForUser = api.BaseRoutes.User.PathPrefix("/messages").Subrouter()
 	api.BaseRoutes.MessageForUser = api.BaseRoutes.MessagesForUser.PathPrefix("/{message_id:[A-Za-z0-9]+}").Subrouter()
 
-
-
-/*	api.BaseRoutes.Sections  =  api.BaseRoutes.ApiRoot.PathPrefix("/sections").Subrouter()
-	api.BaseRoutes.Section  =  api.BaseRoutes.Sections.PathPrefix("/{section_id:[A-Za-z0-9]+}").Subrouter()*/
-
+	/*	api.BaseRoutes.Sections  =  api.BaseRoutes.ApiRoot.PathPrefix("/sections").Subrouter()
+		api.BaseRoutes.Section  =  api.BaseRoutes.Sections.PathPrefix("/{section_id:[A-Za-z0-9]+}").Subrouter()*/
 
 	api.BaseRoutes.Categories = api.BaseRoutes.ApiRoot.PathPrefix("/categories").Subrouter()
 	api.BaseRoutes.Category = api.BaseRoutes.Categories.PathPrefix("/{category_id:[A-Za-z0-9]+}").Subrouter()
 	api.BaseRoutes.CategoriesByClient = api.BaseRoutes.Categories.PathPrefix("/client/{client_id:[A-Za-z0-9]+}").Subrouter()
-
-	//Удаление перемещение пересчет дерева
-	api.BaseRoutes.MoveCategory = api.BaseRoutes.Categories.PathPrefix("/{category_id:[A-Za-z0-9]+}/move").Subrouter()
 
 	api.BaseRoutes.Products = api.BaseRoutes.ApiRoot.PathPrefix("/products").Subrouter()
 	api.BaseRoutes.Product = api.BaseRoutes.Products.PathPrefix("/{product_id:[A-Za-z0-9]+}").Subrouter()
 	api.BaseRoutes.ProductsByClient = api.BaseRoutes.Products.PathPrefix("/client/{client_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.ProductsForCategory = api.BaseRoutes.Category.PathPrefix("/products").Subrouter()
-
 
 	api.BaseRoutes.Promos = api.BaseRoutes.ApiRoot.PathPrefix("/promos").Subrouter()
 	api.BaseRoutes.Promo = api.BaseRoutes.Promos.PathPrefix("/{promo_id:[A-Za-z0-9]+}").Subrouter()
@@ -266,7 +245,6 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 
 	api.InitConfig()
 	api.InitPreference()
-
 
 	api.InitCluster()
 
@@ -305,7 +283,6 @@ func (api *API) Handle404(w http.ResponseWriter, r *http.Request) {
 }
 
 var ReturnStatusOK = web.ReturnStatusOK
-
 
 func ReturnStatusStageTokenOK(w http.ResponseWriter, token string) {
 	m := make(map[string]string)

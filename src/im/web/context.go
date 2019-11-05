@@ -1,4 +1,3 @@
-
 package web
 
 import (
@@ -483,7 +482,6 @@ func (c *Context) RequirePreferenceName() *Context {
 	return c
 }
 
-
 func (c *Context) RequireHookId() *Context {
 	if c.Err != nil {
 		return c
@@ -573,7 +571,6 @@ func (c *Context) RequireRoleName() *Context {
 
 	return c
 }
-
 
 func (c *Context) RequireRemoteId() *Context {
 	if c.Err != nil {

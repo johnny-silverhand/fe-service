@@ -17,53 +17,53 @@ const (
 )
 
 type Params struct {
-	UserId         string
-	TeamId         string
-	InviteId       string
-	TokenId        string
-	ChannelId      string
-	PromoId        string
-	OfficeId       string
-	OrderId        string
-	TransactionId  string
-	LevelId        string
-	ExtraId        string
-	ProductId      string
-	CategoryId     string
+	UserId           string
+	TeamId           string
+	InviteId         string
+	TokenId          string
+	ChannelId        string
+	PromoId          string
+	OfficeId         string
+	OrderId          string
+	TransactionId    string
+	LevelId          string
+	ExtraId          string
+	ProductId        string
+	CategoryId       string
 	CategoryParentId string
 	CategoryDepth    string
 	DestinationId    string
-	PostId         string
-	FileId         string
-	Filename       string
-	PluginId       string
-	CommandId      string
-	HookId         string
-	ReportId       string
-	EmojiId        string
-	AppId          string
-	Email          string
-	Username       string
-	TeamName       string
-	ChannelName    string
-	PreferenceName string
-	EmojiName      string
-	Category       string
-	Service        string
-	JobId          string
-	JobType        string
-	ActionId       string
-	RoleId         string
-	RoleName       string
-	SchemeId       string
-	Scope          string
-	GroupId        string
-	MessageId      string
-	Page           int
-	PerPage        int
-	LogsPerPage    int
-	Permanent      bool
-	RemoteId       string
+	PostId           string
+	FileId           string
+	Filename         string
+	PluginId         string
+	CommandId        string
+	HookId           string
+	ReportId         string
+	EmojiId          string
+	AppId            string
+	Email            string
+	Username         string
+	TeamName         string
+	ChannelName      string
+	PreferenceName   string
+	EmojiName        string
+	Category         string
+	Service          string
+	JobId            string
+	JobType          string
+	ActionId         string
+	RoleId           string
+	RoleName         string
+	SchemeId         string
+	Scope            string
+	GroupId          string
+	MessageId        string
+	Page             int
+	PerPage          int
+	LogsPerPage      int
+	Permanent        bool
+	RemoteId         string
 
 	Sort         string
 	BotUserId    string

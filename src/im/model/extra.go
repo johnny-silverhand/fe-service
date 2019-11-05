@@ -16,16 +16,16 @@ type Extra struct {
 }
 
 type ExtraBasket struct {
-	Products        []string `json:"products"`
-
+	Products []string `json:"products"`
 }
+
 func (extra *ExtraBasket) ToJson() string {
 	b, _ := json.Marshal(extra)
 	return string(b)
 }
 
 func ExtraBasketFromJson(data io.Reader) *ExtraBasket {
-	var product *Extra
+	var product *ExtraBasket
 	json.NewDecoder(data).Decode(&product)
 	return product
 }
@@ -40,7 +40,6 @@ func ExtraFromJson(data io.Reader) *Extra {
 	json.NewDecoder(data).Decode(&product)
 	return product
 }
-
 
 func (o *Extra) Clone() *Extra {
 	copy := *o
@@ -61,7 +60,6 @@ func (o *Extra) PreSave() {
 
 func (o *Extra) PreCommit() {
 
-	
 }
 
 func (o *Extra) MakeNonNil() {
@@ -81,8 +79,6 @@ func (o *Extra) IsValid() *AppError {
 	if o.UpdateAt == 0 {
 		return NewAppError("Extra.IsValid", "model.product.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
-
-
 
 	return nil
 }

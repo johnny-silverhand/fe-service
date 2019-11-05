@@ -1,4 +1,3 @@
-
 package sqlstore
 
 import (
@@ -97,8 +96,8 @@ type SqlSupplierOldStores struct {
 	category             store.CategoryStore
 	transaction          store.TransactionStore
 	linkMetadata         store.LinkMetadataStore
-	level          store.LevelStore
-	extra          store.ExtraStore
+	level                store.LevelStore
+	extra                store.ExtraStore
 }
 
 type SqlSupplier struct {
@@ -981,7 +980,6 @@ func (ss *SqlSupplier) FileInfo() store.FileInfoStore {
 	return ss.oldStores.fileInfo
 }
 
-
 func (ss *SqlSupplier) Job() store.JobStore {
 	return ss.oldStores.job
 }
@@ -994,7 +992,6 @@ func (ss *SqlSupplier) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 	return ss.oldStores.channelMemberHistory
 }
 
-
 func (ss *SqlSupplier) Role() store.RoleStore {
 	return ss.oldStores.role
 }
@@ -1002,7 +999,6 @@ func (ss *SqlSupplier) Role() store.RoleStore {
 func (ss *SqlSupplier) Scheme() store.SchemeStore {
 	return ss.oldStores.scheme
 }
-
 
 func (ss *SqlSupplier) LinkMetadata() store.LinkMetadataStore {
 	return ss.oldStores.linkMetadata

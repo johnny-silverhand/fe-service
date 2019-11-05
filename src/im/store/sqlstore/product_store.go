@@ -2,10 +2,10 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
 	"im/mlog"
 	"im/model"
 	"im/store"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -98,7 +98,6 @@ func (s SqlProductStore) Publish(product *model.Product) store.StoreChannel {
 	})
 }
 
-
 func (s *SqlProductStore) Save(product *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if len(product.Id) > 0 {
@@ -119,8 +118,6 @@ func (s *SqlProductStore) Save(product *model.Product) store.StoreChannel {
 		}
 	})
 }
-
-
 
 func (s *SqlProductStore) Update(newProduct *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -152,7 +149,6 @@ func (s *SqlProductStore) Get(id string) store.StoreChannel {
 		}
 	})
 }
-
 
 func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -209,7 +205,6 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -234,14 +229,12 @@ func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
 }
 
 func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
-
 
 	return store.Do(func(result *store.StoreResult) {
 
@@ -276,7 +269,6 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 			query += prefixSub
 		}
 
-
 		query += ` ORDER BY ` + order.Column + ` `
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
@@ -297,18 +289,12 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 
 		}
 
-
-
-
-
 	})
 }
-
 
 func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -323,8 +309,7 @@ func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 			result.Err = appErr(err.Error())
 		}
 
-		time:= model.GetMillis()
-
+		time := model.GetMillis()
 
 		_, err = s.GetMaster().Exec("UPDATE Products SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE Id = :Id", map[string]interface{}{"DeleteAt": time, "UpdateAt": time, "Id": productId})
 		if err != nil {
@@ -333,11 +318,9 @@ func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 	})
 }
 
-
 func (s *SqlProductStore) Overwrite(product *model.Product) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		product.UpdateAt = model.GetMillis()
-
 
 		if result.Err = product.IsValid(); result.Err != nil {
 			return
