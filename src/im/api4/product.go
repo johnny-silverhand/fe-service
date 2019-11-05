@@ -6,12 +6,11 @@ import (
 )
 
 func (api *API) InitProduct() {
-
-	api.BaseRoutes.Products.Handle("", api.ApiHandler(getProducts)).Methods("GET")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET")
+	api.BaseRoutes.Products.Handle("", api.ApiHandler(getProducts)).Methods("GET")
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
-	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
+	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 }
 
 func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -30,26 +29,17 @@ func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
-
 	c.RequireCategoryId()
 	if c.Err != nil {
 		return
 	}
-	products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId)
 
-	if err != nil {
+	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
+	} else {
+		w.Write([]byte(products.ToJson()))
 	}
-	//// LOAD MEDIA GIVE IN ONE FUNCTION FOR RE-USE
-	/*for i, product := range products {
-		media, err := c.App.GetMediaByProduct(product)
-		if err == nil {
-			products[i].Media = media
-		}
-	}*/
-
-	w.Write([]byte(products.ToJson()))
 }
 
 func createProduct(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -69,7 +59,6 @@ func createProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(result.ToJson()))
 }
 
-
 func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
 	if c.Err != nil {
@@ -83,7 +72,7 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 	//var since int64
 	//var parseError error
 
-/*	if len(sinceString) > 0 {
+	/*	if len(sinceString) > 0 {
 		since, parseError = strconv.ParseInt(sinceString, 10, 64)
 		if parseError != nil {
 			c.SetInvalidParam("since")
@@ -95,13 +84,11 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 	var err *model.AppError
 	etag := ""
 
-
 	/*val := reflect.ValueOf(model.Product{})
 	for i := 0; i < val.Type().NumField(); i++ {
 		// prints empty line if there is no json tag for the field
 		if ()(val.Type().Field(i).Tag.Get("json"))
 	}*/
-
 
 	list, err = c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId)
 	/*if since > 0 {
@@ -144,7 +131,6 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte(c.App.PrepareProductListForClient(list).ToJson()))
 }
 
-
 func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireProductId()
 	if c.Err != nil {
@@ -168,11 +154,10 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	product.MoreImageIds = nil
 
-
 	/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
-			c.SetPermissionError(model.PERMISSION_EDIT_POST)
-			return
-		}*/
+		c.SetPermissionError(model.PERMISSION_EDIT_POST)
+		return
+	}*/
 
 	/*originalProduct, err := c.App.GetSingleProduct(c.Params.ProductId)
 	if err != nil {

@@ -7,26 +7,44 @@ import (
 )
 
 type Category struct {
-	Id            string      `json:"id"`
-	ClientId      string      `json:"client_id"`
-	Name          string      `json:"name"`
-	ParentId      string      `json:"parent_id"`
-	CreateAt      int64       `json:"create_at"`
-	UpdateAt      int64       `json:"update_at"`
-	DeleteAt      int64       `json:"delete_at"`
-	Lft           int         `json:"lft"`
-	Rgt           int         `json:"rgt"`
-	Depth         int         `json:"depth"`
-	CountChildren int         `db:"-" json:"count_children"`
-	Children      []*Category `db:"-" json:"children"`
-
-
-	//Products []*Products `json:"products"`
+	Id            string       `json:"id"`
+	ClientId      string       `json:"client_id"`
+	Name          string       `json:"name"`
+	ParentId      string       `json:"parent_id"`
+	CreateAt      int64        `json:"create_at"`
+	UpdateAt      int64        `json:"update_at"`
+	Lft           int          `json:"lft"`
+	Rgt           int          `json:"rgt"`
+	Depth         int          `json:"depth"`
+	CountChildren int          `db:"-" json:"count_children"`
+	Children      []*Category  `db:"-" json:"children"`
+	DestinationId string       `db:"-" json:"destination_id"`
+	ProductList   *ProductList `db:"-" json:"products"`
 }
 
 type CategoryPatch struct {
-	Name     string `json:"name"`
-	ParentId *int   `json:"parent_id"`
+	Id       string `db:"Id"`
+	ClientId string `db:"ClientId"`
+	Name     string `db:"Name"`
+	ParentId string `db:"ParentId"`
+	CreateAt *int64 `db:"CreateAt"`
+	UpdateAt *int64 `db:"UpdateAt"`
+	DeleteAt *int64 `db:"DeleteAt"`
+}
+
+func (c *Category) NewCp(id string, name string) *CategoryPatch {
+	cp := CategoryPatch{}
+	cp.Id = id
+	cp.Name = name
+	return &cp
+}
+
+func (category *Category) SetPatch() *CategoryPatch {
+	patch := CategoryPatch{}
+	patch.ClientId = category.ClientId
+	patch.ParentId = category.ParentId
+	patch.Name = category.Name
+	return &patch
 }
 
 func (category *Category) ToJson() string {
@@ -35,8 +53,12 @@ func (category *Category) ToJson() string {
 }
 
 func CategoriesToJson(categories []*Category) string {
+	if len(categories) < 2 {
+		m, _ := json.Marshal(categories)
+		return string(m)
+	}
 	sort.Slice(categories, func(i, j int) bool {
-		return categories[i].Depth > categories[j].Depth
+		return categories[i].Lft > categories[j].Lft
 	})
 	slice := make(map[string]*Category)
 	for i, _ := range categories {
@@ -44,6 +66,7 @@ func CategoriesToJson(categories []*Category) string {
 	}
 	for i, category := range categories {
 		if len(category.ParentId) > 0 && slice[category.ParentId] != nil {
+			slice[category.ParentId].CountChildren += 1
 			slice[category.ParentId].Children = append(slice[category.ParentId].Children, categories[i])
 		}
 	}
@@ -54,19 +77,13 @@ func CategoriesToJson(categories []*Category) string {
 		}
 	}
 	sort.Slice(tree, func(i, j int) bool {
-		return tree[i].Depth > tree[j].Depth
+		return tree[i].Lft > tree[j].Lft
 	})
 	outdata, err := json.Marshal(tree)
 	if err != nil {
-		panic(err)
+		panic(err) // dont use panic
 	}
 	return string(outdata)
-}
-
-func CategoryFromJson(data io.Reader) *Category {
-	var category *Category
-	json.NewDecoder(data).Decode(&category)
-	return category
 }
 
 func (o *Category) PreSave() {
@@ -86,6 +103,8 @@ func (o *Category) PreCommit() {
 
 }
 
-func (o *Category) MakeNonNil() {
-
+func CategoryFromJson(data io.Reader) *Category {
+	var category *Category
+	json.NewDecoder(data).Decode(&category)
+	return category
 }

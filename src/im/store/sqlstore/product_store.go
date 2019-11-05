@@ -29,8 +29,6 @@ func NewSqlProductStore(sqlStore SqlStore) store.ProductStore {
 		table.ColMap("CategoryId").SetMaxSize(26)
 		table.ColMap("FileIds").SetMaxSize(150)
 
-
-
 	}
 
 	return s
@@ -254,7 +252,7 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 		queryArgs := make(map[string]interface{})
 
 		if len(categoryId) > 0 {
-			descendantsQuery := `SELECT Child.* FROM Categories  AS Child, Categories AS Parent WHERE Parent.Id=:ParentId AND Child.Left BETWEEN Parent.Left AND Parent.Right`
+			descendantsQuery := `SELECT Children.* FROM Categories  AS Children, Categories AS Parent WHERE Parent.Id=:ParentId AND Children.Left BETWEEN Parent.Left AND Parent.Right`
 
 			if _, err := s.GetReplica().Select(&descendants, descendantsQuery, map[string]interface{}{"ParentId": categoryId}); err != nil {
 				result.Err = model.NewAppError("SqlProductStore.GetAllByClientIdPage", "store.sql_products.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)

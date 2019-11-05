@@ -1,16 +1,88 @@
 package api4
 
 import (
+	"fmt"
 	"im/model"
 	"net/http"
 )
 
 func (api *API) InitCategory() {
+	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
+	api.BaseRoutes.Category.Handle("/path", api.ApiHandler(getCategoryPath)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(getCategories)).Methods("GET")
 	api.BaseRoutes.Categories.Handle("", api.ApiHandler(createCategory)).Methods("POST")
-
-	api.BaseRoutes.Category.Handle("", api.ApiHandler(getCategory)).Methods("GET")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(updateCategory)).Methods("PUT")
+	api.BaseRoutes.Category.Handle("/move", api.ApiHandler(moveCategory)).Methods("PUT")
+	api.BaseRoutes.Category.Handle("/order", api.ApiHandler(orderCategory)).Methods("PUT")
+	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
+}
+
+func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	category := model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id)
+	if err != nil {
+		return
+	}
+
+	storedCategory.ParentId = category.ParentId
+	if len(category.ParentId) > 0 {
+		err = c.App.MoveClientCategoryBySp(storedCategory)
+	} else {
+		_, err = c.App.DeleteOneCategory(storedCategory)
+		_, err = c.App.CreateCategoryBySp(storedCategory)
+	}
+
+	if err == nil {
+		ReturnStatusOK(w)
+	}
+}
+
+func orderCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	category := model.CategoryFromJson(r.Body)
+	storedCategory, err := c.App.GetCategory(category.Id)
+	if err != nil {
+		return
+	}
+
+	storedCategory.ParentId = category.ParentId
+	if len(category.DestinationId) > 0 {
+		storedCategory.DestinationId = category.DestinationId
+		err = c.App.OrderCategoryBySp(storedCategory)
+	}
+
+	if err == nil {
+		ReturnStatusOK(w)
+	}
+
+}
+
+func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	if categories, err := c.App.GetCategoryPath(c.Params.CategoryId); err != nil {
+		c.Err = err
+		return
+	} else {
+
+		// load products for categories
+		for i, category := range categories {
+			if productList, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id); err == nil {
+				categories[i].ProductList = productList
+			}
+		}
+
+		w.Write([]byte(model.CategoriesToJson(categories)))
+	}
 }
 
 func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -18,29 +90,19 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	category, err := c.App.GetCategory(c.Params.CategoryId)
-	if err != nil {
+	if category, err := c.App.GetCategory(c.Params.CategoryId); err != nil {
 		c.Err = err
 		return
-	}
+	} else {
+		productList, _ := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id)
+		category.ProductList = productList
 
-	w.Write([]byte(category.ToJson()))
+		w.Write([]byte(category.ToJson()))
+	}
 }
-func getCategoryWithChildren(c *Context, w http.ResponseWriter, r *http.Request) {
 
-	c.RequireCategoryId()
-	if c.Err != nil {
-		return
-	}
-	categories, err := c.App.GetCategoryWithChildren(c.Params.CategoryId)
-	if err != nil {
-		c.Err = err
-		return
-	}
-	w.Write([]byte(model.CategoriesToJson(categories)))
-}
 func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
-	categories, err := c.App.GetCategoriesPage(c.Params.Page, c.Params.PerPage)
+	categories, err := c.App.GetCategoriesPage(0, c.Params.PerPage)
 	if err != nil {
 		c.Err = err
 		return
@@ -54,7 +116,7 @@ func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = model.NewAppError("createCategory", "api.category", nil, "nil object", http.StatusForbidden)
 		return
 	}
-	result, err := c.App.CreateCategory(category)
+	result, err := c.App.CreateCategoryBySp(category)
 	if err != nil {
 		c.Err = err
 		return
@@ -69,7 +131,7 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	category := model.CategoryFromJson(r.Body)
-
+	fmt.Print(category)
 	if category == nil {
 		c.SetInvalidParam("category")
 		return
@@ -81,20 +143,6 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Updating the file_ids of a post is not a supported operation and will be ignored
-
-
-/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
-
-	/*originalCategory, err := c.App.GetSingleCategory(c.Params.CategoryId)
-	if err != nil {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
-
 	category.Id = c.Params.CategoryId
 
 	rcategory, err := c.App.UpdateCategory(category, false)
@@ -104,4 +152,22 @@ func updateCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(rcategory.ToJson()))
+}
+
+func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
+	category, err := c.App.GetCategory(c.Params.CategoryId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	c.App.DeleteCategory(category)
+	/*
+		if err != nil {
+			c.Err = err
+			ReturnStatusOK(w)
+		}
+	*/
+	ReturnStatusOK(w)
+
+	//w.Write([]byte(model.MapToJson(map[string]string{"status": strconv.Itoa(result["status"])})))
 }

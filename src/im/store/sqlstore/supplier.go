@@ -128,12 +128,16 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.channel = NewSqlChannelStore(supplier)
 	supplier.oldStores.post = NewSqlPostStore(supplier)
 	supplier.oldStores.user = NewSqlUserStore(supplier)
+
 	supplier.oldStores.audit = NewSqlAuditStore(supplier)
 	supplier.oldStores.cluster = NewSqlClusterDiscoveryStore(supplier)
+
 	supplier.oldStores.session = NewSqlSessionStore(supplier)
 	supplier.oldStores.oauth = NewSqlOAuthStore(supplier)
 	supplier.oldStores.system = NewSqlSystemStore(supplier)
+
 	supplier.oldStores.preference = NewSqlPreferenceStore(supplier)
+
 	supplier.oldStores.token = NewSqlTokenStore(supplier)
 	supplier.oldStores.section = NewSqlSectionStore(supplier)
 	supplier.oldStores.status = NewSqlStatusStore(supplier)
@@ -977,6 +981,7 @@ func (ss *SqlSupplier) FileInfo() store.FileInfoStore {
 	return ss.oldStores.fileInfo
 }
 
+
 func (ss *SqlSupplier) Job() store.JobStore {
 	return ss.oldStores.job
 }
@@ -989,6 +994,7 @@ func (ss *SqlSupplier) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 	return ss.oldStores.channelMemberHistory
 }
 
+
 func (ss *SqlSupplier) Role() store.RoleStore {
 	return ss.oldStores.role
 }
@@ -996,6 +1002,7 @@ func (ss *SqlSupplier) Role() store.RoleStore {
 func (ss *SqlSupplier) Scheme() store.SchemeStore {
 	return ss.oldStores.scheme
 }
+
 
 func (ss *SqlSupplier) LinkMetadata() store.LinkMetadataStore {
 	return ss.oldStores.linkMetadata

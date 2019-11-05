@@ -103,6 +103,8 @@ type Routes struct {
 	Category           *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9_-]+}'
 	CategoriesByClient *mux.Router // 'api/v4/categories/client/{client_id:[A-Za-z0-9_-]+}'
 
+	MoveCategory 		*mux.Router // 'api/v4/categories/move/{category_id:[A-Za-z0-9_-]+}'
+
 	ProductsForCategory *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9]+}/products'
 
 	Products         *mux.Router // 'api/v4/products'
@@ -222,6 +224,9 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Categories = api.BaseRoutes.ApiRoot.PathPrefix("/categories").Subrouter()
 	api.BaseRoutes.Category = api.BaseRoutes.Categories.PathPrefix("/{category_id:[A-Za-z0-9]+}").Subrouter()
 	api.BaseRoutes.CategoriesByClient = api.BaseRoutes.Categories.PathPrefix("/client/{client_id:[A-Za-z0-9]+}").Subrouter()
+
+	//Удаление перемещение пересчет дерева
+	api.BaseRoutes.MoveCategory = api.BaseRoutes.Categories.PathPrefix("/{category_id:[A-Za-z0-9]+}/move").Subrouter()
 
 	api.BaseRoutes.Products = api.BaseRoutes.ApiRoot.PathPrefix("/products").Subrouter()
 	api.BaseRoutes.Product = api.BaseRoutes.Products.PathPrefix("/{product_id:[A-Za-z0-9]+}").Subrouter()
