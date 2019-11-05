@@ -76,6 +76,13 @@ type Store interface {
 
 	Product() ProductStore
 	Category() CategoryStore
+	Promo() PromoStore
+	Office() OfficeStore
+	Order() OrderStore
+	Basket() BasketStore
+	Transaction() TransactionStore
+	Level() LevelStore
+	Extra() ExtraStore
 }
 
 type TeamStore interface {
@@ -494,8 +501,9 @@ type ProductStore interface {
 	GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) StoreChannel
 	Update(newProduct *model.Product) StoreChannel
 	Overwrite(product *model.Product) StoreChannel
-/*	Publish(product *model.Product) StoreChannel
-	GetExtras(product *model.Product) StoreChannel*/
+	GetProductsByIds(productIds []string, allowFromCache bool) StoreChannel
+	/*	Publish(product *model.Product) StoreChannel
+		GetExtras(product *model.Product) StoreChannel*/
 }
 
 type CategoryStore interface {
@@ -509,4 +517,119 @@ type CategoryStore interface {
 	GetDescendants(category *model.Category) StoreChannel
 	GetWithChildren(categoryId string) StoreChannel
 
+}
+
+type PromoStore interface {
+	Save(promo *model.Promo) StoreChannel
+	Get(promoId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Activate(promoId string) StoreChannel
+	Deactivate(promoId string) StoreChannel
+	Update(newPromo *model.Promo) StoreChannel
+	Overwrite(promo *model.Promo) StoreChannel
+	Delete(promoId string, time int64, deleteByID string) StoreChannel
+
+	GetAllPromos(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllPromosSince(time int64, allowFromCache bool) StoreChannel
+	GetAllPromosBefore( promoId string, numPromos int, offset int) StoreChannel
+	GetAllPromosAfter(promoId string, numPromos int, offset int) StoreChannel
+
+}
+
+type OfficeStore interface {
+	Save(office *model.Office) StoreChannel
+	Get(officeId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Activate(officeId string) StoreChannel
+	Deactivate(officeId string) StoreChannel
+	Update(newOffice *model.Office) StoreChannel
+	Overwrite(office *model.Office) StoreChannel
+	Delete(officeId string, time int64, deleteByID string) StoreChannel
+
+	GetAllOffices(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllOfficesSince(time int64, allowFromCache bool) StoreChannel
+	GetAllOfficesBefore( officeId string, numOffices int, offset int) StoreChannel
+	GetAllOfficesAfter(officeId string, numOffices int, offset int) StoreChannel
+
+}
+
+type TransactionStore interface {
+	Save(transaction *model.Transaction) StoreChannel
+	Get(transactionId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Update(newTransaction *model.Transaction) StoreChannel
+	Overwrite(transaction *model.Transaction) StoreChannel
+	Delete(transactionId string, time int64, deleteByID string) StoreChannel
+
+	GetAllTransactions(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllTransactionsSince(time int64, allowFromCache bool) StoreChannel
+	GetAllTransactionsBefore( transactionId string, numTransactions int, offset int) StoreChannel
+	GetAllTransactionsAfter(transactionId string, numTransactions int, offset int) StoreChannel
+
+
+}
+
+type OrderStore interface {
+	Save(order *model.Order) StoreChannel
+	Get(orderId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Cancel(orderId string) StoreChannel
+	Update(newOrder *model.Order) StoreChannel
+	Overwrite(order *model.Order) StoreChannel
+	Delete(orderId string, time int64, deleteByID string) StoreChannel
+
+	GetAllOrders(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllOrdersSince(time int64, allowFromCache bool) StoreChannel
+	GetAllOrdersBefore( orderId string, numOrders int, offset int) StoreChannel
+	GetAllOrdersAfter(orderId string, numOrders int, offset int) StoreChannel
+
+	GetFromMaster(id string) StoreChannel
+	SaveBasket(orderId string, positions []*model.Basket) StoreChannel
+
+	SaveWithBasket(order *model.Order) StoreChannel
+
+	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
+}
+
+type BasketStore interface {
+	Save(basket *model.Basket) StoreChannel
+	GetByOrderId(orderId string) StoreChannel
+	GetByUserId(userId string) StoreChannel
+	Update(newBasket *model.Basket) StoreChannel
+	Overwrite(basket *model.Basket) StoreChannel
+	Delete(basketId string, time int64, deleteByID string) StoreChannel
+}
+
+type LevelStore interface {
+	Save(level *model.Level) StoreChannel
+	Get(levelId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Activate(levelId string) StoreChannel
+	Deactivate(levelId string) StoreChannel
+	Update(newLevel *model.Level) StoreChannel
+	Overwrite(level *model.Level) StoreChannel
+	Delete(levelId string, time int64, deleteByID string) StoreChannel
+
+	GetAllLevels(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllLevelsSince(time int64, allowFromCache bool) StoreChannel
+	GetAllLevelsBefore( levelId string, numLevels int, offset int) StoreChannel
+	GetAllLevelsAfter(levelId string, numLevels int, offset int) StoreChannel
+
+}
+
+type ExtraStore interface {
+	Save(extra *model.Extra) StoreChannel
+	Get(extraId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+
+	Update(newExtra *model.Extra) StoreChannel
+	Overwrite(extra *model.Extra) StoreChannel
+	Delete(extraId string, time int64, deleteByID string) StoreChannel
+
+	GetAllExtras(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllExtrasSince(time int64, allowFromCache bool) StoreChannel
+	GetAllExtrasBefore( extraId string, numExtras int, offset int) StoreChannel
+	GetAllExtrasAfter(extraId string, numExtras int, offset int) StoreChannel
+
+	GetExtraProductsByIds(productIds []string, allowFromCache bool) StoreChannel
 }

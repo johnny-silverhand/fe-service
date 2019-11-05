@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"im/mlog"
 	"im/model"
 	"im/store"
 	"fmt"
@@ -348,6 +349,24 @@ func (s *SqlProductStore) Overwrite(product *model.Product) store.StoreChannel {
 			result.Err = model.NewAppError("SqlProductStore.Overwrite", "store.sql_product.overwrite.app_error", nil, "id="+product.Id+", "+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = product
+		}
+	})
+}
+
+func (s SqlProductStore) GetProductsByIds(productIds []string, allowFromCache bool) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		keys, params := MapStringsToQueryParams(productIds, "Product")
+
+		query := `SELECT * FROM Products WHERE Id IN ` + keys
+
+		var products []*model.Product
+		_, err := s.GetReplica().Select(&products, query, params)
+
+		if err != nil {
+			mlog.Error(fmt.Sprint(err))
+			result.Err = model.NewAppError("SqlProductStore.GetProductsByIds", "store.sql_product.get_products_by_ids.app_error", nil, "", http.StatusInternalServerError)
+		} else {
+			result.Data = products
 		}
 	})
 }

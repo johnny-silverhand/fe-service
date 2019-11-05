@@ -8,15 +8,13 @@ import (
 )
 
 type Product struct {
-	Id       string `json:"id"`
-	ClientId string `json:"client_id"`
-
-	Name        string  `json:"name"`
-	Preview     string  `json:"preview"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price,string"`
-	Value       float64 `json:"value,string"`
-
+	Id            string  `json:"id"`
+	ClientId      string  `json:"client_id"`
+	Name          string  `json:"name"`
+	Preview       string  `json:"preview"`
+	Description   string  `json:"description"`
+	Price         float64 `json:"price,string"`
+	Currency      string  `json:"currency"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
 	Status        bool    `json:"status"`
@@ -25,16 +23,13 @@ type Product struct {
 	DeleteAt      int64   `json:"delete_at"`
 	CategoryId    string  `json:"category_id"`
 	//Category      *Category `json:"category"`
-	FileIds StringArray `json:"file_ids,omitempty"`
-
-	Image      *FileInfo   `json:"image,omitempty" db:"-"`
-	MoreImage      []*FileInfo   `json:"more_image,omitempty" db:"-"`
-
-	ImageId string `json:"image_id,omitempty"`
-	MoreImageIds StringArray `json:"more_image_ids,omitempty"`
-
-	Category *Category `json:"category,omitempty" db:"-"`
-	Metadata *ProductMetadata `json:"metadata,omitempty" db:"-"`
+	FileIds      StringArray      `json:"file_ids,omitempty"`
+	Image        *FileInfo        `json:"image,omitempty" db:"-"`
+	MoreImage    []*FileInfo      `json:"more_image,omitempty" db:"-"`
+	ImageId      string           `json:"image_id,omitempty"`
+	MoreImageIds StringArray      `json:"more_image_ids,omitempty"`
+	Category     *Category        `json:"category,omitempty" db:"-"`
+	Metadata     *ProductMetadata `json:"metadata,omitempty" db:"-"`
 }
 
 type ProductPatch struct {

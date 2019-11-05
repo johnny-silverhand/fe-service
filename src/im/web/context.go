@@ -215,6 +215,66 @@ func (c *Context) RequireProductId() *Context {
 	}
 	return c
 }
+func (c *Context) RequirePromoId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.PromoId) != 26 {
+		c.SetInvalidUrlParam("promo_id")
+	}
+	return c
+}
+func (c *Context) RequireOrderId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.OrderId) != 26 {
+		c.SetInvalidUrlParam("order_id")
+	}
+	return c
+}
+func (c *Context) RequireTransactionId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.TransactionId) != 26 {
+		c.SetInvalidUrlParam("transaction_id")
+	}
+	return c
+}
+func (c *Context) RequireOfficeId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.OfficeId) != 26 {
+		c.SetInvalidUrlParam("office_id")
+	}
+	return c
+}
+func (c *Context) RequireLevelId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.LevelId) != 26 {
+		c.SetInvalidUrlParam("level_id")
+	}
+	return c
+}
+func (c *Context) RequireExtraId() *Context {
+	if c.Err != nil {
+		return c
+	}
+
+	if len(c.Params.ExtraId) != 26 {
+		c.SetInvalidUrlParam("extra_id")
+	}
+	return c
+}
 func (c *Context) RequireChannelId() *Context {
 	if c.Err != nil {
 		return c

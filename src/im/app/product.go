@@ -14,6 +14,15 @@ import (
 	product.Status = true
 	return product, nil
 }*/
+func (a *App) GetSingleProduct(productId string) (*model.Product, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().Get(productId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.Product), nil
+}
 
 func (a *App) GetProduct(productId string) (*model.Product, *model.AppError) {
 
@@ -163,7 +172,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	}
 
 	newProduct.Price = product.Price
-	newProduct.Value = product.Value
+
 	newProduct.DiscountLimit = product.DiscountLimit
 	newProduct.Cashback = product.Cashback
 	newProduct.Preview = product.Preview

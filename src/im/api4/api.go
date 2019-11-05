@@ -107,7 +107,28 @@ type Routes struct {
 
 	Products         *mux.Router // 'api/v4/products'
 	Product          *mux.Router // 'api/v4/products/{product_id:[A-Za-z0-9_-]+}'
+
 	ProductsByClient *mux.Router // 'api/v4/products/client/{client_id:[A-Za-z0-9_-]+}'
+
+	Promos          *mux.Router // 'api/v4/promos'
+	Promo          *mux.Router // 'api/v4/promos/{promo_id:[A-Za-z0-9_-]+}'
+
+	Offices          *mux.Router // 'api/v4/offices'
+	Office          *mux.Router // 'api/v4/offices/{office_id:[A-Za-z0-9_-]+}'
+
+	Orders          *mux.Router // 'api/v4/orders'
+	Order          *mux.Router // 'api/v4/orders/{order_id:[A-Za-z0-9_-]+}'
+
+	Transactions          *mux.Router // 'api/v4/transactions'
+	Transaction          *mux.Router // 'api/v4/transactions/{transaction_id:[A-Za-z0-9_-]+}'
+
+	Basket          *mux.Router // 'api/v4/basket/{office_id:[A-Za-z0-9_-]+}'
+
+	Levels          *mux.Router // 'api/v4/levels'
+	Level          *mux.Router // 'api/v4/levels/{level_id:[A-Za-z0-9_-]+}'
+
+	Extras          *mux.Router // 'api/v4/extras'
+	Extra          *mux.Router // 'api/v4/extras/{extra_id:[A-Za-z0-9_-]+}'
 
 }
 
@@ -208,6 +229,27 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 
 	api.BaseRoutes.ProductsForCategory = api.BaseRoutes.Category.PathPrefix("/products").Subrouter()
 
+
+	api.BaseRoutes.Promos = api.BaseRoutes.ApiRoot.PathPrefix("/promos").Subrouter()
+	api.BaseRoutes.Promo = api.BaseRoutes.Promos.PathPrefix("/{promo_id:[A-Za-z0-9]+}").Subrouter()
+
+	api.BaseRoutes.Offices = api.BaseRoutes.ApiRoot.PathPrefix("/offices").Subrouter()
+	api.BaseRoutes.Office = api.BaseRoutes.Offices.PathPrefix("/{office_id:[A-Za-z0-9]+}").Subrouter()
+
+	api.BaseRoutes.Orders = api.BaseRoutes.ApiRoot.PathPrefix("/orders").Subrouter()
+	api.BaseRoutes.Order = api.BaseRoutes.Orders.PathPrefix("/{order_id:[A-Za-z0-9]+}").Subrouter()
+
+	api.BaseRoutes.Transactions = api.BaseRoutes.ApiRoot.PathPrefix("/transactions").Subrouter()
+	api.BaseRoutes.Transaction = api.BaseRoutes.Transactions.PathPrefix("/{transaction_id:[A-Za-z0-9]+}").Subrouter()
+
+	api.BaseRoutes.Basket = api.BaseRoutes.ApiRoot.PathPrefix("/basket").Subrouter()
+
+	api.BaseRoutes.Levels = api.BaseRoutes.ApiRoot.PathPrefix("/levels").Subrouter()
+	api.BaseRoutes.Level = api.BaseRoutes.Levels.PathPrefix("/{level_id:[A-Za-z0-9]+}").Subrouter()
+
+	api.BaseRoutes.Extras = api.BaseRoutes.ApiRoot.PathPrefix("/extras").Subrouter()
+	api.BaseRoutes.Extra = api.BaseRoutes.Extras.PathPrefix("/{extra_id:[A-Za-z0-9]+}").Subrouter()
+
 	api.InitUser()
 
 	api.InitTeam()
@@ -241,7 +283,13 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitCategory()
 	api.InitProduct()
 	api.InitSection()
-
+	api.InitPromo()
+	api.InitOffice()
+	api.InitOrder()
+	api.InitTransaction()
+	api.InitLevel()
+	api.InitExtra()
+	//api.InitBasket()
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api

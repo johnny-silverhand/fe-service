@@ -1,0 +1,83 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+POST http://localhost:8065/api/v4/orders
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
+X-Requested-With: XMLHttpRequest
+
+{
+  "payed": false,
+  "payed_at": 0,
+  "canceled": false,
+  "canceled_at": 0,
+  "reason_canceled": "",
+  "status": "",
+  "status_at": 0,
+  "price_delivery": 0,
+  "date_allow_delivery": 0,
+  "price": 0,
+  "currency": "",
+  "discount_value": 0,
+  "user_id": "",
+  "pay_system_id": "",
+  "delivery_id": "",
+  "pay_systems_tatus": "",
+  "pay_system_code": "",
+  "pay_system_description": "",
+  "pay_system_message": "",
+  "pay_system_sum": 0,
+  "pay_system_currency": "",
+  "pay_system_response_at": 0,
+  "create_at": 1572509861686,
+  "update_at": 1572509861686,
+  "delete_at": 0,
+  "address": "",
+  "comment": "",
+  "phone": "",
+  "positions": [
+    {
+      "product_id": "9n18sf131iymx8ecgbfc3x6nmo",
+      "quantity": 2
+    },
+    {
+      "product_id": "9n18sf131iymx8ecgbfc3x6nmo",
+      "quantity": 2
+    }
+  ]
+}
+
+###
+GET http://localhost:8065/api/v4/products
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
+X-Requested-With: XMLHttpRequest
+
+
+
+###
+DELETE http://localhost:8065/api/v4/orders/iskwjjg1dbfkmb8o3f8wk839rw
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
+X-Requested-With: XMLHttpRequest
+
+
+###
+
+GET http://localhost:8065/api/v4/orders/j3xfh4xqwifejkwbpwmfxj8qww
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
+X-Requested-With: XMLHttpRequest
+
+###
