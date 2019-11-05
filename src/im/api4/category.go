@@ -75,11 +75,11 @@ func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
 	} else {
 
 		// load products for categories
-		for i, category := range categories {
+		/*	for i, category := range categories {
 			if productList, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id); err == nil {
 				categories[i].ProductList = productList
 			}
-		}
+		}*/
 
 		w.Write([]byte(model.CategoriesToJson(categories)))
 	}

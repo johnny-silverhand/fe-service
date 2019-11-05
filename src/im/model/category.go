@@ -18,18 +18,18 @@ type Category struct {
 	Depth         int          `json:"depth"`
 	CountChildren int          `db:"-" json:"count_children"`
 	Children      []*Category  `db:"-" json:"children"`
-	DestinationId string       `db:"-" json:"destination_id"`
-	ProductList   *ProductList `db:"-" json:"products"`
+	DestinationId string       `db:"-" json:"destination_id,omitempty"`
+	ProductList   *ProductList `db:"-" json:"products,omitempty"`
 }
 
 type CategoryPatch struct {
-	Id       string `db:"Id"`
-	ClientId string `db:"ClientId"`
-	Name     string `db:"Name"`
-	ParentId string `db:"ParentId"`
-	CreateAt *int64 `db:"CreateAt"`
-	UpdateAt *int64 `db:"UpdateAt"`
-	DeleteAt *int64 `db:"DeleteAt"`
+	Id       string `db:"id"`
+	ClientId string `db:"client_id"`
+	Name     string `db:"name"`
+	ParentId string `db:"parent_id"`
+	CreateAt *int64 `db:"create_at"`
+	UpdateAt *int64 `db:"update_at"`
+	DeleteAt *int64 `db:"delete_at"`
 }
 
 func (c *Category) NewCp(id string, name string) *CategoryPatch {

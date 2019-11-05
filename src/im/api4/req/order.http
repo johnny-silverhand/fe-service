@@ -81,3 +81,11 @@ X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
 X-Requested-With: XMLHttpRequest
 
 ###
+GET http://localhost:8065/api/v4/orders/c3ps3h75jfyhfdbcj37a854m5o/prepayment
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
+X-Requested-With: XMLHttpRequest
+
+###

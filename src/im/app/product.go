@@ -56,7 +56,10 @@ func (a *App) GetProducts(offset int, limit int, sort string, categoryId string)
 		return nil, result.Err
 	}
 
-	return result.Data.(*model.ProductList), nil
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+
+	return list, nil
+
 }
 
 func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppError) {
@@ -79,14 +82,14 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 
 func (a *App) attachMediaToProduct(product *model.Product) *model.AppError {
 	var attachedIds []string
-	for _, image := range product.Media {
-		result := <-a.Srv.Store.FileInfo().AttachTo(image.Id, product.Id, model.METADATA_TYPE_PRODUCT)
+	for _, media := range product.Media {
+		result := <-a.Srv.Store.FileInfo().AttachTo(media.Id, product.Id, model.METADATA_TYPE_PRODUCT)
 		if result.Err != nil {
-			mlog.Warn("Failed to attach file to post", mlog.String("file_id", image.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+			mlog.Warn("Failed to attach file to post", mlog.String("file_id", media.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
 			continue
 		}
 
-		attachedIds = append(attachedIds, image.Id)
+		attachedIds = append(attachedIds, media.Id)
 	}
 
 	return nil
@@ -144,10 +147,15 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.Preview = product.Preview
 	newProduct.Description = product.Description
 
-	if !safeUpdate {
-		newProduct.FileIds = product.FileIds
-	}
+	//if !safeUpdate {
+	newProduct.Media = product.Media
+	//}
+	if len(newProduct.Media) > 0 {
+		if err := a.attachMediaToProduct(newProduct); err != nil {
+			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", newProduct.Id), mlog.Any("file_ids", newProduct.FileIds), mlog.Err(result.Err))
+		}
 
+	}
 	result = <-a.Srv.Store.Product().Update(newProduct)
 	if result.Err != nil {
 		return nil, result.Err

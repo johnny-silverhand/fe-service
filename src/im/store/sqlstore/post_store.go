@@ -36,12 +36,11 @@ func (s *SqlPostStore) ClearCaches() {
 	s.lastPostTimeCache.Purge()
 	s.lastPostsCache.Purge()
 
-
 }
 
 func NewSqlPostStore(sqlStore SqlStore) store.PostStore {
 	s := &SqlPostStore{
-		SqlStore:          sqlStore,
+		SqlStore: sqlStore,
 
 		lastPostTimeCache: utils.NewLru(LAST_POST_TIME_CACHE_SIZE),
 		lastPostsCache:    utils.NewLru(LAST_POSTS_CACHE_SIZE),
@@ -989,8 +988,6 @@ func (s *SqlPostStore) AnalyticsUserCountsWithPostsByDay(teamId string) store.St
 				LIMIT 30`
 		}
 
-
-
 	})
 }
 
@@ -1032,7 +1029,6 @@ func (s *SqlPostStore) AnalyticsPostCountsByDay(teamId string) store.StoreChanne
 				ORDER BY Name DESC
 				LIMIT 30`
 		}
-
 
 	})
 }
@@ -1377,8 +1373,6 @@ func (s *SqlPostStore) GetDirectPostParentsForExportAfter(limit int, afterId str
 	})
 }
 
-
-
 func (s SqlPostStore) GetAllMessages(userId string, offset int, limit int, allowFromCache bool, limitMin int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
@@ -1389,19 +1383,19 @@ func (s SqlPostStore) GetAllMessages(userId string, offset int, limit int, allow
 		var endTime int64
 		var startTime int64
 
-		endTime = model.GetMillis() +  60 * 60000
+		endTime = model.GetMillis() + 60*60000
 
-		if (limitMin > 0) {
-			startTime = model.GetMillis() -  limitMin //90 * 24 * 60 * 60000
+		if limitMin > 0 {
+			startTime = model.GetMillis() - limitMin //90 * 24 * 60 * 60000
 		} else {
-			startTime = model.GetMillis() -  90 * 24 * 60 * 60000
+			startTime = model.GetMillis() - 90*24*60*60000
 		}
 
 		var posts []*model.Post
-		_, err := s.GetReplica().Select(&posts, "SELECT * FROM Posts WHERE ChannelId IN " +
-			"(SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId )" +
-			" AND DeleteAt = 0 AND CreateAt >= :StartTime AND CreateAt <= :EndTime AND (Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL)" +
-			" ORDER BY CreateAt DESC OFFSET :Offset ROWS FETCH NEXT (:Limit) ROWS ONLY", map[string]interface{}{"UserId": userId, "Offset": offset, "Limit": limit, "StartTime": startTime, "EndTime" : endTime})
+		_, err := s.GetReplica().Select(&posts, "SELECT * FROM Posts WHERE ChannelId IN "+
+			"(SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId )"+
+			" AND DeleteAt = 0 AND CreateAt >= :StartTime AND CreateAt <= :EndTime AND (Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL)"+
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset ", map[string]interface{}{"UserId": userId, "Offset": offset, "Limit": limit, "StartTime": startTime, "EndTime": endTime})
 
 		/*		_, err := s.GetReplica().Select(&posts, `SELECT * FROM Posts LEFT JOIN Channels as CC ON CC.Id = Posts.ChannelId AND CC.CreatorId = :UserId
 				WHERE  Posts.DeleteAt = 0 AND (Posts.Type = '' OR Posts.Type = 'system_close_channel' OR Posts.Type = 'system_close_unresolved_channel' OR Posts.Type = 'system_channel_deleted_message' OR Posts.Type IS NULL)
@@ -1411,7 +1405,7 @@ func (s SqlPostStore) GetAllMessages(userId string, offset int, limit int, allow
 			result.Err = model.NewAppError("SqlMessageStore.GetAllMessages", "store.sql_post.get_root_posts.app_error", nil, "userId="+userId+err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewMessageArray()
 
@@ -1434,12 +1428,12 @@ func (s SqlPostStore) GetAllMessagesSince(userId string, time int64, allowFromCa
 		var startTime int64
 
 		ts := model.GetMillis()
-		endTime = ts +  60 * 60000
+		endTime = ts + 60*60000
 
-		if (limitMin > 0) {
-			startTime = ts -  limitMin //90 * 24 * 60 * 60000
+		if limitMin > 0 {
+			startTime = ts - limitMin //90 * 24 * 60 * 60000
 		} else {
-			startTime = ts -  90 * 24 * 60 * 60000
+			startTime = ts - 90*24*60*60000
 		}
 
 		var posts []*model.Post
@@ -1453,8 +1447,8 @@ WHERE
     (UpdateAt > :Time  AND CreateAt >= :StartTime AND CreateAt <= :EndTime
        AND ChannelId IN (SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId))
 ORDER BY UpdateAt
-    OFFSET 0 ROWS FETCH NEXT (1000) ROWS ONLY`,
-			map[string]interface{}{"UserId": userId, "Time": time, "StartTime" : startTime, "EndTime" : endTime})
+    LIMIT 1000 OFFSET 0`,
+			map[string]interface{}{"UserId": userId, "Time": time, "StartTime": startTime, "EndTime": endTime})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlMessageStore.GetAllMessagesSince", "store.sql_post.get_posts_since.app_error", nil, "userId="+userId+err.Error(), http.StatusInternalServerError)
@@ -1500,20 +1494,6 @@ func (s SqlPostStore) getAllMessagesAround(userId string, postId string, numMess
 			sort = "ASC"
 		}
 
-
-		var endTime int64
-		var startTime int64
-
-		ts := model.GetMillis()
-
-		endTime = ts +  60 * 60000
-
-		if (limitMin > 0) {
-			startTime = ts -  limitMin //90 * 24 * 60 * 60000
-		} else {
-			startTime = ts -  90 * 24 * 60 * 60000
-		}
-
 		var posts []*model.Post
 
 		_, err1 := s.GetReplica().Select(&posts,
@@ -1523,20 +1503,17 @@ func (s SqlPostStore) getAllMessagesAround(userId string, postId string, numMess
 			    Posts
 			WHERE
 				(Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL) AND
-				(CreateAt `+ direction+ ` (SELECT CreateAt FROM Posts WHERE Id = :MessageId)
+				(CreateAt `+direction+` (SELECT CreateAt FROM Posts WHERE Id = :MessageId)
 			        AND ChannelId IN (SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId )
 					)
-				AND (CreateAt >= :StartTime AND CreateAt <= :EndTime)
-			ORDER BY CreateAt `+ sort+ `
-			OFFSET :Offset ROWS FETCH NEXT (:NumMessages) ROWS ONLY`,
-			map[string]interface{}{"UserId": userId, "MessageId": postId, "NumMessages": numMessages, "Offset": offset, "StartTime": startTime, "EndTime" : endTime})
-
-
-
+				
+			ORDER BY CreateAt `+sort+`
+			LIMIT :NumMessages OFFSET :Offset`,
+			map[string]interface{}{"UserId": userId, "MessageId": postId, "NumMessages": numMessages, "Offset": offset})
 
 		if err1 != nil {
 			result.Err = model.NewAppError("SqlMessageStore.getAllMessagesAround", "store.sql_post.get_posts_around.get.app_error", nil, "userId="+userId+err1.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewMessageArray()
 
@@ -1558,5 +1535,3 @@ func (s SqlPostStore) getAllMessagesAround(userId string, postId string, numMess
 		}
 	})
 }
-
-

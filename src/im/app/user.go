@@ -39,7 +39,7 @@ const (
 	TOKEN_TYPE_TEAM_INVITATION    = "team_invitation"
 	PASSWORD_RECOVER_EXPIRY_TIME  = 1000 * 60 * 60      // 1 hour
 	TEAM_INVITATION_EXPIRY_TIME   = 1000 * 60 * 60 * 48 // 48 hours
-	TOKEN_RECOVER_EXPIRY_TIME     = 1000 * 60 * 10 // 1 hour
+	TOKEN_RECOVER_EXPIRY_TIME     = 1000 * 60 * 10      // 1 hour
 	IMAGE_PROFILE_PIXEL_DIMENSION = 128
 )
 
@@ -655,7 +655,6 @@ func (a *App) sanitizeProfiles(users []*model.User, asAdmin bool) []*model.User 
 	return users
 }
 
-
 func CreateProfileImage(username string, userId string, initialFont string) ([]byte, *model.AppError) {
 	colors := []color.NRGBA{
 		{197, 8, 126, 255},
@@ -771,7 +770,6 @@ func (a *App) GetProfileImage(user *model.User) ([]byte, bool, *model.AppError) 
 func (a *App) GetDefaultProfileImage(user *model.User) ([]byte, *model.AppError) {
 	var img []byte
 	var appErr *model.AppError
-
 
 	img, appErr = CreateProfileImage(user.Username, user.Id, *a.Config().FileSettings.InitialFont)
 
@@ -1616,7 +1614,7 @@ func (a *App) SearchUsersInTeam(teamId string, term string, options *model.UserS
 
 	esInterface := a.Elasticsearch
 
-	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableAutocomplete  {
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableAutocomplete {
 		usersIds, err := a.Elasticsearch.SearchUsersInTeam(teamId, term, options)
 		if err != nil {
 			return nil, err
@@ -1866,8 +1864,6 @@ func (a *App) FilterNonGroupChannelMembers(userIDs []string, channel *model.Chan
 	return nonMemberIDs, nil
 }
 
-
-
 func (a *App) VerifyFromStageTokenPhoneNew(userSuppliedTokenString string, code string) (*model.User, *model.AppError) {
 
 	var token *model.Token
@@ -1923,10 +1919,10 @@ func (a *App) VerifyUserPhoneNew(userId string) *model.AppError {
 
 func (a *App) VerifyPasswordPhoneNewSend(token *model.Token, user *model.User, newExtra string) *model.AppError {
 
-/*	if err := a.checkUserAttempts(user, *a.Config().ServiceSettings.MaximumLoginAttempts); err != nil {
-		return err
-	}
-*/
+	/*	if err := a.checkUserAttempts(user, *a.Config().ServiceSettings.MaximumLoginAttempts); err != nil {
+			return err
+		}
+	*/
 	if err := a.UpdateExtraStageToken(token, newExtra); err != nil {
 		return err
 	}
@@ -1962,7 +1958,7 @@ func (a *App) SendVerifyFromStagePhoneNewToken(userSuppliedTokenString string) *
 		return err
 	}
 
-	newPwd := utils.HashDigit(4)
+	newPwd := "1234" //utils.HashDigit(4)
 
 	if err := a.VerifyPasswordPhoneNewSend(token, user, newPwd); err != nil {
 		return err
@@ -1970,7 +1966,6 @@ func (a *App) SendVerifyFromStagePhoneNewToken(userSuppliedTokenString string) *
 
 	return nil
 }
-
 
 func (a *App) GetUserByPhone(phone string) (*model.User, *model.AppError) {
 
@@ -1999,7 +1994,6 @@ func (a *App) CreateStageToken(user *model.User, pwd string) (*model.Token, *mod
 	return token, nil
 }
 
-
 func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) (*model.User, *model.AppError) {
 
 	var token *model.Token
@@ -2017,7 +2011,6 @@ func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) 
 			return nil, err
 		}
 
-
 		if err := a.UpdatePassword(user, token.Extra); err != nil {
 			return nil, err
 		}
@@ -2031,14 +2024,12 @@ func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) 
 		}*/
 	}
 
-
 	return user, nil
 }
 
 func (a *App) VerifyUserPhone(userId string) *model.AppError {
 	return (<-a.Srv.Store.User().VerifyPhone(userId)).Err
 }
-
 
 func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.AppError {
 	var token *model.Token
@@ -2052,19 +2043,16 @@ func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.Ap
 		return err
 	}
 
-	newPwd := utils.HashDigit(4)
+	newPwd := "1234" //utils.HashDigit(4)
 
 	if err := a.VerifyPasswordSend(token, user, newPwd); err != nil {
 		return err
 	}
 
-
 	return nil
 }
 
-
 func (a *App) VerifyPasswordSend(token *model.Token, user *model.User, newExtra string) *model.AppError {
-
 
 	if err := a.UpdateExtraStageToken(token, newExtra); err != nil {
 		return err

@@ -272,7 +272,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitTransaction()
 	api.InitLevel()
 	api.InitExtra()
-	//api.InitBasket()
+	api.InitBasket()
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api

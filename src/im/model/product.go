@@ -17,7 +17,7 @@ type Product struct {
 	Currency      string  `json:"currency"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
-	Status        bool    `json:"status"`
+	Active        bool    `json:"active"`
 	CreateAt      int64   `json:"create_at"`
 	UpdateAt      int64   `json:"update_at"`
 	DeleteAt      int64   `json:"delete_at"`

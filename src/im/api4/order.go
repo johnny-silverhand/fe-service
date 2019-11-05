@@ -1,9 +1,12 @@
 package api4
 
 import (
+	"encoding/json"
 	"im/model"
+	"im/services/aquiring"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (api *API) InitOrder() {
@@ -12,6 +15,8 @@ func (api *API) InitOrder() {
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
+	api.BaseRoutes.Order.Handle("/prepayment", api.ApiHandler(getPaymentOrderUrl)).Methods("GET")
+	api.BaseRoutes.Order.Handle("/status", api.ApiHandler(getPaymentOrderStatus)).Methods("GET")
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(updateOrder)).Methods("PUT")
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(deleteOrder)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/orders", api.ApiSessionRequired(getUserOrders)).Methods("GET")
@@ -55,7 +60,7 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, c.Params.Page, c.Params.PerPage)
 	} else if len(beforeOrder) > 0 {
 
-		list, err = c.App.GetAllOrdersBeforeOrder( beforeOrder, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, c.Params.Page, c.Params.PerPage)
 	} else {
 		list, err = c.App.GetAllOrdersPage(c.Params.Page, c.Params.PerPage)
 	}
@@ -66,8 +71,8 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*	if len(etag) > 0 {
-			w.Header().Set(model.HEADER_ETAG_SERVER, etag)
-		}*/
+		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
+	}*/
 
 	w.Write([]byte(list.ToJson()))
 }
@@ -86,6 +91,27 @@ func getOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(order.ToJson()))
+
+}
+
+func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireOrderId()
+	if c.Err != nil {
+		return
+	}
+
+	order, err := c.App.GetOrder(c.Params.OrderId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+	if response, err := registerOrder(order); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(response.ToJson()))
+	}
 
 }
 
@@ -108,7 +134,6 @@ func updateOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	order.Id = c.Params.OrderId
 
 	rorder, err := c.App.UpdateOrder(order, false)
@@ -129,14 +154,10 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-/*	if (order.Positions == nil) {
+	/*	if (order.Positions == nil) {
 		c.SetInvalidParam("positions")
 		return
 	}*/
-
-
-
-
 
 	result, err := c.App.CreateOrder(order)
 	if err != nil {
@@ -195,6 +216,40 @@ func getUserOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	w.Write([]byte(list.ToJson()))
+}
+
+func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.AppError) {
+	var client *aquiring.Client
+
+	/*if order.PaySystemId == "sberbank" {
+		client = aquiring.NewSberClient("foodexp-api", "foodexp")
+	} else {*/
+	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
+	//}
+
+	var requestRegistration = aquiring.RequestRegistration{
+		OrderNumber: strconv.FormatInt(time.Now().UnixNano(), 10),
+		Description: "",
+		Amount:      "1000", // потому что нужно значение в копейках
+		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/order/" + order.Id + "/payment",
+	}
+
+	if r, err := client.PostRequest("/register.do", requestRegistration); err != nil {
+		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
+	} else {
+		var responseReg *aquiring.ResponseRegistration
+		json.NewDecoder(r.Body).Decode(&responseReg)
+
+		return responseReg, nil
+	}
+}
+
+func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireOrderId()
+	if c.Err != nil {
+		return
+	}
+
+	ReturnStatusOK(w)
 }

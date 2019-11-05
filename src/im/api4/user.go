@@ -1,4 +1,3 @@
-
 package api4
 
 import (
@@ -36,8 +35,6 @@ func (api *API) InitUser() {
 	api.BaseRoutes.User.Handle("/patch/verify", api.ApiHandler(verifyUserPhoneNew)).Methods("POST")
 	api.BaseRoutes.User.Handle("/patch/verify/send", api.ApiHandler(sendVerificationPhoneNewSms)).Methods("POST")
 
-
-
 	api.BaseRoutes.User.Handle("", api.ApiSessionRequired(deleteUser)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/roles", api.ApiSessionRequired(updateUserRoles)).Methods("PUT")
 	api.BaseRoutes.User.Handle("/active", api.ApiSessionRequired(updateUserActive)).Methods("PUT")
@@ -47,11 +44,7 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/email/verify", api.ApiHandler(verifyUserEmail)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/email/verify/send", api.ApiHandler(sendVerificationEmail)).Methods("POST")
 
-
-
 	api.BaseRoutes.User.Handle("/auth", api.ApiSessionRequiredTrustRequester(updateUserAuth)).Methods("PUT")
-
-
 
 	api.BaseRoutes.Users.Handle("/login", api.ApiHandler(login)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/login/switch", api.ApiHandler(switchAccountType)).Methods("POST")
@@ -75,12 +68,12 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/tokens/disable", api.ApiSessionRequired(disableUserAccessToken)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/tokens/enable", api.ApiSessionRequired(enableUserAccessToken)).Methods("POST")
 
-
 	api.BaseRoutes.Users.Handle("/phone/reg", api.ApiHandler(createUserToken)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/reset", api.ApiHandler(resetStageTokenByPhone)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/verify", api.ApiHandler(verifyUserPhone)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/verify/send", api.ApiHandler(sendVerificationSms)).Methods("POST")
 
+	api.BaseRoutes.Users.Handle("/attach_device", api.ApiSessionRequired(attachDeviceId)).Methods("POST")
 
 }
 
@@ -100,7 +93,7 @@ func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	var err *model.AppError
 	/*if len(tokenId) > 0 {
 		ruser, err = c.App.CreateUserWithToken(user, tokenId)
-	} else*/ if len(inviteId) > 0 {
+	} else*/if len(inviteId) > 0 {
 		ruser, err = c.App.CreateUserWithInviteId(user, inviteId)
 	} else if c.IsSystemAdmin() {
 		ruser, err = c.App.CreateUserAsAdmin(user)
@@ -161,7 +154,7 @@ func getUserByUsername(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-		etag := user.Etag(*c.App.Config().PrivacySettings.ShowFullName, *c.App.Config().PrivacySettings.ShowEmailAddress)
+	etag := user.Etag(*c.App.Config().PrivacySettings.ShowFullName, *c.App.Config().PrivacySettings.ShowEmailAddress)
 
 	if c.HandleEtag(etag, "Get User", w, r) {
 		return
@@ -455,12 +448,11 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-
-			etag = c.App.GetUsersInTeamEtag(inTeamId)
-			if c.HandleEtag(etag, "Get Users in Team", w, r) {
-				return
-			}
-			profiles, err = c.App.GetUsersInTeamPage(userGetOptions, c.IsSystemAdmin())
+		etag = c.App.GetUsersInTeamEtag(inTeamId)
+		if c.HandleEtag(etag, "Get Users in Team", w, r) {
+			return
+		}
+		profiles, err = c.App.GetUsersInTeamPage(userGetOptions, c.IsSystemAdmin())
 
 	} else if len(inChannelId) > 0 {
 		if !c.App.SessionHasPermissionToChannel(c.App.Session, inChannelId, model.PERMISSION_READ_CHANNEL) {
@@ -1028,7 +1020,6 @@ func login(c *Context, w http.ResponseWriter, r *http.Request) {
 	deviceId := props["device_id"]
 	ldapOnly := props["ldap_only"] == "true"
 
-
 	c.LogAuditWithUserId(id, "attempt - login_id="+loginId)
 	user, err := c.App.AuthenticateUserForLogin(id, loginId, password, mfaToken, ldapOnly)
 
@@ -1047,7 +1038,6 @@ func login(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.LogAuditWithUserId(user.Id, "success")
-
 
 	c.App.Session = *session
 
@@ -1284,7 +1274,7 @@ func switchAccountType(c *Context, w http.ResponseWriter, r *http.Request) {
 		}
 
 		link, err = c.App.SwitchOAuthToEmail(switchRequest.Email, switchRequest.NewPassword, c.App.Session.UserId)
-	}  else {
+	} else {
 		c.SetInvalidParam("switch_request")
 		return
 	}
@@ -1392,16 +1382,16 @@ func getUserAccessTokensForUser(c *Context, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_READ_USER_ACCESS_TOKEN) {
-		c.SetPermissionError(model.PERMISSION_READ_USER_ACCESS_TOKEN)
-		return
-	}
+	/*	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_READ_USER_ACCESS_TOKEN) {
+			c.SetPermissionError(model.PERMISSION_READ_USER_ACCESS_TOKEN)
+			return
+		}
 
-	if !c.App.SessionHasPermissionToUserOrBot(c.App.Session, c.Params.UserId) {
-		c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
-		return
-	}
-
+		if !c.App.SessionHasPermissionToUserOrBot(c.App.Session, c.Params.UserId) {
+			c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
+			return
+		}
+	*/
 	accessTokens, err := c.App.GetUserAccessTokensForUser(c.Params.UserId, c.Params.Page, c.Params.PerPage)
 	if err != nil {
 		c.Err = err
@@ -1417,10 +1407,10 @@ func getUserAccessToken(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_READ_USER_ACCESS_TOKEN) {
+	/*	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_READ_USER_ACCESS_TOKEN) {
 		c.SetPermissionError(model.PERMISSION_READ_USER_ACCESS_TOKEN)
 		return
-	}
+	}*/
 
 	accessToken, err := c.App.GetUserAccessToken(c.Params.TokenId, true)
 	if err != nil {
@@ -1428,10 +1418,10 @@ func getUserAccessToken(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !c.App.SessionHasPermissionToUserOrBot(c.App.Session, accessToken.UserId) {
+	/*if !c.App.SessionHasPermissionToUserOrBot(c.App.Session, accessToken.UserId) {
 		c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
 		return
-	}
+	}*/
 
 	w.Write([]byte(accessToken.ToJson()))
 }
@@ -1543,7 +1533,6 @@ func enableUserAccessToken(c *Context, w http.ResponseWriter, r *http.Request) {
 	ReturnStatusOK(w)
 }
 
-
 func createUserToken(c *Context, w http.ResponseWriter, r *http.Request) {
 	user := model.UserFromJson(r.Body)
 
@@ -1558,7 +1547,6 @@ func createUserToken(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	ReturnStatusStageTokenOK(w, token.Token)
 }
-
 
 func verifyUserPhoneNew(c *Context, w http.ResponseWriter, r *http.Request) {
 	props := model.MapFromJson(r.Body)
@@ -1612,7 +1600,6 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 
 	ReturnStatusStageTokenOK(w, token.Token)
 }
-
 
 func verifyUserPhone(c *Context, w http.ResponseWriter, r *http.Request) {
 	props := model.MapFromJson(r.Body)

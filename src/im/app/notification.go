@@ -58,7 +58,7 @@ func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *mod
 
 		//userIds := strings.Split(channel.Name, "__")
 
-	/*	if userIds[0] != userIds[1] {
+		/*	if userIds[0] != userIds[1] {
 			if userIds[0] == post.UserId {
 				otherUserId = userIds[1]
 			} else {
@@ -67,7 +67,7 @@ func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *mod
 		}*/
 
 		//otherUser, ok := profileMap[otherUserId]
-	/*	if ok {
+		/*	if ok {
 			mentionedUserIds[otherUserId] = true
 		}*/
 
@@ -328,7 +328,7 @@ func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *mod
 
 	// Note that PreparePostForClient should've already been called by this point
 	message.Add("post", post.ToJson())
-
+	message.Add("metadata", post)
 	message.Add("channel_type", channel.Type)
 	message.Add("channel_display_name", notification.GetChannelName(model.SHOW_USERNAME, ""))
 	message.Add("channel_name", channel.Name)

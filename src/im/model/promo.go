@@ -20,6 +20,8 @@ type Promo struct {
 	DeleteAt  int64  `json:"delete_at"`
 	ProductId string `json:"product_id"`
 
+	Push bool `json:"push"`
+
 	FileIds StringArray `json:"file_ids,omitempty"`
 	Media   []*FileInfo `db:"-" json:"media,omitempty"`
 }
