@@ -53,6 +53,7 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 	var total float64
 
 	if order.Positions != nil {
+		order.NormalizePositions()
 		for _, ps := range order.Positions {
 			pr := <-a.Srv.Store.Product().Get(ps.ProductId)
 
