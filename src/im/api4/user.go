@@ -2,7 +2,6 @@ package api4
 
 import (
 	"fmt"
-	"im/utils"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -1536,7 +1535,7 @@ func enableUserAccessToken(c *Context, w http.ResponseWriter, r *http.Request) {
 func createUserToken(c *Context, w http.ResponseWriter, r *http.Request) {
 	user := model.UserFromJson(r.Body)
 
-	pwd := utils.HashDigit(4)
+	pwd := "1234" //utils.HashDigit(4)
 	user.Roles = model.CHANNEL_USER_ROLE_ID
 
 	token, err := c.App.CreateUserWithToken(user, pwd)
@@ -1595,7 +1594,7 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	pwd := utils.HashDigit(4)
+	pwd := "1234"                                   //utils.HashDigit(4)
 	token, err := c.App.CreateStageToken(user, pwd) /*pwd*/
 
 	ReturnStatusStageTokenOK(w, token.Token)

@@ -39,14 +39,14 @@ X-Requested-With: XMLHttpRequest
   "delete_at": 0,
   "address": "",
   "comment": "",
-  "phone": "",
+  "phone": "79199113919",
   "positions": [
     {
-      "product_id": "9n18sf131iymx8ecgbfc3x6nmo",
+      "product_id": "8qinmdfjjtfz9eb6c4fjkffmxy",
       "quantity": 2
     },
     {
-      "product_id": "9n18sf131iymx8ecgbfc3x6nmo",
+      "product_id": "8qinmdfjjtfz9eb6c4fjkffmxy",
       "quantity": 2
     }
   ]

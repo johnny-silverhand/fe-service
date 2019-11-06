@@ -72,7 +72,6 @@ func (a *App) UpdateTransaction(transaction *model.Transaction, safeUpdate bool)
 
 	newTransaction.Description = transaction.Description
 
-
 	result = <-a.Srv.Store.Transaction().Update(newTransaction)
 	if result.Err != nil {
 		return nil, result.Err
@@ -89,10 +88,6 @@ func (a *App) UpdateTransaction(transaction *model.Transaction, safeUpdate bool)
 func (a *App) PrepareTransactionForClient(originalTransaction *model.Transaction, isNewTransaction bool) *model.Transaction {
 	transaction := originalTransaction.Clone()
 
-
-
-
-
 	//transaction.Metadata.Images = a.getCategoryForTransaction(transaction)
 
 	return transaction
@@ -101,7 +96,7 @@ func (a *App) PrepareTransactionForClient(originalTransaction *model.Transaction
 func (a *App) PrepareTransactionListForClient(originalList *model.TransactionList) *model.TransactionList {
 	list := &model.TransactionList{
 		Transactions: make(map[string]*model.Transaction, len(originalList.Transactions)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:        originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalTransaction := range originalList.Transactions {
@@ -121,27 +116,23 @@ func (a *App) DeleteTransaction(transactionId, deleteByID string) (*model.Transa
 	}
 	transaction := result.Data.(*model.Transaction)
 
-
 	if result := <-a.Srv.Store.Transaction().Delete(transactionId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return transaction, nil
 }
 
-
 func (a *App) GetAllTransactionsBeforeTransaction(transactionId string, page, perPage int) (*model.TransactionList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Transaction().GetAllTransactionsBefore( transactionId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Transaction().GetAllTransactionsBefore(transactionId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.TransactionList), nil
 	}
 }
 
-func (a *App) GetAllTransactionsAfterTransaction( transactionId string, page, perPage int) (*model.TransactionList, *model.AppError) {
-
+func (a *App) GetAllTransactionsAfterTransaction(transactionId string, page, perPage int) (*model.TransactionList, *model.AppError) {
 
 	if result := <-a.Srv.Store.Transaction().GetAllTransactionsAfter(transactionId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
@@ -180,4 +171,16 @@ func (a *App) GetAllTransactionsPage(page int, perPage int) (*model.TransactionL
 	} else {
 		return result.Data.(*model.TransactionList), nil
 	}
+}
+
+func (a *App) AccrualTransaction(transaction *model.Transaction) (*model.Transaction, *model.AppError) {
+
+	result := <-a.Srv.Store.Transaction().Save(transaction)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	rtransaction := result.Data.(*model.Transaction)
+
+	return rtransaction, nil
 }

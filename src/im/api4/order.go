@@ -154,16 +154,46 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(c.App.Session.UserId) == 0 {
+
+		if len(order.Phone) > 0 {
+
+			user, err := c.App.GetUserByPhone(order.Phone)
+
+			if err != nil {
+
+				newUser := &model.User{
+					Phone:         order.Phone,
+					Username:      order.Phone,
+					EmailVerified: true,
+				}
+
+				c.App.AutoCreateUser(newUser)
+
+			} else {
+				order.UserId = user.Id
+			}
+		} else {
+			c.SetInvalidParam("phone")
+			return
+		}
+
+	} else {
+		order.UserId = c.App.Session.UserId
+	}
+
 	/*	if (order.Positions == nil) {
 		c.SetInvalidParam("positions")
 		return
 	}*/
 
 	result, err := c.App.CreateOrder(order)
+
 	if err != nil {
 		c.Err = err
 		return
 	}
+
 	w.Write([]byte(result.ToJson()))
 }
 
@@ -231,11 +261,12 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 	var requestRegistration = aquiring.RequestRegistration{
 		OrderNumber: strconv.FormatInt(time.Now().UnixNano(), 10),
 		Description: "",
-		Amount:      "1000", // потому что нужно значение в копейках
-		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/order/" + order.Id + "/payment",
+		Amount:      "100000", // потому что нужно значение в копейках
+		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/order/" + order.Id + "/status",
 	}
 
 	if r, err := client.PostRequest("/register.do", requestRegistration); err != nil {
+
 		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
 	} else {
 		var responseReg *aquiring.ResponseRegistration
@@ -247,6 +278,9 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 
 func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
+
+	c.App.SetOrderPayed(c.Params.OrderId)
+
 	if c.Err != nil {
 		return
 	}

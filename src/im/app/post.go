@@ -793,8 +793,8 @@ func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, i
 	//var teamId string
 
 	/*	if teams, err := a.GetTeamsForUser(userId); err == nil {
-			teamId = teams[0].Id
-		}*/
+		teamId = teams[0].Id
+	}*/
 
 	resultList := model.NewChannelSearchResultList()
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableSearching {
@@ -839,7 +839,7 @@ func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, i
 			mlog.Error(fmt.Sprint(err))
 			return nil, err
 		}
-*/
+		*/
 		posts, err := a.Elasticsearch.SearchPostsHint(finalParamsList, page, perPage)
 		if err != nil {
 			return nil, err
@@ -861,7 +861,7 @@ func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, i
 
 			for _, c := range presult.Data.([]*model.Channel) {
 
-					channels[c.Id] = c
+				channels[c.Id] = c
 
 			}
 			for _, p := range posts {
@@ -1204,4 +1204,28 @@ func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppErr
 		return rp, nil
 	}
 
+}
+
+func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
+
+	var channel *model.Channel
+	var err *model.AppError
+
+	if channel, err = a.FindOpennedChannel(post.UserId); err == nil {
+		post.ChannelId = channel.Id
+	} else {
+
+		if channel, err = a.CreateUnresolvedChannel(post.UserId); err != nil {
+			return nil, err
+		} else {
+			if cmhjResult := <-a.Srv.Store.ChannelMemberHistory().LogJoinEvent(post.UserId, channel.Id, model.GetMillis()); cmhjResult.Err != nil {
+				//l4g.Warn(cmhjResult.Err.Error())
+			}
+			post.ChannelId = channel.Id
+		}
+	}
+
+	//post.AddProp("order_id", order.Id)
+
+	return a.CreatePost(post, channel, triggerWebhooks)
 }
