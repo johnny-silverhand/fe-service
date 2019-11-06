@@ -20,7 +20,6 @@ func NewSqlOrderStore(sqlStore SqlStore) store.OrderStore {
 
 		table.ColMap("Id").SetMaxSize(26)
 
-
 	}
 
 	return s
@@ -96,7 +95,6 @@ func (s *SqlOrderStore) Get(id string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlOrderStore) GetAllPage(offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var orders []*model.Order
@@ -126,7 +124,6 @@ func (s SqlOrderStore) GetAllPage(offset int, limit int, order model.ColumnOrder
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -135,7 +132,6 @@ func (s SqlOrderStore) GetAllPage(offset int, limit int, order model.ColumnOrder
 func (s *SqlOrderStore) Overwrite(order *model.Order) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		order.UpdateAt = model.GetMillis()
-
 
 		if result.Err = order.IsValid(); result.Err != nil {
 			return
@@ -169,7 +165,6 @@ func (s *SqlOrderStore) Delete(orderId string, time int64, deleteByID string) st
 	})
 }
 
-
 func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
@@ -177,17 +172,16 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) 
 			return
 		}
 
-
 		var orders []*model.Order
-		_, err := s.GetReplica().Select(&orders, "SELECT * FROM Orders WHERE " +
-			" DeleteAt = 0 " +
+		_, err := s.GetReplica().Select(&orders, "SELECT * FROM Orders WHERE "+
+			" DeleteAt = 0 "+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_root_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewOrderList()
 
@@ -205,7 +199,6 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) 
 
 func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		var orders []*model.Order
 		_, err := s.GetReplica().Select(&orders,
@@ -236,12 +229,12 @@ func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool) store.
 	})
 }
 
-func (s SqlOrderStore) GetAllOrdersBefore( orderId string, numOrders int, offset int) store.StoreChannel {
-	return s.getAllOrdersAround( orderId, numOrders, offset, true)
+func (s SqlOrderStore) GetAllOrdersBefore(orderId string, numOrders int, offset int) store.StoreChannel {
+	return s.getAllOrdersAround(orderId, numOrders, offset, true)
 }
 
 func (s SqlOrderStore) GetAllOrdersAfter(orderId string, numOrders int, offset int) store.StoreChannel {
-	return s.getAllOrdersAround( orderId, numOrders, offset, false)
+	return s.getAllOrdersAround(orderId, numOrders, offset, false)
 }
 
 func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset int, before bool) store.StoreChannel {
@@ -263,17 +256,14 @@ func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset 
 			    *
 			FROM
 			    Orders
-			WHERE (CreateAt `+ direction+ ` (SELECT CreateAt FROM Orders WHERE Id = :OrderId))
-			ORDER BY CreateAt `+ sort+ `
-			OFFSET :Offset LIMIT :NumOrders`,
+			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Orders WHERE Id = :OrderId))
+			ORDER BY CreateAt `+sort+`
+			LIMIT :NumOrders OFFSET :Offset `,
 			map[string]interface{}{"OrderId": orderId, "NumOrders": numOrders, "Offset": offset})
-
-
-
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.getAllOrdersAround", "store.sql_order.get_orders_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewOrderList()
 
@@ -296,7 +286,6 @@ func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset 
 	})
 }
 
-
 func (s SqlOrderStore) GetFromMaster(id string) store.StoreChannel {
 	return s.get(id, true, false)
 }
@@ -310,13 +299,12 @@ func (s SqlOrderStore) get(id string, master bool, allowFromCache bool) store.St
 			db = s.GetReplica()
 		}
 
-/*		if allowFromCache {
-			if cacheItem, ok := orderCache.Get(id); ok {
-				result.Data = (orderItem.(*model.Order)).DeepCopy()
-				return
-			}
-		}*/
-
+		/*		if allowFromCache {
+				if cacheItem, ok := orderCache.Get(id); ok {
+					result.Data = (orderItem.(*model.Order)).DeepCopy()
+					return
+				}
+			}*/
 
 		obj, err := db.Get(model.Order{}, id)
 		if err != nil {
@@ -334,10 +322,8 @@ func (s SqlOrderStore) get(id string, master bool, allowFromCache bool) store.St
 	})
 }
 
-
 func (s SqlOrderStore) SaveBasket(orderId string, positions []*model.Basket) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		// Grab the order we are saving this basket to
 		cr := <-s.GetFromMaster(orderId)
@@ -444,22 +430,20 @@ func (s *SqlOrderStore) SaveWithBasket(order *model.Order) store.StoreChannel {
 	})
 }
 
-
-
 func (s SqlOrderStore) GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var orders []*model.Order
 
 		query := `SELECT *
                   FROM Orders
-WHERE UserId =:UserId`
+WHERE UserId =:UserId `
 		//ORDER BY ` + order.Column + ` `
 
 		/*if order.Column == "price" { // cuz price is string
 			query += `+ 0 ` // hack for sorting string as integer
 		}*/
 
-		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
+		query += /*order.Type + */ ` LIMIT :Limit OFFSET :Offset `
 
 		if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllPage", "store.sql_orders.get_all_page.app_error",
@@ -476,8 +460,21 @@ WHERE UserId =:UserId`
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
+	})
+}
+
+func (s SqlOrderStore) SetOrderPayed(orderId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		ts := model.GetMillis()
+
+		_, err := s.GetMaster().Exec("UPDATE Orders SET Payed = :Payed, UpdateAt =:UpdateAt, PayedAt = :PayedAt WHERE Id = :Id ", map[string]interface{}{"Payed": true, "UpdateAt": ts, "Id": orderId, "PayedAt": ts})
+		if err != nil {
+			result.Err = model.NewAppError("SqlOfficeStore.Publish", "store.sql_offices.publish.app_error", nil, err.Error(), http.StatusInternalServerError)
+
+		}
+
 	})
 }

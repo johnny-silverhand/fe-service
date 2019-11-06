@@ -48,9 +48,9 @@ func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProdu
 	return product
 }
 func (a *App) getMediaForProduct(product *model.Product) ([]*model.FileInfo, *model.AppError) {
-	if len(product.FileIds) == 0 {
+	/*if len(product.FileIds) == 0 {
 		return nil, nil
-	}
+	}*/
 
 	return a.GetFileInfosForMetadata(product.Id)
 }

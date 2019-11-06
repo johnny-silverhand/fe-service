@@ -32,8 +32,8 @@ func (a *App) GetPromos(offset int, limit int, sort string) (*model.PromoList, *
 	if result.Err != nil {
 		return nil, result.Err
 	}
-
-	return result.Data.(*model.PromoList), nil
+	list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+	return list, nil
 }
 
 func (a *App) CreatePromo(promo *model.Promo) (*model.Promo, *model.AppError) {
@@ -43,9 +43,30 @@ func (a *App) CreatePromo(promo *model.Promo) (*model.Promo, *model.AppError) {
 		return nil, result.Err
 	}
 
+	if len(promo.Media) > 0 {
+		if err := a.attachMediaToPromo(promo); err != nil {
+			mlog.Error("Encountered error attaching files to post", mlog.String("product_id", promo.Id), mlog.Any("files_ids", promo.FileIds), mlog.Err(result.Err))
+		}
+	}
+
 	rpromo := result.Data.(*model.Promo)
 
 	return rpromo, nil
+}
+
+func (a *App) attachMediaToPromo(promo *model.Promo) *model.AppError {
+	var attachedIds []string
+	for _, media := range promo.Media {
+		result := <-a.Srv.Store.FileInfo().AttachTo(media.Id, promo.Id, model.METADATA_TYPE_PROMO)
+		if result.Err != nil {
+			mlog.Warn("Failed to attach file to post", mlog.String("file_id", media.Id), mlog.String("product_id", promo.Id), mlog.Err(result.Err))
+			continue
+		}
+
+		attachedIds = append(attachedIds, media.Id)
+	}
+
+	return nil
 }
 
 func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *model.AppError) {
@@ -77,6 +98,16 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 
 	newPromo.Preview = promo.Preview
 	newPromo.Description = promo.Description
+	//if !safeUpdate {
+	newPromo.Media = promo.Media
+	//}
+
+	if len(newPromo.Media) > 0 {
+		if err := a.attachMediaToPromo(newPromo); err != nil {
+			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", newPromo.Id), mlog.Any("file_ids", newPromo.FileIds), mlog.Err(result.Err))
+		}
+
+	}
 
 	result = <-a.Srv.Store.Promo().Update(newPromo)
 	if result.Err != nil {
@@ -84,6 +115,7 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 	}
 
 	rpromo := result.Data.(*model.Promo)
+
 	rpromo = a.PreparePromoForClient(rpromo, false)
 
 	//a.InvalidateCacheForChannelPromos(rpromo.ChannelId)
@@ -97,7 +129,7 @@ func (a *App) PreparePromoForClient(originalPromo *model.Promo, isNewPromo bool)
 	if fileInfos, err := a.getMediaForPromo(originalPromo); err != nil {
 		mlog.Warn("Failed to get files for a product", mlog.String("product_id", originalPromo.Id), mlog.Any("err", err))
 	} else {
-		originalPromo.Media = fileInfos
+		promo.Media = fileInfos
 
 	}
 	//promo.Metadata.Images = a.getCategoryForPromo(promo)
@@ -106,10 +138,10 @@ func (a *App) PreparePromoForClient(originalPromo *model.Promo, isNewPromo bool)
 }
 
 func (a *App) getMediaForPromo(promo *model.Promo) ([]*model.FileInfo, *model.AppError) {
-	if len(promo.FileIds) == 0 {
-		return nil, nil
-	}
-
+	/*	if len(promo.FileIds) == 0 {
+			return nil, nil
+		}
+	*/
 	return a.GetFileInfosForMetadata(promo.Id)
 }
 
@@ -148,7 +180,9 @@ func (a *App) GetAllPromosBeforePromo(promoId string, page, perPage int) (*model
 	if result := <-a.Srv.Store.Promo().GetAllPromosBefore(promoId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.PromoList), nil
+		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+		return list, nil
 	}
 }
 
@@ -157,7 +191,9 @@ func (a *App) GetAllPromosAfterPromo(promoId string, page, perPage int) (*model.
 	if result := <-a.Srv.Store.Promo().GetAllPromosAfter(promoId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.PromoList), nil
+		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+		return list, nil
 	}
 }
 
@@ -173,7 +209,9 @@ func (a *App) GetAllPromosAroundPromo(promoId string, offset, limit int, before 
 	if result := <-pchan; result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.PromoList), nil
+		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+		return list, nil
 	}
 }
 
@@ -181,7 +219,9 @@ func (a *App) GetAllPromosSince(time int64) (*model.PromoList, *model.AppError) 
 	if result := <-a.Srv.Store.Promo().GetAllPromosSince(time, true); result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.PromoList), nil
+		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+		return list, nil
 	}
 }
 
@@ -189,6 +229,8 @@ func (a *App) GetAllPromosPage(page int, perPage int) (*model.PromoList, *model.
 	if result := <-a.Srv.Store.Promo().GetAllPromos(page*perPage, perPage, true); result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.PromoList), nil
+		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+		return list, nil
 	}
 }

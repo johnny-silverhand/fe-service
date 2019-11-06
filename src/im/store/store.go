@@ -580,6 +580,7 @@ type OrderStore interface {
 	SaveWithBasket(order *model.Order) StoreChannel
 
 	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
+	SetOrderPayed(orderId string) StoreChannel
 }
 
 type BasketStore interface {

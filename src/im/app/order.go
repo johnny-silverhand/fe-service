@@ -1,19 +1,20 @@
 package app
 
 import (
+	"fmt"
 	"im/model"
 	"im/store"
 	"net/http"
+	"strconv"
 )
-
 
 func NewBasketFromModel(pr *model.Product, order *model.Order, q int) *model.Basket {
 	return &model.Basket{
-		OrderId  : order.Id,
-		ProductId : pr.Id,
-		Price   : pr.Price,
-		Currency  : pr.Currency,
-		Quantity   : q,
+		OrderId:   order.Id,
+		ProductId: pr.Id,
+		Price:     pr.Price,
+		Currency:  pr.Currency,
+		Quantity:  q,
 	}
 }
 
@@ -48,7 +49,6 @@ func (a *App) GetOrders(offset int, limit int, sort string) (*model.OrderList, *
 
 func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
-
 	basket := make([]*model.Basket, 0)
 	var total float64
 
@@ -71,16 +71,12 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 		order.Positions = basket
 	}
 
-
 	return order, nil
 }
 
-
 func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
-
 	a.RecalculateOrder(order)
-
 
 	result := <-a.Srv.Store.Order().SaveWithBasket(order)
 
@@ -88,7 +84,37 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		return nil, result.Err
 	}
 
-	return result.Data.(*model.Order), nil
+	newOrder := result.Data.(*model.Order)
+	var msg string
+	var total float64
+	msg += fmt.Sprintf("Заказ № %s \n", strconv.FormatInt(newOrder.CreateAt, 10))
+	if order.Positions != nil {
+		for _, ps := range order.Positions {
+			pr := <-a.Srv.Store.Product().Get(ps.ProductId)
+
+			if pr.Err == nil {
+				product := pr.Data.(*model.Product)
+
+				msg += fmt.Sprintf("%s %.2f \n", product.Name, product.Price)
+
+				total += ps.Price * float64(ps.Quantity)
+
+			}
+		}
+		msg += fmt.Sprintf("Итого %.2f \n", total)
+
+	}
+
+	/*	post := &model.Post{
+
+		UserId:    newOrder.UserId,
+		Message:   msg,
+		CreateAt:  model.GetMillis() + 1,
+	}*/
+
+	//a.CreatePostWithOrder(post, order, false)
+
+	return newOrder, nil
 }
 
 func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *model.AppError) {
@@ -114,8 +140,6 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	newOrder := &model.Order{}
 	*newOrder = *oldOrder
 
-
-
 	result = <-a.Srv.Store.Order().Update(newOrder)
 	if result.Err != nil {
 		return nil, result.Err
@@ -132,16 +156,15 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 func (a *App) PrepareOrderForClient(originalOrder *model.Order, isNewOrder bool) *model.Order {
 	order := originalOrder.Clone()
 
-	order.Positions =  a.GetBasketForOrder(order)
+	order.Positions = a.GetBasketForOrder(order)
 
 	return order
 }
 
-
 func (a *App) PrepareOrderListForClient(originalList *model.OrderList) *model.OrderList {
 	list := &model.OrderList{
 		Orders: make(map[string]*model.Order, len(originalList.Orders)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:  originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalOrder := range originalList.Orders {
@@ -161,27 +184,23 @@ func (a *App) DeleteOrder(orderId, deleteByID string) (*model.Order, *model.AppE
 	}
 	order := result.Data.(*model.Order)
 
-
 	if result := <-a.Srv.Store.Order().Delete(orderId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return order, nil
 }
 
-
 func (a *App) GetAllOrdersBeforeOrder(orderId string, page, perPage int) (*model.OrderList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Order().GetAllOrdersBefore( orderId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersAfterOrder( orderId string, page, perPage int) (*model.OrderList, *model.AppError) {
-
+func (a *App) GetAllOrdersAfterOrder(orderId string, page, perPage int) (*model.OrderList, *model.AppError) {
 
 	if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
@@ -223,9 +242,32 @@ func (a *App) GetAllOrdersPage(page int, perPage int) (*model.OrderList, *model.
 }
 
 func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetByUserId(userId, page*perPage, perPage,  model.GetOrder(sort)); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
+	}
+}
+
+func (a *App) SetOrderPayed(orderId string) *model.AppError {
+
+	result := <-a.Srv.Store.Order().Get(orderId)
+	if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return result.Err
+	}
+	order := result.Data.(*model.Order)
+
+	if result := <-a.Srv.Store.Order().SetOrderPayed(order.Id); result.Err != nil {
+		return result.Err
+	} else {
+
+		a.AccrualTransaction(&model.Transaction{
+			OrderId: order.Id,
+			User_Id: order.UserId,
+			Value:   order.Price * 0.05,
+		})
+
+		return nil
 	}
 }

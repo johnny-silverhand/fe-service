@@ -2066,3 +2066,25 @@ func (a *App) VerifyPasswordSend(token *model.Token, user *model.User, newExtra 
 
 	return nil
 }
+
+func (a *App) AutoCreateUser(user *model.User) (*model.User, *model.AppError) {
+
+	var ruser *model.User
+	var err *model.AppError
+	if ruser, err = a.PreCreateUser(user); err != nil {
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	_token := &model.UserAccessToken{UserId: user.Id, Description: "demo access"}
+	_token, err = a.CreateUserAccessToken(_token)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ruser, nil
+}
