@@ -88,6 +88,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 	var msg string
 	var total float64
 	msg += fmt.Sprintf("Заказ № %s \n", strconv.FormatInt(newOrder.CreateAt, 10))
+
 	if order.Positions != nil {
 		for _, ps := range order.Positions {
 			pr := <-a.Srv.Store.Product().Get(ps.ProductId)
@@ -105,14 +106,14 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
 	}
 
-	/*	post := &model.Post{
+	post := &model.Post{
 
-		UserId:    newOrder.UserId,
-		Message:   msg,
-		CreateAt:  model.GetMillis() + 1,
-	}*/
+		UserId:   newOrder.UserId,
+		Message:  msg,
+		CreateAt: model.GetMillis() + 1,
+	}
 
-	//a.CreatePostWithOrder(post, order, false)
+	a.CreatePostWithOrder(post, order, false)
 
 	return newOrder, nil
 }
