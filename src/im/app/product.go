@@ -215,3 +215,31 @@ func (a *App) SearchProducts(terms string, timeZoneOffset int, page, perPage int
 	}
 	return resultList, nil
 }
+
+func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *model.AppError) {
+	result := <-a.Srv.Store.Product().GetProductsByIds(productIds, true)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	rproducts := result.Data.([]*model.Product)
+	var (
+		discount model.ProductsDiscount
+		value    int64
+	)
+
+	for _, product := range rproducts {
+		value = int64(product.Price * (product.DiscountLimit / 100))
+		discount.Limits = append(discount.Limits, struct {
+			Id            string `json:"id"`
+			DiscountValue int64  `json:"discount_value"`
+		}{
+			product.Id,
+			value,
+		})
+		discount.Total += value
+
+	}
+
+	return &discount, nil
+}
