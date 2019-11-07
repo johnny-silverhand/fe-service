@@ -7,13 +7,13 @@ import (
 )
 
 type OrderList struct {
-	Order []string         `json:"order"`
-	Orders map[string]*Order `json:"order"`
+	Order  []string          `json:"order"`
+	Orders map[string]*Order `json:"orders"`
 }
 
 func NewOrderList() *OrderList {
 	return &OrderList{
-		Order: make([]string, 0),
+		Order:  make([]string, 0),
 		Orders: make(map[string]*Order),
 	}
 }
@@ -124,7 +124,6 @@ func (o *OrderList) Etag() string {
 
 	return Etag(orderId, id, t)
 }
-
 
 func OrderListFromJson(data io.Reader) *OrderList {
 	var o *OrderList
