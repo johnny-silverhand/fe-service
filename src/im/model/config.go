@@ -182,6 +182,9 @@ const (
 
 	IMAGE_PROXY_TYPE_LOCAL      = "local"
 	IMAGE_PROXY_TYPE_ATMOS_CAMO = "atmos/camo"
+
+	PAYMENT_PROXY_TYPE_ALFABANK = "alfa"
+	PAYMENT_PROXY_TYPE_SBERBANK = "sber"
 )
 
 var ServerTLSSupportedCiphers = map[string]uint16{
@@ -934,6 +937,16 @@ type FileSettings struct {
 	AmazonS3SignV2          *bool   `restricted:"true"`
 	AmazonS3SSE             *bool   `restricted:"true"`
 	AmazonS3Trace           *bool   `restricted:"true"`
+}
+
+type PaymentBackendSettings struct {
+	Backend    *string `restricted:"true"`
+	Password   *string `restricted:"true"`
+	UserName   *string `restricted:"true"`
+	MerchantId *string `restricted:"true"`
+	Currency   *string `restricted:"true"`
+	Language   *string `restricted:"true"`
+	Sandbox    *bool
 }
 
 func (s *FileSettings) SetDefaults() {
@@ -1692,35 +1705,35 @@ func (ips *ImageProxySettings) SetDefaults(ss ServiceSettings) {
 type ConfigFunc func() *Config
 
 type Config struct {
-	ServiceSettings       ServiceSettings
-	TeamSettings          TeamSettings
-	ClientRequirements    ClientRequirements
-	SqlSettings           SqlSettings
-	LogSettings           LogSettings
-	PasswordSettings      PasswordSettings
-	FileSettings          FileSettings
-	EmailSettings         EmailSettings
-	RateLimitSettings     RateLimitSettings
-	PrivacySettings       PrivacySettings
-	AnnouncementSettings  AnnouncementSettings
-	ThemeSettings         ThemeSettings
-	GitLabSettings        SSOSettings
-	GoogleSettings        SSOSettings
-	Office365Settings     SSOSettings
+	ServiceSettings      ServiceSettings
+	TeamSettings         TeamSettings
+	ClientRequirements   ClientRequirements
+	SqlSettings          SqlSettings
+	LogSettings          LogSettings
+	PasswordSettings     PasswordSettings
+	FileSettings         FileSettings
+	EmailSettings        EmailSettings
+	RateLimitSettings    RateLimitSettings
+	PrivacySettings      PrivacySettings
+	AnnouncementSettings AnnouncementSettings
+	ThemeSettings        ThemeSettings
+	GitLabSettings       SSOSettings
+	GoogleSettings       SSOSettings
+	Office365Settings    SSOSettings
 
-	LocalizationSettings  LocalizationSettings
+	LocalizationSettings LocalizationSettings
 
-	ClusterSettings       ClusterSettings
+	ClusterSettings ClusterSettings
 
 	ExperimentalSettings  ExperimentalSettings
 	AnalyticsSettings     AnalyticsSettings
 	ElasticsearchSettings ElasticsearchSettings
 	DataRetentionSettings DataRetentionSettings
 
-	JobSettings           JobSettings
+	JobSettings JobSettings
 
-	DisplaySettings       DisplaySettings
-	ImageProxySettings    ImageProxySettings
+	DisplaySettings    DisplaySettings
+	ImageProxySettings ImageProxySettings
 }
 
 func (o *Config) Clone() *Config {
@@ -1759,7 +1772,6 @@ func (o *Config) SetDefaults() {
 
 	if o.TeamSettings.TeammateNameDisplay == nil {
 		o.TeamSettings.TeammateNameDisplay = NewString(SHOW_USERNAME)
-
 
 	}
 

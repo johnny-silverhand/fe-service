@@ -8,36 +8,24 @@ import (
 )
 
 type Product struct {
-	Id       string `json:"id"`
-	ClientId string `json:"client_id"`
-
-	Name        string  `json:"name"`
-	Preview     string  `json:"preview"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price,string"`
-	Value       float64 `json:"value,string"`
-
+	Id            string  `json:"id"`
+	ClientId      string  `json:"client_id"`
+	Name          string  `json:"name"`
+	Preview       string  `json:"preview"`
+	Description   string  `json:"description"`
+	Price         float64 `json:"price,string"`
+	Currency      string  `json:"currency"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
-	Status        bool    `json:"status"`
+	Active        bool    `json:"active"`
 	CreateAt      int64   `json:"create_at"`
 	UpdateAt      int64   `json:"update_at"`
 	DeleteAt      int64   `json:"delete_at"`
 	CategoryId    string  `json:"category_id"`
 	//Category      *Category `json:"category"`
-	FileIds StringArray `json:"file_ids,omitempty"`
-
-	Image     *FileInfo   `json:"image,omitempty" db:"-"`
-	MoreImage []*FileInfo `json:"more_image,omitempty" db:"-"`
-
-	ImageId      string      `json:"image_id,omitempty"`
-	MoreImageIds StringArray `json:"more_image_ids,omitempty"`
-
-	Category *Category        `json:"category,omitempty" db:"-"`
-	Metadata *ProductMetadata `json:"metadata,omitempty" db:"-"`
-
-	// TODO временное решение для формирования массива изображений для мобильной разработки
-	Media []*MobileFileInfo `db:"-" json:"media,omitempty"`
+	FileIds  StringArray `json:"file_ids,omitempty"`
+	Category *Category   `json:"category,omitempty" db:"-"`
+	Media    []*FileInfo `db:"-" json:"media,omitempty"`
 }
 
 type ProductPatch struct {

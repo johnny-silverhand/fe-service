@@ -11,6 +11,26 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
 	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
+	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
+}
+
+func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
+	if c.Err != nil {
+		return
+	}
+	params := model.SearchParameterFromJson(r.Body)
+	if params.Terms == nil || len(*params.Terms) == 0 {
+		c.SetInvalidParam("terms")
+		return
+	}
+	terms := *params.Terms
+	if results, err := c.App.SearchProducts(terms, 0, 0, 99); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Write([]byte(results.ToJson()))
+	}
 }
 
 func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -149,10 +169,6 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-
-	// Updating the file_ids of a post is not a supported operation and will be ignored
-
-	product.MoreImageIds = nil
 
 	/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
 		c.SetPermissionError(model.PERMISSION_EDIT_POST)

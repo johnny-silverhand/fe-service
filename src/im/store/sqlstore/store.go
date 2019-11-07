@@ -92,6 +92,8 @@ type SqlStore interface {
 	Product() store.ProductStore
 	Category() store.CategoryStore
 
+	Basket() store.BasketStore
+
 	LinkMetadata() store.LinkMetadataStore
 	getQueryBuilder() sq.StatementBuilderType
 }

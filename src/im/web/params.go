@@ -22,9 +22,14 @@ type Params struct {
 	InviteId         string
 	TokenId          string
 	ChannelId        string
+	PromoId          string
+	OfficeId         string
+	OrderId          string
+	TransactionId    string
+	LevelId          string
+	ExtraId          string
 	ProductId        string
 	CategoryId       string
-	ClientId         string
 	CategoryParentId string
 	CategoryDepth    string
 	DestinationId    string
@@ -130,10 +135,25 @@ func ParamsFromRequest(r *http.Request) *Params {
 	if val, ok := props["product_id"]; ok {
 		params.ProductId = val
 	}
-	if val, ok := props["emoji_id"]; ok {
-		params.EmojiId = val
+	if val, ok := props["promo_id"]; ok {
+		params.PromoId = val
+	}
+	if val, ok := props["office_id"]; ok {
+		params.OfficeId = val
+	}
+	if val, ok := props["transaction_id"]; ok {
+		params.TransactionId = val
+	}
+	if val, ok := props["order_id"]; ok {
+		params.OrderId = val
+	}
+	if val, ok := props["level_id"]; ok {
+		params.LevelId = val
 	}
 
+	if val, ok := props["extra_id"]; ok {
+		params.ExtraId = val
+	}
 	if val, ok := props["app_id"]; ok {
 		params.AppId = val
 	}

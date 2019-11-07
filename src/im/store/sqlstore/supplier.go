@@ -1,6 +1,3 @@
-// Copyright (c) 2016-present Mattermost, Inc. All Rights Reserved.
-// See License.txt for license information.
-
 package sqlstore
 
 import (
@@ -67,33 +64,40 @@ const (
 )
 
 type SqlSupplierOldStores struct {
-	team                 store.TeamStore
-	channel              store.ChannelStore
-	post                 store.PostStore
-	user                 store.UserStore
-	audit                store.AuditStore
-	cluster              store.ClusterDiscoveryStore
+	team    store.TeamStore
+	channel store.ChannelStore
+	post    store.PostStore
+	user    store.UserStore
+	audit   store.AuditStore
+	cluster store.ClusterDiscoveryStore
 
-	session              store.SessionStore
-	oauth                store.OAuthStore
-	system               store.SystemStore
+	session store.SessionStore
+	oauth   store.OAuthStore
+	system  store.SystemStore
 
-	preference           store.PreferenceStore
+	preference store.PreferenceStore
 
-	token                store.TokenStore
-	section 				store.SectionStore
-	status               store.StatusStore
-	fileInfo             store.FileInfoStore
+	token    store.TokenStore
+	section  store.SectionStore
+	status   store.StatusStore
+	fileInfo store.FileInfoStore
 
-	job                  store.JobStore
-	userAccessToken      store.UserAccessTokenStore
+	job             store.JobStore
+	userAccessToken store.UserAccessTokenStore
 
 	channelMemberHistory store.ChannelMemberHistoryStore
 	role                 store.RoleStore
 	scheme               store.SchemeStore
-	product               store.ProductStore
-	category               store.CategoryStore
+	product              store.ProductStore
+	promo                store.PromoStore
+	office               store.OfficeStore
+	order                store.OrderStore
+	basket               store.BasketStore
+	category             store.CategoryStore
+	transaction          store.TransactionStore
 	linkMetadata         store.LinkMetadataStore
+	level                store.LevelStore
+	extra                store.ExtraStore
 }
 
 type SqlSupplier struct {
@@ -140,9 +144,16 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.job = NewSqlJobStore(supplier)
 	supplier.oldStores.userAccessToken = NewSqlUserAccessTokenStore(supplier)
 	supplier.oldStores.channelMemberHistory = NewSqlChannelMemberHistoryStore(supplier)
-	supplier.oldStores.category = NewSqlCategoryStore(supplier)
 	supplier.oldStores.product = NewSqlProductStore(supplier)
+	supplier.oldStores.category = NewSqlCategoryStore(supplier)
+	supplier.oldStores.promo = NewSqlPromoStore(supplier)
+	supplier.oldStores.office = NewSqlOfficeStore(supplier)
+	supplier.oldStores.order = NewSqlOrderStore(supplier)
+	supplier.oldStores.basket = NewSqlBasketStore(supplier)
+	supplier.oldStores.transaction = NewSqlTransactionStore(supplier)
 	supplier.oldStores.linkMetadata = NewSqlLinkMetadataStore(supplier)
+	supplier.oldStores.level = NewSqlLevelStore(supplier)
+	supplier.oldStores.extra = NewSqlExtraStore(supplier)
 
 	initSqlSupplierRoles(supplier)
 	initSqlSupplierSchemes(supplier)
@@ -175,11 +186,14 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 
 	supplier.oldStores.product.(*SqlProductStore).CreateIndexesIfNotExists()
 	supplier.oldStores.category.(*SqlCategoryStore).CreateIndexesIfNotExists()
-
+	supplier.oldStores.promo.(*SqlPromoStore).CreateIndexesIfNotExists()
+	supplier.oldStores.office.(*SqlOfficeStore).CreateIndexesIfNotExists()
+	supplier.oldStores.order.(*SqlOrderStore).CreateIndexesIfNotExists()
+	supplier.oldStores.basket.(*SqlBasketStore).CreateIndexesIfNotExists()
+	supplier.oldStores.transaction.(*SqlTransactionStore).CreateIndexesIfNotExists()
 	supplier.oldStores.linkMetadata.(*SqlLinkMetadataStore).CreateIndexesIfNotExists()
-
-
-
+	supplier.oldStores.level.(*SqlLevelStore).CreateIndexesIfNotExists()
+	supplier.oldStores.extra.(*SqlExtraStore).CreateIndexesIfNotExists()
 	supplier.oldStores.preference.(*SqlPreferenceStore).DeleteUnusedFeatures()
 
 	return supplier
@@ -938,7 +952,6 @@ func (ss *SqlSupplier) ClusterDiscovery() store.ClusterDiscoveryStore {
 	return ss.oldStores.cluster
 }
 
-
 func (ss *SqlSupplier) OAuth() store.OAuthStore {
 	return ss.oldStores.oauth
 }
@@ -967,7 +980,6 @@ func (ss *SqlSupplier) FileInfo() store.FileInfoStore {
 	return ss.oldStores.fileInfo
 }
 
-
 func (ss *SqlSupplier) Job() store.JobStore {
 	return ss.oldStores.job
 }
@@ -980,7 +992,6 @@ func (ss *SqlSupplier) ChannelMemberHistory() store.ChannelMemberHistoryStore {
 	return ss.oldStores.channelMemberHistory
 }
 
-
 func (ss *SqlSupplier) Role() store.RoleStore {
 	return ss.oldStores.role
 }
@@ -989,7 +1000,6 @@ func (ss *SqlSupplier) Scheme() store.SchemeStore {
 	return ss.oldStores.scheme
 }
 
-
 func (ss *SqlSupplier) LinkMetadata() store.LinkMetadataStore {
 	return ss.oldStores.linkMetadata
 }
@@ -997,11 +1007,30 @@ func (ss *SqlSupplier) LinkMetadata() store.LinkMetadataStore {
 func (ss *SqlSupplier) Product() store.ProductStore {
 	return ss.oldStores.product
 }
-
+func (ss *SqlSupplier) Promo() store.PromoStore {
+	return ss.oldStores.promo
+}
 func (ss *SqlSupplier) Category() store.CategoryStore {
 	return ss.oldStores.category
 }
-
+func (ss *SqlSupplier) Office() store.OfficeStore {
+	return ss.oldStores.office
+}
+func (ss *SqlSupplier) Order() store.OrderStore {
+	return ss.oldStores.order
+}
+func (ss *SqlSupplier) Basket() store.BasketStore {
+	return ss.oldStores.basket
+}
+func (ss *SqlSupplier) Transaction() store.TransactionStore {
+	return ss.oldStores.transaction
+}
+func (ss *SqlSupplier) Level() store.LevelStore {
+	return ss.oldStores.level
+}
+func (ss *SqlSupplier) Extra() store.ExtraStore {
+	return ss.oldStores.extra
+}
 func (ss *SqlSupplier) DropAllTables() {
 	ss.master.TruncateTables()
 }

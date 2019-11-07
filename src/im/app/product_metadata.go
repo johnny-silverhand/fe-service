@@ -38,54 +38,19 @@ func (a *App) PrepareProductListForClient(originalList *model.ProductList) *mode
 func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProduct bool) *model.Product {
 	product := originalProduct.Clone()
 
-	//product.Metadata = &model.ProductMetadata{}
-	// TODO временное решение для формирования массива изображений для мобильной разработки
-	var media []*model.MobileFileInfo
-	// Files
-
-	if fileInfo, err := a.getImageForProduct(product); err != nil {
+	if fileInfos, err := a.getMediaForProduct(product); err != nil {
 		mlog.Warn("Failed to get files for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
-		product.Image = fileInfo
-		// TODO временное решение для формирования массива изображений для мобильной разработки
-		media = append(media, &model.MobileFileInfo{Id: fileInfo.Id, FileId: fileInfo.Id})
-	}
+		product.Media = fileInfos
 
-	if fileInfos, err := a.getMoreImageForProduct(product); err != nil {
-		mlog.Warn("Failed to get files for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
-	} else {
-		product.MoreImage = fileInfos
-		// TODO временное решение для формирования массива изображений для мобильной разработки
-		for _, fileInfo := range fileInfos {
-			media = append(media, &model.MobileFileInfo{Id: fileInfo.Id, FileId: fileInfo.Id})
-		}
 	}
-	// TODO временное решение для формирования массива изображений для мобильной разработки
-	product.Media = media
-
-	//product.Metadata.Images = a.getCategoryForProduct(product)
 
 	return product
 }
-func (a *App) getMoreImageForProduct(product *model.Product) ([]*model.FileInfo, *model.AppError) {
-	if len(product.MoreImageIds) == 0 {
+func (a *App) getMediaForProduct(product *model.Product) ([]*model.FileInfo, *model.AppError) {
+	/*if len(product.FileIds) == 0 {
 		return nil, nil
-	}
+	}*/
 
 	return a.GetFileInfosForMetadata(product.Id)
-}
-func (a *App) getImageForProduct(product *model.Product) (*model.FileInfo, *model.AppError) {
-	if len(product.ImageId) == 0 {
-		return nil, nil
-	}
-
-	return a.getFileMetadataForProduct(product)
-}
-
-func (a *App) getFileMetadataForProduct(product *model.Product) (*model.FileInfo, *model.AppError) {
-	if len(product.ImageId) == 0 {
-		return nil, nil
-	}
-
-	return a.GetFileInfo(product.ImageId)
 }

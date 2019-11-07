@@ -153,7 +153,7 @@ func (s SqlUserAccessTokenStore) Get(tokenId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		token := model.UserAccessToken{}
 
-		if err := s.GetReplica().SelectOne(&token, "SELECT * FROM UserAccessTokens WHERE Id = :Id", map[string]interface{}{"Id": tokenId}); err != nil {
+		if err := s.GetReplica().SelectOne(&token, "SELECT * FROM UserAccessTokens WHERE Id = :Id OR Token = :Token", map[string]interface{}{"Id": tokenId, "Token": tokenId}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlUserAccessTokenStore.Get", "store.sql_user_access_token.get.app_error", nil, err.Error(), http.StatusNotFound)
 			} else {

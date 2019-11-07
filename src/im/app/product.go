@@ -14,6 +14,15 @@ import (
 	product.Status = true
 	return product, nil
 }*/
+func (a *App) GetSingleProduct(productId string) (*model.Product, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().Get(productId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.Product), nil
+}
 
 func (a *App) GetProduct(productId string) (*model.Product, *model.AppError) {
 
@@ -30,7 +39,7 @@ func (a *App) GetProduct(productId string) (*model.Product, *model.AppError) {
 	if ct.Err == nil {
 		product.Category = ct.Data.(*model.Category)
 	}
-*/
+	*/
 
 	return rproduct, nil
 }
@@ -47,7 +56,10 @@ func (a *App) GetProducts(offset int, limit int, sort string, categoryId string)
 		return nil, result.Err
 	}
 
-	return result.Data.(*model.ProductList), nil
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+
+	return list, nil
+
 }
 
 func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppError) {
@@ -57,61 +69,36 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 		return nil, result.Err
 	}
 
-	if len(product.MoreImage) > 0 {
-		if err := a.attachMoreImageToProduct(product); err != nil {
-			mlog.Error("Encountered error attaching files to post", mlog.String("product_id", product.Id), mlog.Any("more_image_ids", product.MoreImageIds), mlog.Err(result.Err))
+	if len(product.Media) > 0 {
+		if err := a.attachMediaToProduct(product); err != nil {
+			mlog.Error("Encountered error attaching files to post", mlog.String("product_id", product.Id), mlog.Any("files_ids", product.FileIds), mlog.Err(result.Err))
 		}
 	}
 
-	if product.Image != nil {
-		if err := a.attachImageToProduct(product); err != nil {
-			mlog.Error("Encountered error attaching files to post", mlog.String("product_id", product.Id), mlog.Any("more_image_ids", product.MoreImageIds), mlog.Err(result.Err))
-		}
-	}
 	rproduct := result.Data.(*model.Product)
+
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+				mlog.Error("Encountered error indexing product", mlog.String("product_id", rproduct.Id), mlog.Err(err))
+			}
+		})
+	}
 
 	return rproduct, nil
 }
 
-func (a *App) attachMoreImageToProduct(product *model.Product) *model.AppError {
+func (a *App) attachMediaToProduct(product *model.Product) *model.AppError {
 	var attachedIds []string
-	for _, image := range product.MoreImage {
-		result := <-a.Srv.Store.FileInfo().AttachTo(image.Id, product.Id, model.METADATA_TYPE_PRODUCT)
+	for _, media := range product.Media {
+		result := <-a.Srv.Store.FileInfo().AttachTo(media.Id, product.Id, model.METADATA_TYPE_PRODUCT)
 		if result.Err != nil {
-			mlog.Warn("Failed to attach file to post", mlog.String("file_id", image.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+			mlog.Warn("Failed to attach file to post", mlog.String("file_id", media.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
 			continue
 		}
 
-		attachedIds = append(attachedIds, image.Id)
-	}
-
-	if len(product.MoreImageIds) != len(attachedIds) {
-		// We couldn't attach all files to the post, so ensure that post.FileIds reflects what was actually attached
-		product.MoreImageIds = attachedIds
-
-		result := <-a.Srv.Store.Product().Overwrite(product)
-		if result.Err != nil {
-			return result.Err
-		}
-	}
-
-	return nil
-}
-func (a *App) attachImageToProduct(product *model.Product) *model.AppError {
-
-	result := <-a.Srv.Store.FileInfo().AttachTo(product.Image.Id, product.Id, model.METADATA_TYPE_PRODUCT)
-	if result.Err != nil {
-		mlog.Warn("Failed to attach file to post", mlog.String("file_id", product.Image.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
-	}
-
-	if product.ImageId != product.Image.Id {
-		// We couldn't attach all files to the post, so ensure that post.FileIds reflects what was actually attached
-		product.ImageId = product.Image.Id
-
-		result := <-a.Srv.Store.Product().Overwrite(product)
-		if result.Err != nil {
-			return result.Err
-		}
+		attachedIds = append(attachedIds, media.Id)
 	}
 
 	return nil
@@ -163,32 +150,68 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	}
 
 	newProduct.Price = product.Price
-	newProduct.Value = product.Value
+
 	newProduct.DiscountLimit = product.DiscountLimit
 	newProduct.Cashback = product.Cashback
 	newProduct.Preview = product.Preview
 	newProduct.Description = product.Description
 
-	if !safeUpdate {
-		newProduct.FileIds = product.FileIds
-	}
-
-	if product.Image != nil && product.Image.Id != product.ImageId {
-		if err := a.attachImageToProduct(product); err != nil {
-			mlog.Error("Encountered error attaching files to post", mlog.String("product_id", product.Id), mlog.Any("more_image_ids", product.MoreImageIds), mlog.Err(result.Err))
+	//if !safeUpdate {
+	newProduct.Media = product.Media
+	//}
+	if len(newProduct.Media) > 0 {
+		if err := a.attachMediaToProduct(newProduct); err != nil {
+			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", newProduct.Id), mlog.Any("file_ids", newProduct.FileIds), mlog.Err(result.Err))
 		}
-		newProduct.ImageId = product.Image.Id
-	}
 
+	}
 	result = <-a.Srv.Store.Product().Update(newProduct)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 
 	rproduct := result.Data.(*model.Product)
+
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			/*rchannel := <-a.Srv.Store.Channel().GetForPost(rpost.Id)
+			if rchannel.Err != nil {
+				mlog.Error(fmt.Sprintf("Couldn't get channel %v for post %v for Elasticsearch indexing.", rpost.ChannelId, rpost.Id))
+				return
+			}*/
+			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+				mlog.Error("Encountered error indexing product", mlog.String("product_id", product.Id), mlog.Err(err))
+			}
+		})
+	}
+
 	rproduct = a.PrepareProductForClient(rproduct, false)
 
 	//a.InvalidateCacheForChannelProducts(rproduct.ChannelId)
 
 	return rproduct, nil
+}
+
+func (a *App) SearchProducts(terms string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
+	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
+	esInterface := a.Elasticsearch
+	resultList := model.NewProductList()
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableSearching {
+		if len(paramsList) == 0 {
+			return model.NewProductList(), nil
+		}
+
+		if products, err := a.Elasticsearch.SearchProductsHint(paramsList, page, perPage); err != nil {
+			return nil, err
+		} else if len(products) > 0 {
+			for _, p := range products {
+				if p.DeleteAt == 0 {
+					resultList.AddOrder(p.Id)
+					resultList.AddProduct(p)
+				}
+			}
+		}
+	}
+	return resultList, nil
 }

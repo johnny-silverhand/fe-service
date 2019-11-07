@@ -5,15 +5,13 @@ import (
 	"strconv"
 	"time"
 
-	l4g "github.com/alecthomas/log4go"
+	//l4g "github.com/alecthomas/log4go"
 
 	"im/model"
-	"im/utils"
-
 )
 
 func (api *API) InitMessage() {
-	l4g.Debug(utils.T("api.post.init.debug"))
+	//l4g.Debug(utils.T("api.post.init.debug"))
 
 	api.BaseRoutes.Messages.Handle("", api.ApiSessionRequired(getAllMessages)).Methods("GET")
 	api.BaseRoutes.Messages.Handle("", api.ApiSessionRequired(createMessage)).Methods("POST")
@@ -44,7 +42,6 @@ func createMessage(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	hasPermission := false
 
-
 	if channel, err := c.App.FindOpennedChannel(post.UserId); err == nil {
 		post.ChannelId = channel.Id
 	} else {
@@ -54,7 +51,7 @@ func createMessage(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			if cmhjResult := <-c.App.Srv.Store.ChannelMemberHistory().LogJoinEvent(post.UserId, channel.Id, model.GetMillis()); cmhjResult.Err != nil {
-				l4g.Warn(cmhjResult.Err.Error())
+				//l4g.Warn(cmhjResult.Err.Error())
 			}
 			post.ChannelId = channel.Id
 		}

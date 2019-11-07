@@ -147,6 +147,9 @@ func (s *LayeredStore) Scheme() SchemeStore {
 func (s *LayeredStore) Product() ProductStore {
 	return s.DatabaseLayer.Product()
 }
+func (s *LayeredStore) Promo() PromoStore {
+	return s.DatabaseLayer.Promo()
+}
 func (s *LayeredStore) Category() CategoryStore {
 	return s.DatabaseLayer.Category()
 }
@@ -156,6 +159,25 @@ func (s *LayeredStore) LinkMetadata() LinkMetadataStore {
 
 func (s *LayeredStore) MarkSystemRanUnitTests() {
 	s.DatabaseLayer.MarkSystemRanUnitTests()
+}
+func (s *LayeredStore) Office() OfficeStore {
+	return s.DatabaseLayer.Office()
+}
+func (s *LayeredStore) Order() OrderStore {
+	return s.DatabaseLayer.Order()
+}
+func (s *LayeredStore) Basket() BasketStore {
+	return s.DatabaseLayer.Basket()
+}
+func (s *LayeredStore) Transaction() TransactionStore {
+	return s.DatabaseLayer.Transaction()
+}
+func (s *LayeredStore) Level() LevelStore {
+	return s.DatabaseLayer.Level()
+}
+
+func (s *LayeredStore) Extra() ExtraStore {
+	return s.DatabaseLayer.Extra()
 }
 
 func (s *LayeredStore) Close() {

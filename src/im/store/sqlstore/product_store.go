@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"im/mlog"
 	"im/model"
 	"im/store"
 	"net/http"
@@ -134,10 +135,12 @@ func (s *SqlProductStore) Update(newProduct *model.Product) store.StoreChannel {
 func (s *SqlProductStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var product *model.Product
-
-		if err := s.GetMaster().SelectOne(&product, "select * from products where id = :Id", map[string]interface{}{"Id": id}); err != nil {
+		if err := s.GetReplica().SelectOne(&product,
+			`SELECT *
+					FROM Products
+					WHERE Id = :Id  AND DeleteAt = 0`, map[string]interface{}{"Id": id}); err != nil {
 			if err == sql.ErrNoRows {
-				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.not_found", nil, err.Error(), http.StatusNotFound)
+				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.app_error", nil, err.Error(), http.StatusNotFound)
 			} else {
 				result.Err = model.NewAppError("SqlProductStore.Get", "store.sql_products.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 			}
@@ -180,6 +183,10 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
                   FROM Products
                   WHERE CategoryId = :CategoryId
                   ORDER BY ` + order.Column + ` `
+
+		/*if order.Column == "price" { // cuz price is string
+			query += `+ 0 ` // hack for sorting string as integer
+		}*/
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
@@ -323,6 +330,24 @@ func (s *SqlProductStore) Overwrite(product *model.Product) store.StoreChannel {
 			result.Err = model.NewAppError("SqlProductStore.Overwrite", "store.sql_product.overwrite.app_error", nil, "id="+product.Id+", "+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = product
+		}
+	})
+}
+
+func (s SqlProductStore) GetProductsByIds(productIds []string, allowFromCache bool) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		keys, params := MapStringsToQueryParams(productIds, "Product")
+
+		query := `SELECT * FROM Products WHERE Id IN ` + keys
+
+		var products []*model.Product
+		_, err := s.GetReplica().Select(&products, query, params)
+
+		if err != nil {
+			mlog.Error(fmt.Sprint(err))
+			result.Err = model.NewAppError("SqlProductStore.GetProductsByIds", "store.sql_product.get_products_by_ids.app_error", nil, "", http.StatusInternalServerError)
+		} else {
+			result.Data = products
 		}
 	})
 }

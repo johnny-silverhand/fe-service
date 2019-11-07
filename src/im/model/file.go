@@ -12,6 +12,7 @@ const (
 	MaxImageSize = 6048 * 4032 // 24 megapixels, roughly 36MB as a raw image
 	METADATA_TYPE_POST                       = "post"
 	METADATA_TYPE_PRODUCT                     = "product"
+	METADATA_TYPE_PROMO                     = "promo"
 )
 
 
