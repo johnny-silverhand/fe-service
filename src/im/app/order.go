@@ -68,7 +68,7 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 				basket = append(basket, ps)
 			}
 		}
-		order.Price = total
+		order.Price = total - order.DiscountValue
 		order.Positions = basket
 	}
 
@@ -76,6 +76,16 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 }
 
 func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
+	// проверка DiscountValue на превышение допустимого лимита оплаты бонусами в заказе
+	var productIds = make([]string, 0)
+	for _, position := range order.Positions {
+		productIds = append(productIds, position.ProductId)
+	}
+	if discountLimit, err := a.GetDiscountLimits(productIds); err != nil {
+		return nil, err
+	} else if int64(order.DiscountValue) > discountLimit.Total {
+		return nil, model.NewAppError("CreateOrder", "api.order.create_order.discount_limit.app_error", nil, "id="+order.Id, http.StatusBadRequest)
+	}
 
 	a.RecalculateOrder(order)
 
@@ -87,33 +97,15 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
 	newOrder := result.Data.(*model.Order)
 	var msg string
-	var total float64
 	msg += fmt.Sprintf("Заказ № %s \n", strconv.FormatInt(newOrder.CreateAt, 10))
-	if order.Positions != nil {
-		for _, ps := range order.Positions {
-			pr := <-a.Srv.Store.Product().Get(ps.ProductId)
 
-			if pr.Err == nil {
-				product := pr.Data.(*model.Product)
-
-				msg += fmt.Sprintf("%s %.2f \n", product.Name, product.Price)
-
-				total += ps.Price * float64(ps.Quantity)
-
-			}
-		}
-		msg += fmt.Sprintf("Итого %.2f \n", total)
-
+	post := &model.Post{
+		UserId:   newOrder.UserId,
+		Message:  msg,
+		CreateAt: model.GetMillis() + 1,
 	}
 
-	/*	post := &model.Post{
-
-		UserId:    newOrder.UserId,
-		Message:   msg,
-		CreateAt:  model.GetMillis() + 1,
-	}*/
-
-	//a.CreatePostWithOrder(post, order, false)
+	a.CreatePostWithOrder(post, newOrder, false)
 
 	return newOrder, nil
 }

@@ -24,7 +24,23 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	terms := *params.Terms
-	if results, err := c.App.SearchProducts(terms, 0, 0, 99); err != nil {
+
+	timeZoneOffset := 0
+	if params.TimeZoneOffset != nil {
+		timeZoneOffset = *params.TimeZoneOffset
+	}
+
+	page := 0
+	if params.Page != nil {
+		page = *params.Page
+	}
+
+	perPage := 60
+	if params.PerPage != nil {
+		perPage = *params.PerPage
+	}
+
+	if results, err := c.App.SearchProducts(terms, timeZoneOffset, page, perPage); err != nil {
 		c.Err = err
 		return
 	} else {

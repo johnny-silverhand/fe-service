@@ -1225,7 +1225,7 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 		}
 	}
 
-	//post.AddProp("order_id", order.Id)
+	post.AddProp("order_id", order.Id)
 
 	return a.CreatePost(post, channel, triggerWebhooks)
 }
