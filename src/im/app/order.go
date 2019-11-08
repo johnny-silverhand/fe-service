@@ -64,9 +64,6 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 				ps.Currency = product.Currency
 				ps.Name = product.Name
 
-				/*ps.DiscountValue = int64(product.Price * (product.DiscountLimit / 100))
-				ps.DiscountPrice = int64(ps.Price) - ps.DiscountValue*/
-
 				total += ps.Price * float64(ps.Quantity)
 				basket = append(basket, ps)
 			}
