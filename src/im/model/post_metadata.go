@@ -12,7 +12,8 @@ type PostMetadata struct {
 	// for links in the post.
 	Embeds []*PostEmbed `json:"embeds,omitempty"`
 
-
+	// Order holds information required to render content order in the post.
+	Order *Order `json:"order,omitempty"`
 
 	// Files holds information about the file attachments on the post.
 	Files []*FileInfo `json:"files,omitempty"`
@@ -22,7 +23,6 @@ type PostMetadata struct {
 	// contained in the OpenGraph metadata, and images contained in message attachments. It does not contain
 	// the dimensions of any file attachments as those are stored in FileInfos.
 	Images map[string]*PostImage `json:"images,omitempty"`
-
 }
 
 type PostImage struct {

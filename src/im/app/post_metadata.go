@@ -67,6 +67,13 @@ func (a *App) PreparePostForClient(originalPost *model.Post, isNewPost bool) *mo
 		post.Metadata.Files = fileInfos
 	}
 
+	// Order
+	if order, err := a.getOrderMetadataForPost(post); err != nil {
+		mlog.Warn("Failed to get order for a post", mlog.String("post_id", post.Id), mlog.Any("err", err))
+	} else {
+		post.Metadata.Order = order
+	}
+
 	// Embeds and image dimensions
 	firstLink, images := getFirstLinkAndImages(post.Message)
 
@@ -91,6 +98,12 @@ func (a *App) getFileMetadataForPost(post *model.Post) ([]*model.FileInfo, *mode
 	return a.GetFileInfosForPost(post.Id)
 }
 
+func (a *App) getOrderMetadataForPost(post *model.Post) (*model.Order, *model.AppError) {
+	if orderId, ok := post.Props["order_id"].(string); ok {
+		return a.GetOrder(orderId)
+	}
+	return nil, nil
+}
 
 func (a *App) getEmbedForPost(post *model.Post, firstLink string, isNewPost bool) (*model.PostEmbed, error) {
 	if _, ok := post.Props["attachments"]; ok {
@@ -211,7 +224,7 @@ func getFirstLinkAndImages(str string) (string, []string) {
 func getImagesInMessageAttachments(post *model.Post) []string {
 	var images []string
 
-/*	for _, attachment := range post.Attachments() {
+	/*	for _, attachment := range post.Attachments() {
 		_, imagesInText := getFirstLinkAndImages(attachment.Text)
 		images = append(images, imagesInText...)
 
