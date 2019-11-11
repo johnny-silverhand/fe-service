@@ -470,3 +470,19 @@ func (m *ElasticsearcInterfaceImpl) PurgeIndexes() *model.AppError {
 func (m *ElasticsearcInterfaceImpl) DataRetentionDeleteIndexes(cutoff time.Time) *model.AppError {
 	return nil
 }
+func (m *ElasticsearcInterfaceImpl) DeleteProduct(product *model.Product) *model.AppError {
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/"+product.Id, strings.NewReader(""))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("DeleteProductElasticsearch", "ent.elasticsearch.delete.product", nil, "", http.StatusBadRequest)
+
+	}
+	if resp.Body != nil {
+		parsed := ElasticProductsResponseFromJson(resp.Body)
+		fmt.Println(parsed)
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+	return nil
+}
