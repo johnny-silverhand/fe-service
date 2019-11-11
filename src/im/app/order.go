@@ -238,7 +238,8 @@ func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (
 	if result := <-a.Srv.Store.Order().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
 		return nil, result.Err
 	} else {
-		return result.Data.(*model.OrderList), nil
+		orderList := result.Data.(*model.OrderList)
+		return a.PrepareOrderListForClient(orderList), nil
 	}
 }
 
