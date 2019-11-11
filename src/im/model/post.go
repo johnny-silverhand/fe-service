@@ -104,6 +104,7 @@ type SearchParameter struct {
 	Page                   *int    `json:"page"`
 	PerPage                *int    `json:"per_page"`
 	IncludeDeletedChannels *bool   `json:"include_deleted_channels"`
+	CategoryId             *string `json:"category_id"`
 }
 
 func (o *PostPatch) WithRewrittenImageURLs(f func(string) string) *PostPatch {
@@ -295,7 +296,6 @@ func (o *Post) PreCommit() {
 		o.FileIds = []string{}
 	}
 
-
 	// There's a rare bug where the client sends up duplicate FileIds so protect against that
 	o.FileIds = RemoveDuplicateStrings(o.FileIds)
 }
@@ -382,6 +382,7 @@ func SearchParameterFromJson(data io.Reader) *SearchParameter {
 func (o *Post) ChannelMentions() []string {
 	return []string{}
 }
+
 /*
 func (o *Post) Attachments() []*SlackAttachment {
 	if attachments, ok := o.Props["attachments"].([]*SlackAttachment); ok {
@@ -508,9 +509,10 @@ func RewriteImageURLs(message string, f func(string) string) string {
 }
 
 type MessageArray struct {
-	Order    []string            `json:"order"`
-	Messages []*Post 		 `json:"messages"`
+	Order    []string `json:"order"`
+	Messages []*Post  `json:"messages"`
 }
+
 func NewMessageArray() *MessageArray {
 	return &MessageArray{
 		Order:    make([]string, 0),
@@ -518,14 +520,13 @@ func NewMessageArray() *MessageArray {
 	}
 }
 
-
 func (o *MessageArray) MakeNonNil() {
 	if o.Order == nil {
 		o.Order = make([]string, 0)
 	}
 
 	if o.Messages == nil {
-		o.Messages =  make([]*Post, 0)
+		o.Messages = make([]*Post, 0)
 	}
 
 	for _, v := range o.Messages {
@@ -550,7 +551,6 @@ func (o *MessageArray) AddMessage(post *Post) {
 
 	o.Messages = append(o.Messages, post)
 }
-
 
 func (o *MessageArray) ToJson() string {
 	copy := *o

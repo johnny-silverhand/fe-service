@@ -193,7 +193,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	return rproduct, nil
 }
 
-func (a *App) SearchProducts(terms string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
+func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
 	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
 	esInterface := a.Elasticsearch
 	resultList := model.NewProductList()
@@ -206,9 +206,11 @@ func (a *App) SearchProducts(terms string, timeZoneOffset int, page, perPage int
 			return nil, err
 		} else if len(products) > 0 {
 			for _, p := range products {
-				if p.DeleteAt == 0 {
-					resultList.AddOrder(p.Id)
-					resultList.AddProduct(p)
+				if (len(categoryId) > 0 && p.CategoryId == categoryId) || len(categoryId) == 0 {
+					if p.DeleteAt == 0 {
+						resultList.AddOrder(p.Id)
+						resultList.AddProduct(p)
+					}
 				}
 			}
 		}
