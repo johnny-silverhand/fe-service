@@ -12,7 +12,7 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
 	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
-	api.BaseRoutes.Product.Handle("/delete", api.ApiHandler(deleteProduct)).Methods("DELETE")
+	api.BaseRoutes.Product.Handle("", api.ApiHandler(deleteProduct)).Methods("DELETE")
 }
 
 func deleteProduct(c *Context, w http.ResponseWriter, r *http.Request) {
