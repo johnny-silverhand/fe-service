@@ -1,7 +1,6 @@
 package api4
 
 import (
-	"fmt"
 	"im/model"
 	"net/http"
 )
@@ -25,9 +24,11 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	terms := *params.Terms
-	categoryId := *params.CategoryId
 
-	fmt.Println(categoryId)
+	var categoryId string = ""
+	if params.CategoryId != nil {
+		categoryId = *params.CategoryId
+	}
 
 	timeZoneOffset := 0
 	if params.TimeZoneOffset != nil {
