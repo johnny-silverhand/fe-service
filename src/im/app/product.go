@@ -193,6 +193,34 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	return rproduct, nil
 }
 
+func (a *App) DeleteProduct(productId, deleteByID string) (*model.Product, *model.AppError) {
+	result := <-a.Srv.Store.Product().Get(productId)
+	if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return nil, result.Err
+	}
+	product := result.Data.(*model.Product)
+
+	if result := <-a.Srv.Store.Product().Delete(productId, model.GetMillis(), deleteByID); result.Err != nil {
+		return nil, result.Err
+	}
+
+	/*a.Srv.Go(func() {
+		a.DeleteProductFiles(productId)
+	})*/
+
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			if err := esInterface.DeleteProduct(product); err != nil {
+				mlog.Error("Encountered error deleting product", mlog.String("product_id", product.Id), mlog.Err(err))
+			}
+		})
+	}
+
+	return product, nil
+}
+
 func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
 	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
 	esInterface := a.Elasticsearch

@@ -16,6 +16,7 @@ type ElasticsearchInterface interface {
 
 	IndexProduct(product *model.Product, clientId string) *model.AppError
 	SearchProductsHint(searchParams []*model.SearchParams, page, perPage int) ([]*model.Product, *model.AppError)
+	DeleteProduct(productId *model.Product) *model.AppError
 
 	DeletePost(post *model.Post) *model.AppError
 	IndexChannel(channel *model.Channel) *model.AppError

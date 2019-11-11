@@ -490,7 +490,8 @@ type ProductStore interface {
 	GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
 	GetAllByClientId(clientId string) StoreChannel
 	GetAllByClientIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
-	Delete(productId string) StoreChannel
+	//Delete(productId string) StoreChannel
+	Delete(productId string, time int64, deleteByID string) StoreChannel
 	GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) StoreChannel
 	Update(newProduct *model.Product) StoreChannel
 	Overwrite(product *model.Product) StoreChannel

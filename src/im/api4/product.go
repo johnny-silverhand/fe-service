@@ -1,7 +1,6 @@
 package api4
 
 import (
-	"fmt"
 	"im/model"
 	"net/http"
 )
@@ -13,6 +12,27 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
 	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
+	api.BaseRoutes.Product.Handle("/delete", api.ApiHandler(deleteProduct)).Methods("DELETE")
+}
+
+func deleteProduct(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireProductId()
+	if c.Err != nil {
+		return
+	}
+
+	if _, err := c.App.GetProduct(c.Params.ProductId); err != nil {
+		// TODO CHANGE TO PERMISSION_DELETE_PRODUCT
+		c.SetPermissionError(model.PERMISSION_DELETE_POST)
+		return
+	}
+
+	if _, err := c.App.DeleteProduct(c.Params.ProductId, c.App.Session.UserId); err != nil {
+		c.Err = err
+		return
+	}
+
+	ReturnStatusOK(w)
 }
 
 func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -25,9 +45,11 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	terms := *params.Terms
-	categoryId := *params.CategoryId
 
-	fmt.Println(categoryId)
+	var categoryId string = ""
+	if params.CategoryId != nil {
+		categoryId = *params.CategoryId
+	}
 
 	timeZoneOffset := 0
 	if params.TimeZoneOffset != nil {

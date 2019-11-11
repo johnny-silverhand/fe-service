@@ -296,7 +296,7 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 	})
 }
 
-func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
+func (s *SqlProductStore) Delete(productId string, time int64, deleteByID string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
 		appErr := func(errMsg string) *model.AppError {
@@ -308,8 +308,6 @@ func (s *SqlProductStore) Delete(productId string) store.StoreChannel {
 		if err != nil {
 			result.Err = appErr(err.Error())
 		}
-
-		time := model.GetMillis()
 
 		_, err = s.GetMaster().Exec("UPDATE Products SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE Id = :Id", map[string]interface{}{"DeleteAt": time, "UpdateAt": time, "Id": productId})
 		if err != nil {
