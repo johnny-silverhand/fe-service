@@ -15,6 +15,21 @@ func (api *API) InitCategory() {
 	api.BaseRoutes.Category.Handle("/move", api.ApiHandler(moveCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("/order", api.ApiHandler(orderCategory)).Methods("PUT")
 	api.BaseRoutes.Category.Handle("", api.ApiHandler(deleteCategory)).Methods("DELETE")
+	api.BaseRoutes.Categories.Handle("/search", api.ApiHandler(searchCategories)).Methods("POST")
+}
+
+func searchCategories(c *Context, w http.ResponseWriter, r *http.Request) {
+	categoryIds := model.ArrayFromJson(r.Body)
+	if len(categoryIds) == 0 {
+		c.SetInvalidParam("category_ids")
+		return
+	}
+	if categories, err := c.App.GetCategoriesByIds(categoryIds); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(model.CategoriesToJson(categories)))
+	}
 }
 
 func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
