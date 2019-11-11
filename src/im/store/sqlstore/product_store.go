@@ -156,7 +156,7 @@ func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit
 		//add cache with allowFromCache
 
 		var products []*model.Product
-		query := `SELECT * from Products WHERE CategoryId = :CategoryId`
+		query := `SELECT * from Products WHERE CategoryId = :CategoryId AND DeleteAt = 0`
 		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"CategoryId": categoryId}); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllByCategoryId", "store.sql_products.get_all_by_category_id.app_error", nil, err.Error(), http.StatusNotFound)
 		} else {
@@ -182,11 +182,8 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 		query := `SELECT *
                   FROM Products
                   WHERE CategoryId = :CategoryId
+				  AND DeleteAt = 0
                   ORDER BY ` + order.Column + ` `
-
-		/*if order.Column == "price" { // cuz price is string
-			query += `+ 0 ` // hack for sorting string as integer
-		}*/
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
@@ -216,7 +213,7 @@ func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
 		if err := s.GetReplica().SelectOne(&products,
 			`SELECT *
                     FROM Products
-                    WHERE ClientId = :ClientId`, map[string]interface{}{"ClientId": clientId}); err != nil {
+                    WHERE ClientId = :ClientId AND DeleteAt = 0`, map[string]interface{}{"ClientId": clientId}); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllByClientId", "store.sql_products.get_all_by_client_id.app_error", nil, err.Error(), http.StatusNotFound)
 		} else {
 
@@ -263,7 +260,7 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 
 		query := `SELECT *
                   FROM Products
-                  WHERE AND DeleteAt = 0`
+                  WHERE DeleteAt = 0`
 
 		if len(prefixSub) > 0 {
 			query += prefixSub
@@ -336,7 +333,7 @@ func (s SqlProductStore) GetProductsByIds(productIds []string, allowFromCache bo
 	return store.Do(func(result *store.StoreResult) {
 		keys, params := MapStringsToQueryParams(productIds, "Product")
 
-		query := `SELECT * FROM Products WHERE Id IN ` + keys
+		query := `SELECT * FROM Products WHERE DeleteAt = 0 AND Id IN ` + keys
 
 		var products []*model.Product
 		_, err := s.GetReplica().Select(&products, query, params)
