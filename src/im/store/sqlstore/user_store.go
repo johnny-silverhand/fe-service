@@ -1,4 +1,3 @@
-
 package sqlstore
 
 import (
@@ -61,7 +60,6 @@ func NewSqlUserStore(sqlStore SqlStore) store.UserStore {
 		Select("u.*").
 		From("Users u")
 
-
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.User{}, "Users").SetKeys(false, "Id")
 		table.ColMap("Id").SetMaxSize(26)
@@ -69,7 +67,7 @@ func NewSqlUserStore(sqlStore SqlStore) store.UserStore {
 		table.ColMap("Password").SetMaxSize(128)
 		table.ColMap("AuthData").SetMaxSize(128).SetUnique(true)
 		table.ColMap("AuthService").SetMaxSize(32)
-		table.ColMap("Email").SetMaxSize(128).SetUnique(true)
+		table.ColMap("Email").SetMaxSize(128)
 		table.ColMap("Nickname").SetMaxSize(64)
 		table.ColMap("FirstName").SetMaxSize(64)
 		table.ColMap("LastName").SetMaxSize(64)
@@ -165,7 +163,7 @@ func (us SqlUserStore) Update(user *model.User, trustedUpdateData bool) store.St
 				if !trustedUpdateData {
 					user.Email = oldUser.Email
 				}
-			}  else if user.Email != oldUser.Email {
+			} else if user.Email != oldUser.Email {
 				user.EmailVerified = false
 			}
 
@@ -1559,7 +1557,6 @@ func (us SqlUserStore) GetChannelGroupUsers(channelID string) store.StoreChannel
 	})
 }
 
-
 func (us SqlUserStore) SaveWithCheckExist(user *model.User) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if len(user.Id) > 0 {
@@ -1588,7 +1585,6 @@ func (us SqlUserStore) SaveWithCheckExist(user *model.User) store.StoreChannel {
 	})
 }
 
-
 func (us SqlUserStore) VerifyPhone(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if _, err := us.GetMaster().Exec("UPDATE Users SET PhoneVerified = 1 WHERE Id = :UserId", map[string]interface{}{"UserId": userId}); err != nil {
@@ -1608,7 +1604,6 @@ func (us SqlUserStore) VerifyPhoneNew(userId string) store.StoreChannel {
 		result.Data = userId
 	})
 }
-
 
 func (us SqlUserStore) GetByPhone(phone string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
