@@ -512,6 +512,7 @@ type CategoryStore interface {
 	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
 	GetCategoryPath(categoryId string) StoreChannel
+	GetCategoriesByIds(categoryIds []string) StoreChannel
 }
 
 type PromoStore interface {

@@ -75,10 +75,10 @@ func (a *App) DeleteCategory(category *model.Category) (map[string]int, *model.A
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	descendants, _ := a.GetDescendants(category)
+	/*descendants, _ := a.GetDescendants(category)
 	for _, descendant := range descendants {
 		a.DeleteCategory(descendant)
-	}
+	}*/
 	return nil, nil
 }
 
@@ -144,6 +144,14 @@ func (a *App) UpdateCategory(category *model.Category, safeUpdate bool) (*model.
 
 func (a *App) GetCategoryPath(categoryId string) ([]*model.Category, *model.AppError) {
 	result := <-a.Srv.Store.Category().GetCategoryPath(categoryId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.Category), nil
+}
+
+func (a *App) GetCategoriesByIds(categoryIds []string) ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetCategoriesByIds(categoryIds)
 	if result.Err != nil {
 		return nil, result.Err
 	}
