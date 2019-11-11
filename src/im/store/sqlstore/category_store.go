@@ -572,6 +572,41 @@ func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel 
 	})
 }
 
+func (s SqlCategoryStore) GetCategoriesByIds(categoryIds []string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var (
+			categories []*model.Category
+		)
+		props := make(map[string]interface{})
+		idQuery := ""
+		for i, categoryId := range categoryIds {
+			if len(idQuery) > 0 {
+				idQuery += ", "
+			}
+			props["categoryId"+strconv.Itoa(i)] = categoryId
+			idQuery += ":categoryId" + strconv.Itoa(i)
+		}
+
+		if _, err := s.GetMaster().Select(&categories, `
+			SELECT distinct p.* 
+			FROM categories AS n, categories AS p 
+			WHERE n.lft BETWEEN p.lft AND p.rgt AND n.Id IN (`+idQuery+`) 
+			ORDER BY p.lft`,
+			props); err != nil {
+
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlCategoryStore.GetCategoriesByIds",
+					"store.sql_category.get_categories_by_ids.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlCategoryStore.GetCategoriesByIds", "store.sql_category.get_categories_by_ids.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = categories
+		}
+	})
+}
+
 /*
 					*** STORED PROCEDURE CALLS ***
  https://www.we-rc.com/blog/2015/07/19/nested-set-model-practical-examples-part-i
