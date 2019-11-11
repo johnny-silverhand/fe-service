@@ -1,6 +1,7 @@
 package api4
 
 import (
+	"fmt"
 	"im/model"
 	"net/http"
 )
@@ -24,6 +25,9 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	terms := *params.Terms
+	categoryId := *params.CategoryId
+
+	fmt.Println(categoryId)
 
 	timeZoneOffset := 0
 	if params.TimeZoneOffset != nil {
@@ -40,7 +44,7 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		perPage = *params.PerPage
 	}
 
-	if results, err := c.App.SearchProducts(terms, timeZoneOffset, page, perPage); err != nil {
+	if results, err := c.App.SearchProducts(terms, categoryId, timeZoneOffset, page, perPage); err != nil {
 		c.Err = err
 		return
 	} else {
