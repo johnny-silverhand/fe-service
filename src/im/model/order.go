@@ -116,3 +116,18 @@ func (o *Order) IsValid() *AppError {
 
 	return nil
 }
+
+func (o *Order) NormalizePositions() {
+	var positions []*Basket
+normalizeLoop:
+	for _, v := range o.Positions {
+		for i, u := range positions {
+			if v.ProductId == u.ProductId {
+				positions[i].Quantity += v.Quantity
+				continue normalizeLoop
+			}
+		}
+		positions = append(positions, v)
+	}
+	o.Positions = positions
+}

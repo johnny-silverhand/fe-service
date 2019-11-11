@@ -77,6 +77,15 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 
 	rproduct := result.Data.(*model.Product)
 
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+				mlog.Error("Encountered error indexing product", mlog.String("product_id", rproduct.Id), mlog.Err(err))
+			}
+		})
+	}
+
 	return rproduct, nil
 }
 
@@ -162,9 +171,75 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	}
 
 	rproduct := result.Data.(*model.Product)
+
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			/*rchannel := <-a.Srv.Store.Channel().GetForPost(rpost.Id)
+			if rchannel.Err != nil {
+				mlog.Error(fmt.Sprintf("Couldn't get channel %v for post %v for Elasticsearch indexing.", rpost.ChannelId, rpost.Id))
+				return
+			}*/
+			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+				mlog.Error("Encountered error indexing product", mlog.String("product_id", product.Id), mlog.Err(err))
+			}
+		})
+	}
+
 	rproduct = a.PrepareProductForClient(rproduct, false)
 
 	//a.InvalidateCacheForChannelProducts(rproduct.ChannelId)
 
 	return rproduct, nil
+}
+
+func (a *App) SearchProducts(terms string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
+	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
+	esInterface := a.Elasticsearch
+	resultList := model.NewProductList()
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableSearching {
+		if len(paramsList) == 0 {
+			return model.NewProductList(), nil
+		}
+
+		if products, err := a.Elasticsearch.SearchProductsHint(paramsList, page, perPage); err != nil {
+			return nil, err
+		} else if len(products) > 0 {
+			for _, p := range products {
+				if p.DeleteAt == 0 {
+					resultList.AddOrder(p.Id)
+					resultList.AddProduct(p)
+				}
+			}
+		}
+	}
+	return resultList, nil
+}
+
+func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *model.AppError) {
+	result := <-a.Srv.Store.Product().GetProductsByIds(productIds, true)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	rproducts := result.Data.([]*model.Product)
+	var (
+		discount model.ProductsDiscount
+		value    int64
+	)
+
+	for _, product := range rproducts {
+		value = int64(product.Price * (product.DiscountLimit / 100))
+		discount.Limits = append(discount.Limits, struct {
+			Id            string `json:"id"`
+			DiscountValue int64  `json:"discount_value"`
+		}{
+			product.Id,
+			value,
+		})
+		discount.Total += value
+
+	}
+
+	return &discount, nil
 }

@@ -160,7 +160,7 @@ func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	c.App.DeleteCategory(category)
+	c.App.DeleteOneCategory(category)
 	/*
 		if err != nil {
 			c.Err = err
