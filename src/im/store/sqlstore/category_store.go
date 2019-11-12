@@ -644,8 +644,15 @@ func (s SqlCategoryStore) DeleteCategoryBySp(category *model.Category) store.Sto
 	return store.Do(func(result *store.StoreResult) {
 		//call r_tree_traversal(:Crud, :Id, :clientId, :parentId, :name, :createAt, :updateAt)
 		_, err := s.GetMaster().Exec(`
-			call r_tree_traversal('delete',:Id, '', '','','','');`,
-			map[string]interface{}{"Id": category.Id})
+			call r_tree_traversal('delete',:Id, :ClientID, :ParentId,:Name,:CreateAt,:UpdateAt);`,
+			map[string]interface{}{
+				"Id":       category.Id,
+				"ClientID": category.ClientId,
+				"ParentId": category.ParentId,
+				"Name":     category.Name,
+				"CreateAt": category.CreateAt,
+				"UpdateAt": category.UpdateAt,
+			})
 		if err != nil {
 			fmt.Print("error")
 		}
