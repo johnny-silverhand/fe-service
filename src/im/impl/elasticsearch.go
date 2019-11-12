@@ -106,20 +106,18 @@ type ElasticProductsResponse struct {
 		Failed     int `json:"failed"`
 	} `json:"_shards"`
 	Hits struct {
-		Total struct {
-			Value    int    `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-		MaxScore float64 `json:"max_score"`
+		Total    int         `json:"total"`
+		MaxScore interface{} `json:"max_score"`
 		Hits     []struct {
 			Index     string        `json:"_index"`
 			Type      string        `json:"_type"`
 			ID        string        `json:"_id"`
-			Score     float64       `json:"_score"`
+			Score     interface{}   `json:"_score"`
 			Source    model.Product `json:"_source"`
 			Highlight struct {
 				Message []string `json:"message"`
 			} `json:"highlight"`
+			Sort []int64 `json:"sort"`
 		} `json:"hits"`
 	} `json:"hits"`
 }
@@ -415,6 +413,10 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 
 	var products []*model.Product
 	if resp.Body != nil {
+
+		//htmlData, _ := ioutil.ReadAll(resp.Body) //<--- here!
+
+		//fmt.Println(string(htmlData[:]))
 
 		parsed := ElasticProductsResponseFromJson(resp.Body)
 
