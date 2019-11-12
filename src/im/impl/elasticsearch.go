@@ -175,7 +175,7 @@ func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *
 
 	st := post.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/"+post.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/"+post.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -197,7 +197,7 @@ func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, clientI
 
 	st := product.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/"+product.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/"+product.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -262,7 +262,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPosts(channels *model.ChannelList, sea
 
 	fmt.Println(string(dslJsonEncode))
 
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/_search", strings.NewReader(string(dslJsonEncode[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/_search", strings.NewReader(string(dslJsonEncode[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -326,7 +326,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -404,7 +404,7 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -471,7 +471,7 @@ func (m *ElasticsearcInterfaceImpl) DataRetentionDeleteIndexes(cutoff time.Time)
 	return nil
 }
 func (m *ElasticsearcInterfaceImpl) DeleteProduct(product *model.Product) *model.AppError {
-	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/"+product.Id, strings.NewReader(""))
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/"+product.Id, strings.NewReader(""))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
