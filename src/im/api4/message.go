@@ -149,7 +149,7 @@ func getMessagesForChannel(c *Context, w http.ResponseWriter, r *http.Request) {
 	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}
-	w.Write([]byte(list.ToJson()))
+	w.Write([]byte(c.App.PreparePostListForClient(list).ToJson()))
 }
 
 func getAllMessages(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -204,7 +204,7 @@ func getAllMessages(c *Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}
 
-	w.Write([]byte(list.ToJson()))
+	w.Write([]byte(c.App.PrepareMessageListForClient(list).ToJson()))
 }
 
 func getMessage(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -224,7 +224,7 @@ func getMessage(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.Header().Set(model.HEADER_ETAG_SERVER, post.Etag())
-		w.Write([]byte(post.ToJson()))
+		w.Write([]byte(c.App.PreparePostForClient(post, false).ToJson()))
 	}
 }
 
