@@ -1620,3 +1620,12 @@ func (us SqlUserStore) GetByPhone(phone string) store.StoreChannel {
 		result.Data = &user
 	})
 }
+func (us SqlUserStore) AccrualBalance(userId string, value float64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := us.GetMaster().Exec("UPDATE Users SET Balance = Balance + :Value WHERE Id = :UserId", map[string]interface{}{"UserId": userId, "Value": value}); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.AccrualBalance", "store.sql_user.verify_phone.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusInternalServerError)
+		}
+
+		result.Data = userId
+	})
+}

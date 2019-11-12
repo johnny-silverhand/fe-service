@@ -2088,3 +2088,7 @@ func (a *App) AutoCreateUser(user *model.User) (*model.User, *model.AppError) {
 
 	return ruser, nil
 }
+
+func (a *App) AccrualBalance(userId string, value float64) *model.AppError {
+	return (<-a.Srv.Store.User().AccrualBalance(userId, value)).Err
+}

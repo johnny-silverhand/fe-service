@@ -106,20 +106,18 @@ type ElasticProductsResponse struct {
 		Failed     int `json:"failed"`
 	} `json:"_shards"`
 	Hits struct {
-		Total struct {
-			Value    int    `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-		MaxScore float64 `json:"max_score"`
+		Total    int         `json:"total"`
+		MaxScore interface{} `json:"max_score"`
 		Hits     []struct {
 			Index     string        `json:"_index"`
 			Type      string        `json:"_type"`
 			ID        string        `json:"_id"`
-			Score     float64       `json:"_score"`
+			Score     interface{}   `json:"_score"`
 			Source    model.Product `json:"_source"`
 			Highlight struct {
 				Message []string `json:"message"`
 			} `json:"highlight"`
+			Sort []int64 `json:"sort"`
 		} `json:"hits"`
 	} `json:"hits"`
 }
@@ -175,7 +173,7 @@ func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *
 
 	st := post.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/"+post.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/"+post.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -197,7 +195,7 @@ func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, clientI
 
 	st := product.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/"+product.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/"+product.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -262,7 +260,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPosts(channels *model.ChannelList, sea
 
 	fmt.Println(string(dslJsonEncode))
 
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/_search", strings.NewReader(string(dslJsonEncode[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/_search", strings.NewReader(string(dslJsonEncode[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -326,7 +324,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/posts/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -404,7 +402,7 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -415,6 +413,10 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 
 	var products []*model.Product
 	if resp.Body != nil {
+
+		//htmlData, _ := ioutil.ReadAll(resp.Body) //<--- here!
+
+		//fmt.Println(string(htmlData[:]))
 
 		parsed := ElasticProductsResponseFromJson(resp.Body)
 
@@ -471,7 +473,7 @@ func (m *ElasticsearcInterfaceImpl) DataRetentionDeleteIndexes(cutoff time.Time)
 	return nil
 }
 func (m *ElasticsearcInterfaceImpl) DeleteProduct(product *model.Product) *model.AppError {
-	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"/products/"+product.Id, strings.NewReader(""))
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products"+"/products/"+product.Id, strings.NewReader(""))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)

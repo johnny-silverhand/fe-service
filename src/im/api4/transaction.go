@@ -14,7 +14,7 @@ func (api *API) InitTransaction() {
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(getTransaction)).Methods("GET")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(updateTransaction)).Methods("PUT")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(deleteTransaction)).Methods("DELETE")
-
+	api.BaseRoutes.User.Handle("/transactions", api.ApiSessionRequired(getUserTransactions)).Methods("GET")
 }
 
 func getAllTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -54,7 +54,7 @@ func getAllTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
 		list, err = c.App.GetAllTransactionsAfterTransaction(afterTransaction, c.Params.Page, c.Params.PerPage)
 	} else if len(beforeTransaction) > 0 {
 
-		list, err = c.App.GetAllTransactionsBeforeTransaction( beforeTransaction, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllTransactionsBeforeTransaction(beforeTransaction, c.Params.Page, c.Params.PerPage)
 	} else {
 		list, err = c.App.GetAllTransactionsPage(c.Params.Page, c.Params.PerPage)
 	}
@@ -65,8 +65,8 @@ func getAllTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*	if len(etag) > 0 {
-			w.Header().Set(model.HEADER_ETAG_SERVER, etag)
-		}*/
+		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
+	}*/
 
 	w.Write([]byte(list.ToJson()))
 }
@@ -106,7 +106,6 @@ func updateTransaction(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-
 
 	transaction.Id = c.Params.TransactionId
 
@@ -166,4 +165,24 @@ func deleteTransaction(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	ReturnStatusOK(w)
+}
+
+func getUserTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+	if c.Err != nil {
+		return
+	}
+
+	var list *model.TransactionList
+	var err *model.AppError
+	//etag := ""
+
+	list, err = c.App.GetUserTransactions(c.Params.UserId, c.Params.Page, c.Params.PerPage, "")
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(list.ToJson()))
 }

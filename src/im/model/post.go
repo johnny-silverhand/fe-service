@@ -38,18 +38,20 @@ const (
 	POST_CHANNEL_DELETED        = "system_channel_deleted"
 	POST_EPHEMERAL              = "system_ephemeral"
 	POST_CHANGE_CHANNEL_PRIVACY = "system_change_chan_privacy"
-	POST_FILEIDS_MAX_RUNES      = 150
-	POST_FILENAMES_MAX_RUNES    = 4000
-	POST_HASHTAGS_MAX_RUNES     = 1000
-	POST_MESSAGE_MAX_RUNES_V1   = 4000
-	POST_MESSAGE_MAX_BYTES_V2   = 65535                         // Maximum size of a TEXT column in MySQL
-	POST_MESSAGE_MAX_RUNES_V2   = POST_MESSAGE_MAX_BYTES_V2 / 4 // Assume a worst-case representation
-	POST_PROPS_MAX_RUNES        = 8000
-	POST_PROPS_MAX_USER_RUNES   = POST_PROPS_MAX_RUNES - 400 // Leave some room for system / pre-save modifications
-	POST_CUSTOM_TYPE_PREFIX     = "custom_"
-	PROPS_ADD_CHANNEL_MEMBER    = "add_channel_member"
-	POST_PROPS_ADDED_USER_ID    = "addedUserId"
-	POST_PROPS_DELETE_BY        = "deleteBy"
+	POST_WITH_METADATA          = "system_metadata"
+
+	POST_FILEIDS_MAX_RUNES    = 150
+	POST_FILENAMES_MAX_RUNES  = 4000
+	POST_HASHTAGS_MAX_RUNES   = 1000
+	POST_MESSAGE_MAX_RUNES_V1 = 4000
+	POST_MESSAGE_MAX_BYTES_V2 = 65535                         // Maximum size of a TEXT column in MySQL
+	POST_MESSAGE_MAX_RUNES_V2 = POST_MESSAGE_MAX_BYTES_V2 / 4 // Assume a worst-case representation
+	POST_PROPS_MAX_RUNES      = 8000
+	POST_PROPS_MAX_USER_RUNES = POST_PROPS_MAX_RUNES - 400 // Leave some room for system / pre-save modifications
+	POST_CUSTOM_TYPE_PREFIX   = "custom_"
+	PROPS_ADD_CHANNEL_MEMBER  = "add_channel_member"
+	POST_PROPS_ADDED_USER_ID  = "addedUserId"
+	POST_PROPS_DELETE_BY      = "deleteBy"
 )
 
 type Post struct {
@@ -234,6 +236,7 @@ func (o *Post) IsValid(maxPostSize int) *AppError {
 		POST_DISPLAYNAME_CHANGE,
 		POST_CONVERT_CHANNEL,
 		POST_CHANNEL_DELETED,
+		POST_WITH_METADATA,
 		POST_CHANGE_CHANNEL_PRIVACY:
 	default:
 		if !strings.HasPrefix(o.Type, POST_CUSTOM_TYPE_PREFIX) {

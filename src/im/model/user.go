@@ -82,10 +82,11 @@ type User struct {
 	TermsOfServiceId       string    `db:"-" json:"terms_of_service_id,omitempty"`
 	TermsOfServiceCreateAt int64     `db:"-" json:"terms_of_service_create_at,omitempty"`
 
-	Phone          string `json:"phone"`
-	PhoneVerified  bool   `json:"phone_verified,omitempty"`
-	PhoneNew       string `json:"phone_new"`
+	Phone         string `json:"phone"`
+	PhoneVerified bool   `json:"phone_verified,omitempty"`
+	PhoneNew      string `json:"phone_new"`
 
+	Balance float64 `json:"balance"`
 }
 
 type UserPatch struct {

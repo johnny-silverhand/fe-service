@@ -33,6 +33,21 @@ func (a *App) InitPostMetadata() {
 	})
 }
 
+func (a *App) PrepareMessageListForClient(originalList *model.MessageArray) *model.MessageArray {
+	list := &model.MessageArray{
+		Messages: make([]*model.Post, len(originalList.Messages)),
+		Order:    originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+	}
+
+	for id, originalPost := range originalList.Messages {
+		post := a.PreparePostForClient(originalPost, false)
+
+		list.Messages[id] = post
+	}
+
+	return list
+}
+
 func (a *App) PreparePostListForClient(originalList *model.PostList) *model.PostList {
 	list := &model.PostList{
 		Posts: make(map[string]*model.Post, len(originalList.Posts)),

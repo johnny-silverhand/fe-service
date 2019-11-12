@@ -81,7 +81,6 @@ func (s *SqlTransactionStore) Get(id string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlTransactionStore) GetAllPage(offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var transactions []*model.Transaction
@@ -111,7 +110,6 @@ func (s SqlTransactionStore) GetAllPage(offset int, limit int, order model.Colum
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -120,7 +118,6 @@ func (s SqlTransactionStore) GetAllPage(offset int, limit int, order model.Colum
 func (s *SqlTransactionStore) Overwrite(transaction *model.Transaction) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		transaction.UpdateAt = model.GetMillis()
-
 
 		if result.Err = transaction.IsValid(); result.Err != nil {
 			return
@@ -154,7 +151,6 @@ func (s *SqlTransactionStore) Delete(transactionId string, time int64, deleteByI
 	})
 }
 
-
 func (s SqlTransactionStore) GetAllTransactions(offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
@@ -162,17 +158,16 @@ func (s SqlTransactionStore) GetAllTransactions(offset int, limit int, allowFrom
 			return
 		}
 
-
 		var transactions []*model.Transaction
-		_, err := s.GetReplica().Select(&transactions, "SELECT * FROM Transactions WHERE " +
-			" DeleteAt = 0 " +
+		_, err := s.GetReplica().Select(&transactions, "SELECT * FROM Transactions WHERE "+
+			" DeleteAt = 0 "+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlTransactionStore.GetAllTransactions", "store.sql_transaction.get_root_transactions.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewTransactionList()
 
@@ -190,7 +185,6 @@ func (s SqlTransactionStore) GetAllTransactions(offset int, limit int, allowFrom
 
 func (s SqlTransactionStore) GetAllTransactionsSince(time int64, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		var transactions []*model.Transaction
 		_, err := s.GetReplica().Select(&transactions,
@@ -221,12 +215,12 @@ func (s SqlTransactionStore) GetAllTransactionsSince(time int64, allowFromCache 
 	})
 }
 
-func (s SqlTransactionStore) GetAllTransactionsBefore( transactionId string, numTransactions int, offset int) store.StoreChannel {
-	return s.getAllTransactionsAround( transactionId, numTransactions, offset, true)
+func (s SqlTransactionStore) GetAllTransactionsBefore(transactionId string, numTransactions int, offset int) store.StoreChannel {
+	return s.getAllTransactionsAround(transactionId, numTransactions, offset, true)
 }
 
 func (s SqlTransactionStore) GetAllTransactionsAfter(transactionId string, numTransactions int, offset int) store.StoreChannel {
-	return s.getAllTransactionsAround( transactionId, numTransactions, offset, false)
+	return s.getAllTransactionsAround(transactionId, numTransactions, offset, false)
 }
 
 func (s SqlTransactionStore) getAllTransactionsAround(transactionId string, numTransactions int, offset int, before bool) store.StoreChannel {
@@ -248,17 +242,14 @@ func (s SqlTransactionStore) getAllTransactionsAround(transactionId string, numT
 			    *
 			FROM
 			    Transactions
-			WHERE (CreateAt `+ direction+ ` (SELECT CreateAt FROM Transactions WHERE Id = :TransactionId))
-			ORDER BY CreateAt `+ sort+ `
+			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Transactions WHERE Id = :TransactionId))
+			ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumTransactions`,
 			map[string]interface{}{"TransactionId": transactionId, "NumTransactions": numTransactions, "Offset": offset})
 
-
-
-
 		if err != nil {
 			result.Err = model.NewAppError("SqlTransactionStore.getAllTransactionsAround", "store.sql_transaction.get_transactions_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewTransactionList()
 
@@ -281,4 +272,37 @@ func (s SqlTransactionStore) getAllTransactionsAround(transactionId string, numT
 	})
 }
 
+func (s SqlTransactionStore) GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var orders []*model.Transaction
 
+		query := `SELECT *
+                  FROM Transactions
+WHERE UserId = :UserId `
+		//ORDER BY ` + order.Column + ` `
+
+		/*if order.Column == "price" { // cuz price is string
+			query += `+ 0 ` // hack for sorting string as integer
+		}*/
+
+		query += /*order.Type + */ ` LIMIT :Limit OFFSET :Offset `
+
+		if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error",
+				nil, err.Error(),
+				http.StatusInternalServerError)
+		} else {
+
+			list := model.NewTransactionList()
+
+			for _, p := range orders {
+				list.AddTransaction(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}

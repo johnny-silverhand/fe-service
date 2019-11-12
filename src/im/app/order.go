@@ -103,8 +103,19 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		UserId:   newOrder.UserId,
 		Message:  msg,
 		CreateAt: model.GetMillis() + 1,
+		Type:     model.POST_WITH_METADATA,
 	}
 
+	accural := newOrder.Price * 0.1
+
+	transaction := &model.Transaction{
+		UserId:      newOrder.UserId,
+		OrderId:     newOrder.Id,
+		Description: fmt.Sprintf("Начисление по заказу № %s \n", strconv.FormatInt(newOrder.CreateAt, 10)),
+		Value:       accural,
+	}
+
+	a.AccrualTransaction(transaction)
 	a.CreatePostWithOrder(post, newOrder, false)
 
 	return newOrder, nil
@@ -258,7 +269,7 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 
 		a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
-			User_Id: order.UserId,
+			UserId:  order.UserId,
 			Value:   order.Price * 0.05,
 		})
 

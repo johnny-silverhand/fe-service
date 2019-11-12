@@ -436,7 +436,7 @@ func (s SqlOrderStore) GetByUserId(userId string, offset int, limit int, order m
 
 		query := `SELECT *
                   FROM Orders
-WHERE UserId =:UserId `
+WHERE UserId = :UserId `
 		//ORDER BY ` + order.Column + ` `
 
 		/*if order.Column == "price" { // cuz price is string
