@@ -9,10 +9,10 @@ import (
 type Transaction struct {
 	Id          string  `json:"id"`
 	ClientId    string  `json:"client_id"`
-	User_Id     string  `json:"name"`
+	UserId      string  `json:"user_id"`
 	OrderId     string  `json:"order_id"`
 	Description string  `json:"description"`
-	Value       float64 `json:"active"`
+	Value       float64 `json:"value"`
 	Active      bool    `json:"active"`
 	CreateAt    int64   `json:"create_at"`
 	UpdateAt    int64   `json:"update_at"`

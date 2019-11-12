@@ -34,11 +34,8 @@ X-Requested-With: XMLHttpRequest
   "pay_system_sum": 0,
   "pay_system_currency": "",
   "pay_system_response_at": 0,
-  "create_at": 1572509861686,
-  "update_at": 1572509861686,
-  "delete_at": 0,
-  "address": "",
-  "comment": "",
+  "address": "123",
+  "comment": "21321321",
   "phone": "79199113919",
   "positions": [
     {

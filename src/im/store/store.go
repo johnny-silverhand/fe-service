@@ -312,6 +312,7 @@ type UserStore interface {
 	VerifyPhoneNew(userId string) StoreChannel
 
 	GetByPhone(phone string) StoreChannel
+	AccrualBalance(userId string, value float64) StoreChannel
 }
 
 type SessionStore interface {
@@ -560,6 +561,7 @@ type TransactionStore interface {
 	GetAllTransactionsSince(time int64, allowFromCache bool) StoreChannel
 	GetAllTransactionsBefore(transactionId string, numTransactions int, offset int) StoreChannel
 	GetAllTransactionsAfter(transactionId string, numTransactions int, offset int) StoreChannel
+	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
 }
 
 type OrderStore interface {

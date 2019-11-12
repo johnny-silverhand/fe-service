@@ -180,7 +180,18 @@ func (a *App) AccrualTransaction(transaction *model.Transaction) (*model.Transac
 		return nil, result.Err
 	}
 
+	a.AccrualBalance(transaction.UserId, transaction.Value)
+
 	rtransaction := result.Data.(*model.Transaction)
 
 	return rtransaction, nil
+}
+
+func (a *App) GetUserTransactions(userId string, page int, perPage int, sort string) (*model.TransactionList, *model.AppError) {
+	if result := <-a.Srv.Store.Transaction().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
+		return nil, result.Err
+	} else {
+		transactionList := result.Data.(*model.TransactionList)
+		return a.PrepareTransactionListForClient(transactionList), nil
+	}
 }
