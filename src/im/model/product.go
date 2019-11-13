@@ -36,6 +36,24 @@ type ProductPatch struct {
 	FileIds     *StringArray `json:"file_ids"`
 }
 
+type ProductSearch struct {
+	Terms          *string `json:"terms"`
+	TimeZoneOffset *int    `json:"time_zone_offset"`
+	Page           *int    `json:"page"`
+	PerPage        *int    `json:"per_page"`
+	CategoryId     *string `json:"category_id"`
+}
+
+func ProductSearchFromJson(data io.Reader) *ProductSearch {
+	decoder := json.NewDecoder(data)
+	var searchParam ProductSearch
+	err := decoder.Decode(&searchParam)
+	if err != nil {
+		return nil
+	}
+	return &searchParam
+}
+
 func (p *Product) Patch(patch *ProductPatch) {
 
 	if patch.Name != nil {

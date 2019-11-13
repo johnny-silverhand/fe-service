@@ -39,7 +39,7 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	params := model.SearchParameterFromJson(r.Body)
+	params := model.ProductSearchFromJson(r.Body)
 	if params.Terms == nil || len(*params.Terms) == 0 {
 		c.SetInvalidParam("terms")
 		return
