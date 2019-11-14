@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+const (
+	PROMO_STATUS_DRAFT = "draft"
+)
+
 type Promo struct {
 	Id       string `json:"id"`
 	ClientId string `json:"client_id"`
@@ -14,6 +18,7 @@ type Promo struct {
 	Preview     string `json:"preview"`
 	Description string `json:"description"`
 
+	Status    string `json:"status"`
 	Active    bool   `json:"active"`
 	CreateAt  int64  `json:"create_at"`
 	UpdateAt  int64  `json:"update_at"`

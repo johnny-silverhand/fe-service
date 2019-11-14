@@ -1,4 +1,3 @@
-
 package sqlstore
 
 import (
@@ -626,8 +625,11 @@ func UpgradeDatabaseToVersion510(sqlStore SqlStore) {
 
 func UpgradeDatabaseToVersion511(sqlStore SqlStore) {
 	// TODO: Uncomment following condition when version 5.11.0 is released
-	// if shouldPerformUpgrade(sqlStore, VERSION_5_10_0, VERSION_5_11_0) {
+	if shouldPerformUpgrade(sqlStore, VERSION_5_10_0, VERSION_5_11_0) {
 
-	// 	saveSchemaVersion(sqlStore, VERSION_5_11_0)
-	// }
+		sqlStore.CreateColumnIfNotExists("Promos", "Status", "varchar(100)", "varchar(100)", "draft")
+		sqlStore.CreateColumnIfNotExists("Products", "Status", "varchar(100)", "varchar(100)", "draft")
+
+		saveSchemaVersion(sqlStore, VERSION_5_11_0)
+	}
 }

@@ -7,6 +7,10 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	PRODUCT_STATUS_DRAFT = "draft"
+)
+
 type Product struct {
 	Id            string  `json:"id"`
 	ClientId      string  `json:"client_id"`
@@ -17,6 +21,7 @@ type Product struct {
 	Currency      string  `json:"currency"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
+	Status        string  `json:"status"`
 	Active        bool    `json:"active"`
 	CreateAt      int64   `json:"create_at"`
 	UpdateAt      int64   `json:"update_at"`
