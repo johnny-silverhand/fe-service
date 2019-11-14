@@ -25,6 +25,9 @@ type ElasticsearchInterface interface {
 	IndexUser(user *model.User, teamsIds, channelsIds []string) *model.AppError
 	SearchUsersInChannel(teamId, channelId, term string, options *model.UserSearchOptions) ([]string, []string, *model.AppError)
 	SearchUsersInTeam(teamId, term string, options *model.UserSearchOptions) ([]string, *model.AppError)
+
+	SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]string, *model.AppError)
+
 	DeleteUser(user *model.User) *model.AppError
 	TestConfig(cfg *model.Config) *model.AppError
 	PurgeIndexes() *model.AppError

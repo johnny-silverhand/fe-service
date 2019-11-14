@@ -122,6 +122,32 @@ type ElasticProductsResponse struct {
 	} `json:"hits"`
 }
 
+type ElasticUsersResponse struct {
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Hits struct {
+		Total    int         `json:"total"`
+		MaxScore interface{} `json:"max_score"`
+		Hits     []struct {
+			Index     string      `json:"_index"`
+			Type      string      `json:"_type"`
+			ID        string      `json:"_id"`
+			Score     interface{} `json:"_score"`
+			Source    model.User  `json:"_source"`
+			Highlight struct {
+				Message []string `json:"message"`
+			} `json:"highlight"`
+			Sort []int64 `json:"sort"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
 func ElasticPostsResponseFromJson(data io.Reader) *ElasticPostsResponse {
 
 	decoder := json.NewDecoder(data)
@@ -146,6 +172,17 @@ func ElasticProductsResponseFromJson(data io.Reader) *ElasticProductsResponse {
 		return nil
 	}
 
+}
+
+func ElasticUsersResponseFromJson(data io.Reader) *ElasticUsersResponse {
+	decoder := json.NewDecoder(data)
+	var o ElasticUsersResponse
+	err := decoder.Decode(&o)
+	if err == nil {
+		return &o
+	} else {
+		return nil
+	}
 }
 
 type ElasticsearcInterfaceImpl struct {
@@ -201,6 +238,27 @@ func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, clientI
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
 	if err != nil {
 		return model.NewAppError("SearchElasticsearch", "ent.elasticsearch.search", nil, "", http.StatusBadRequest)
+
+	}
+
+	result, _ := ioutil.ReadAll(resp.Body)
+	if resp.Body != nil {
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+
+	fmt.Println(string(result[:]))
+	return nil
+}
+
+func (m *ElasticsearcInterfaceImpl) IndexUser(user *model.User, teamsIds, channelsIds []string) *model.AppError {
+	st := user.ToJson()
+
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users"+"/users/"+user.Id, strings.NewReader(st))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("SearchElasticsearch.IndexUser", "ent.elasticsearch.index.user", nil, "", http.StatusBadRequest)
 
 	}
 
@@ -439,6 +497,88 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 	return products, nil
 }
 
+func (m *ElasticsearcInterfaceImpl) SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]string, *model.AppError) {
+
+	/*var term []string
+	for _, param := range options {
+		term = append(term, strings.ToLower(param.))
+	}
+
+	term := strings.Join(terms, " ")*/
+
+	dsl := Q{
+		Query: Query{
+			Bool: BoolMain{
+				Must: []Must{
+					Must{
+						Bool: Bool{Should: []Should{
+							Should{
+								MultiMatchFuzziness: MultiMatchFuzziness{
+									Query:     term,
+									Fields:    []string{"nickname", "phone"},
+									Type:      "best_fields",
+									Operator:  "or",
+									Fuzziness: 1,
+								},
+							},
+							Should{
+								MultiMatchFuzziness: MultiMatchFuzziness{
+									Query:    term,
+									Fields:   []string{"nickname", "phone"},
+									Type:     "phrase_prefix",
+									Operator: "or",
+								},
+							},
+						}, MinimumShouldMatch: "1"},
+					},
+				},
+			},
+		},
+		Highlight: Highlight{PreTags: []string{"<mark>"}, PostTags: []string{"</mark>"}, Fields: Fields{Message: Message{}}},
+		Size:      50,
+		From:      0,
+	}
+
+	query, _ := json.Marshal(dsl)
+	fmt.Println(string(query[:]))
+
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users"+"/users/_search", strings.NewReader(string(query[:])))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return nil, model.NewAppError("SearchElasticsearch", "ent.elasticsearch.search", nil, "", http.StatusBadRequest)
+
+	}
+
+	var userIds []string
+	if resp.Body != nil {
+
+		//htmlData, _ := ioutil.ReadAll(resp.Body) //<--- here!
+
+		//fmt.Println(string(htmlData[:]))
+
+		parsed := ElasticUsersResponseFromJson(resp.Body)
+
+		if parsed != nil {
+
+			if len(parsed.Hits.Hits) > 0 {
+				for _, user := range parsed.Hits.Hits {
+					i := user.Source
+					/*h := post.Highlight
+					i.Message = h.Message[0]*/
+					userIds = append(userIds, i.Id)
+				}
+
+			}
+		}
+
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+
+	return userIds, nil
+}
+
 func (m *ElasticsearcInterfaceImpl) DeletePost(post *model.Post) *model.AppError {
 	return nil
 }
@@ -451,9 +591,7 @@ func (m *ElasticsearcInterfaceImpl) SearchChannels(teamId, term string) ([]strin
 func (m *ElasticsearcInterfaceImpl) DeleteChannel(channel *model.Channel) *model.AppError {
 	return nil
 }
-func (m *ElasticsearcInterfaceImpl) IndexUser(user *model.User, teamsIds, channelsIds []string) *model.AppError {
-	return nil
-}
+
 func (m *ElasticsearcInterfaceImpl) SearchUsersInChannel(teamId, channelId, term string, options *model.UserSearchOptions) ([]string, []string, *model.AppError) {
 	return nil, nil, nil
 }
@@ -461,6 +599,19 @@ func (m *ElasticsearcInterfaceImpl) SearchUsersInTeam(teamId, term string, optio
 	return nil, nil
 }
 func (m *ElasticsearcInterfaceImpl) DeleteUser(user *model.User) *model.AppError {
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users"+"/users/"+user.Id, strings.NewReader(""))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("DeleteUserElasticsearch", "ent.elasticsearch.delete.user", nil, "", http.StatusBadRequest)
+
+	}
+	if resp.Body != nil {
+		parsed := ElasticUsersResponseFromJson(resp.Body)
+		fmt.Println(parsed)
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
 	return nil
 }
 func (m *ElasticsearcInterfaceImpl) TestConfig(cfg *model.Config) *model.AppError {
