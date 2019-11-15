@@ -7,7 +7,9 @@ import (
 )
 
 const (
-	PROMO_STATUS_DRAFT = "draft"
+	PROMO_STATUS_DRAFT      = "draft"
+	PROMO_STATUS_MODERATION = "moderation"
+	PROMO_STATUS_ACCEPTED   = "accepted"
 )
 
 type Promo struct {
@@ -37,6 +39,23 @@ type PromoPatch struct {
 	Description *string `json:"description"`
 	ProductId   *string `json:"promo_id"`
 	ImageId     string  `json:"image_id,omitempty"`
+}
+
+type PromoStatus struct {
+	PromoId  string `json:"product_id"`
+	Status   string `json:"status"`
+	Activate bool   `json:"activate"`
+}
+
+func PromoStatusFromJson(data io.Reader) *PromoStatus {
+	var o *PromoStatus
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func (o *PromoStatus) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 func (p *Promo) Patch(patch *PromoPatch) {
