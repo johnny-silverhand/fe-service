@@ -13,6 +13,38 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(deleteProduct)).Methods("DELETE")
+	api.BaseRoutes.Product.Handle("/status", api.ApiHandler(updateProductStatus)).Methods("PUT")
+}
+
+func updateProductStatus(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireProductId()
+	if c.Err != nil {
+		return
+	}
+
+	status := model.ProductStatusFromJson(r.Body)
+	if status == nil {
+		c.SetInvalidParam("status")
+		return
+	}
+
+	// The user being updated in the payload must be the same one as indicated in the URL.
+	if status.ProductId != c.Params.ProductId {
+		c.SetInvalidParam("product_id")
+		return
+	}
+
+	//product, err := c.App.GetProduct(c.Params.ProductId)
+	/*if err == nil && product.Status == model.STATUS_OUT_OF_OFFICE && status.Status != model.STATUS_OUT_OF_OFFICE {
+		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
+	}*/
+
+	if product, err := c.App.UpdateProductStatus(c.Params.ProductId, status); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(product.ToJson()))
+	}
 }
 
 func deleteProduct(c *Context, w http.ResponseWriter, r *http.Request) {

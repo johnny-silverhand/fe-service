@@ -7,6 +7,12 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	PRODUCT_STATUS_DRAFT      = "draft"
+	PRODUCT_STATUS_MODERATION = "moderation"
+	PRODUCT_STATUS_ACCEPTED   = "accepted"
+)
+
 type Product struct {
 	Id            string  `json:"id"`
 	ClientId      string  `json:"client_id"`
@@ -17,6 +23,7 @@ type Product struct {
 	Currency      string  `json:"currency"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
+	Status        string  `json:"status"`
 	Active        bool    `json:"active"`
 	CreateAt      int64   `json:"create_at"`
 	UpdateAt      int64   `json:"update_at"`
@@ -34,6 +41,23 @@ type ProductPatch struct {
 	Description *string      `json:"description"`
 	CategoryId  *string      `json:"category_id"`
 	FileIds     *StringArray `json:"file_ids"`
+}
+
+type ProductStatus struct {
+	ProductId string `json:"product_id"`
+	Status    string `json:"status"`
+	Activate  bool   `json:"activate"`
+}
+
+func ProductStatusFromJson(data io.Reader) *ProductStatus {
+	var o *ProductStatus
+	json.NewDecoder(data).Decode(&o)
+	return o
+}
+
+func (o *ProductStatus) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
 }
 
 type ProductSearch struct {

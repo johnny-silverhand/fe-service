@@ -15,6 +15,39 @@ func (api *API) InitPromo() {
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(updatePromo)).Methods("PUT")
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(deletePromo)).Methods("DELETE")
 
+	api.BaseRoutes.Promo.Handle("/status", api.ApiHandler(updatePromoStatus)).Methods("PUT")
+
+}
+
+func updatePromoStatus(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequirePromoId()
+	if c.Err != nil {
+		return
+	}
+
+	status := model.PromoStatusFromJson(r.Body)
+	if status == nil {
+		c.SetInvalidParam("status")
+		return
+	}
+
+	// The user being updated in the payload must be the same one as indicated in the URL.
+	if status.PromoId != c.Params.PromoId {
+		c.SetInvalidParam("promo_id")
+		return
+	}
+
+	//product, err := c.App.GetProduct(c.Params.ProductId)
+	/*if err == nil && product.Status == model.STATUS_OUT_OF_OFFICE && status.Status != model.STATUS_OUT_OF_OFFICE {
+		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
+	}*/
+
+	if promo, err := c.App.UpdatePromoStatus(c.Params.PromoId, status); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(promo.ToJson()))
+	}
 }
 
 func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -54,7 +87,7 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		list, err = c.App.GetAllPromosAfterPromo(afterPromo, c.Params.Page, c.Params.PerPage)
 	} else if len(beforePromo) > 0 {
 
-		list, err = c.App.GetAllPromosBeforePromo( beforePromo, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllPromosBeforePromo(beforePromo, c.Params.Page, c.Params.PerPage)
 	} else {
 		list, err = c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage)
 	}
@@ -65,8 +98,8 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	/*	if len(etag) > 0 {
-			w.Header().Set(model.HEADER_ETAG_SERVER, etag)
-		}*/
+		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
+	}*/
 
 	w.Write([]byte(list.ToJson()))
 }
@@ -106,7 +139,6 @@ func updatePromo(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-
 
 	promo.Id = c.Params.PromoId
 

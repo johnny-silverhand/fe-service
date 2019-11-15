@@ -273,3 +273,26 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 
 	return &discount, nil
 }
+
+func (a *App) UpdateProductStatus(productId string, status *model.ProductStatus) (*model.Product, *model.AppError) {
+	switch status.Status {
+	case model.PRODUCT_STATUS_DRAFT:
+	case model.PRODUCT_STATUS_MODERATION:
+	case model.PRODUCT_STATUS_ACCEPTED:
+	default:
+		return nil, model.NewAppError("UpdateProductStatus", "api.product.update_product_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
+	}
+	product, err := a.GetProduct(productId)
+	if err == nil && product.Status == status.Status {
+		return product, nil
+	}
+
+	product.Status = status.Status
+	result := <-a.Srv.Store.Product().Update(product)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.Product), nil
+}
