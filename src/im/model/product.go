@@ -21,6 +21,7 @@ type Product struct {
 	Description   string  `json:"description"`
 	Price         float64 `json:"price,string"`
 	Currency      string  `json:"currency"`
+	Measure       string  `json:"measure"`
 	DiscountLimit float64 `json:"discount_limit,string"`
 	Cashback      float64 `json:"cashback,string"`
 	Status        string  `json:"status"`
