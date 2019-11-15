@@ -44,6 +44,15 @@ func (a *App) GetProduct(productId string) (*model.Product, *model.AppError) {
 	return rproduct, nil
 }
 
+func (a *App) GetProductsList() (*model.ProductList, *model.AppError) {
+	result := <-a.Srv.Store.Product().GetAll()
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+	return list, nil
+}
+
 func (a *App) GetProductsPage(page int, perPage int, sort string, categoryId string) (*model.ProductList, *model.AppError) {
 	return a.GetProducts(page*perPage, perPage, sort, categoryId)
 }

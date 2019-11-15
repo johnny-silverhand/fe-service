@@ -346,3 +346,23 @@ func (s SqlProductStore) GetProductsByIds(productIds []string, allowFromCache bo
 		}
 	})
 }
+
+func (s SqlProductStore) GetAll() store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var products []*model.Product
+		query := `SELECT * FROM products WHERE DeleteAt = 0`
+		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAll", "store.sql_products.get_all.app_error",
+				nil, err.Error(),
+				http.StatusInternalServerError)
+		} else {
+			list := model.NewProductList()
+			for _, p := range products {
+				list.AddProduct(p)
+				list.AddOrder(p.Id)
+			}
+			list.MakeNonNil()
+			result.Data = list
+		}
+	})
+}

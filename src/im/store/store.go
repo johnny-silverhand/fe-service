@@ -497,6 +497,7 @@ type ProductStore interface {
 	Update(newProduct *model.Product) StoreChannel
 	Overwrite(product *model.Product) StoreChannel
 	GetProductsByIds(productIds []string, allowFromCache bool) StoreChannel
+	GetAll() StoreChannel
 	/*	Publish(product *model.Product) StoreChannel
 		GetExtras(product *model.Product) StoreChannel*/
 }

@@ -617,9 +617,55 @@ func (m *ElasticsearcInterfaceImpl) DeleteUser(user *model.User) *model.AppError
 func (m *ElasticsearcInterfaceImpl) TestConfig(cfg *model.Config) *model.AppError {
 	return nil
 }
-func (m *ElasticsearcInterfaceImpl) PurgeIndexes() *model.AppError {
+
+func PurgeUsersIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users", strings.NewReader(""))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("PurgeUsersElasticsearch", "ent.elasticsearch.purge.users", nil, "", http.StatusBadRequest)
+
+	}
+	if resp.Body != nil {
+		parsed := ElasticUsersResponseFromJson(resp.Body)
+		fmt.Println(parsed)
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+
 	return nil
 }
+
+func PurgeProductsIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products", strings.NewReader(""))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("PurgeProductsElasticsearch", "ent.elasticsearch.purge.products", nil, "", http.StatusBadRequest)
+
+	}
+	if resp.Body != nil {
+		parsed := ElasticProductsResponseFromJson(resp.Body)
+		fmt.Println(parsed)
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+
+	return nil
+}
+
+func (m *ElasticsearcInterfaceImpl) PurgeIndexes() *model.AppError {
+
+	if err := PurgeProductsIndexes(m); err != nil {
+		return err
+	}
+	if err := PurgeUsersIndexes(m); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *ElasticsearcInterfaceImpl) DataRetentionDeleteIndexes(cutoff time.Time) *model.AppError {
 	return nil
 }
