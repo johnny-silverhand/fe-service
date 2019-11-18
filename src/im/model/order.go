@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -130,4 +131,13 @@ normalizeLoop:
 		positions = append(positions, v)
 	}
 	o.Positions = positions
+}
+
+func (o *Order) FormatOrderNumber() string {
+	create_at := strconv.FormatInt(o.CreateAt, 10)
+	if i := len(create_at); i == 0 {
+		create_at = strconv.FormatInt(GetMillis(), 10)
+	}
+	num := create_at[len(create_at)-6:]
+	return num[:3] + "-" + num[3:]
 }
