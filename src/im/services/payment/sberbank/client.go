@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"./schema"
+	"im/services/payment/sberbank/schema"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -86,14 +86,16 @@ var newRestRequest = func(c *Client, ctx context.Context, method, urlPath string
 		uri = c.Config.endpoint + urlPath
 	}
 
-	jsonParamsEncoded, _ := json.Marshal(jsonParams)
-
 	body := url.Values{}
 	body.Add("userName", c.Config.UserName)
 	body.Add("password", c.Config.Password)
 	body.Add("currency", strconv.Itoa(c.Config.Currency))
-	body.Add("jsonParams", string(jsonParamsEncoded[:]))
 	body.Add("sessionTimeoutSecs", strconv.Itoa(c.Config.SessionTimeoutSecs))
+
+	if jsonParams != nil {
+		jsonParamsEncoded, _ := json.Marshal(jsonParams)
+		body.Add("jsonParams", string(jsonParamsEncoded[:]))
+	}
 
 	for key, value := range data {
 		body.Add(key, value)

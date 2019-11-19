@@ -258,6 +258,9 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
 	//}
 
+	/*var sber payment.SberBankBackend
+	sber.RegisterOrder()*/
+
 	var requestRegistration = aquiring.RequestRegistration{
 		OrderNumber: strconv.FormatInt(time.Now().UnixNano(), 10),
 		Description: "",
