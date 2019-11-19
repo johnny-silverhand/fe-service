@@ -234,3 +234,26 @@ func (a *App) GetAllPromosPage(page int, perPage int) (*model.PromoList, *model.
 		return list, nil
 	}
 }
+
+func (a *App) UpdatePromoStatus(promoId string, status *model.PromoStatus) (*model.Promo, *model.AppError) {
+	switch status.Status {
+	case model.PROMO_STATUS_DRAFT:
+	case model.PROMO_STATUS_MODERATION:
+	case model.PROMO_STATUS_ACCEPTED:
+	default:
+		return nil, model.NewAppError("UpdatePromoStatus", "api.promo.update_promo_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
+	}
+	promo, err := a.GetPromo(promoId)
+	if err == nil && promo.Status == status.Status {
+		return promo, nil
+	}
+
+	promo.Status = status.Status
+	result := <-a.Srv.Store.Promo().Update(promo)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.Promo), nil
+}

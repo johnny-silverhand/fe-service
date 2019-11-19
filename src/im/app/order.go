@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"im/model"
 	"im/store"
+	"math"
 	"net/http"
-	"strconv"
 )
 
 func NewBasketFromModel(pr *model.Product, order *model.Order, q int) *model.Basket {
@@ -97,7 +97,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
 	newOrder := result.Data.(*model.Order)
 	var msg string
-	msg += fmt.Sprintf("Заказ № %s \n", strconv.FormatInt(newOrder.CreateAt, 10))
+	msg += fmt.Sprintf("Заказ № %s \n", newOrder.FormatOrderNumber())
 
 	post := &model.Post{
 		UserId:   newOrder.UserId,
@@ -111,7 +111,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 	transaction := &model.Transaction{
 		UserId:      newOrder.UserId,
 		OrderId:     newOrder.Id,
-		Description: fmt.Sprintf("Начисление по заказу № %s \n", strconv.FormatInt(newOrder.CreateAt, 10)),
+		Description: fmt.Sprintf("Начисление по заказу № %s \n", newOrder.FormatOrderNumber()),
 		Value:       accural,
 	}
 
@@ -270,7 +270,7 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 		a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
 			UserId:  order.UserId,
-			Value:   order.Price * 0.05,
+			Value:   math.Round(order.Price * 0.05),
 		})
 
 		return nil

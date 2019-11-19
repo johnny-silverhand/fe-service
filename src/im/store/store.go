@@ -291,7 +291,7 @@ type UserStore interface {
 	GetAnyUnreadPostCountForChannel(userId string, channelId string) StoreChannel
 	GetRecentlyActiveUsersForTeam(teamId string, offset, limit int) StoreChannel
 	GetNewUsersForTeam(teamId string, offset, limit int) StoreChannel
-	Search(teamId string, term string, options *model.UserSearchOptions) StoreChannel
+	Search(clientId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchNotInTeam(notInTeamId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchInChannel(channelId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchNotInChannel(teamId string, channelId string, term string, options *model.UserSearchOptions) StoreChannel
@@ -497,6 +497,7 @@ type ProductStore interface {
 	Update(newProduct *model.Product) StoreChannel
 	Overwrite(product *model.Product) StoreChannel
 	GetProductsByIds(productIds []string, allowFromCache bool) StoreChannel
+	GetAll() StoreChannel
 	/*	Publish(product *model.Product) StoreChannel
 		GetExtras(product *model.Product) StoreChannel*/
 }

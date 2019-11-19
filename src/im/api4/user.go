@@ -2,16 +2,15 @@ package api4
 
 import (
 	"fmt"
+	"im/app"
+	"im/mlog"
+	"im/model"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"time"
-
-	"im/app"
-	"im/mlog"
-	"im/model"
 )
 
 func (api *API) InitUser() {
@@ -535,30 +534,30 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if props.TeamId == "" && props.NotInChannelId != "" {
+	/*if props.TeamId == "" && props.NotInChannelId != "" {
 		c.SetInvalidParam("team_id")
 		return
-	}
+	}*/
 
-	if props.InChannelId != "" && !c.App.SessionHasPermissionToChannel(c.App.Session, props.InChannelId, model.PERMISSION_READ_CHANNEL) {
+	/*if props.InChannelId != "" && !c.App.SessionHasPermissionToChannel(c.App.Session, props.InChannelId, model.PERMISSION_READ_CHANNEL) {
 		c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
 		return
-	}
+	}*/
 
-	if props.NotInChannelId != "" && !c.App.SessionHasPermissionToChannel(c.App.Session, props.NotInChannelId, model.PERMISSION_READ_CHANNEL) {
+	/*if props.NotInChannelId != "" && !c.App.SessionHasPermissionToChannel(c.App.Session, props.NotInChannelId, model.PERMISSION_READ_CHANNEL) {
 		c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
 		return
-	}
+	}*/
 
-	if props.TeamId != "" && !c.App.SessionHasPermissionToTeam(c.App.Session, props.TeamId, model.PERMISSION_VIEW_TEAM) {
+	/*if props.TeamId != "" && !c.App.SessionHasPermissionToTeam(c.App.Session, props.TeamId, model.PERMISSION_VIEW_TEAM) {
 		c.SetPermissionError(model.PERMISSION_VIEW_TEAM)
 		return
-	}
+	}*/
 
-	if props.NotInTeamId != "" && !c.App.SessionHasPermissionToTeam(c.App.Session, props.NotInTeamId, model.PERMISSION_VIEW_TEAM) {
+	/*if props.NotInTeamId != "" && !c.App.SessionHasPermissionToTeam(c.App.Session, props.NotInTeamId, model.PERMISSION_VIEW_TEAM) {
 		c.SetPermissionError(model.PERMISSION_VIEW_TEAM)
 		return
-	}
+	}*/
 
 	if props.Limit <= 0 || props.Limit > model.USER_SEARCH_MAX_LIMIT {
 		c.SetInvalidParam("limit")
@@ -572,13 +571,13 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		Role:          props.Role,
 	}
 
-	if c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+	/*if c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
 		options.AllowEmails = true
 		options.AllowFullNames = true
 	} else {
 		options.AllowEmails = *c.App.Config().PrivacySettings.ShowEmailAddress
 		options.AllowFullNames = *c.App.Config().PrivacySettings.ShowFullName
-	}
+	}*/
 
 	profiles, err := c.App.SearchUsers(props, options)
 	if err != nil {
