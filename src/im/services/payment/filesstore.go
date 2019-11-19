@@ -23,7 +23,7 @@ type PaymentBackend interface {
 }
 
 func NewPaymentBackend(settings *model.PaymentBackendSettings) (PaymentBackend, *model.AppError) {
-	switch *settings.Backend {
+	/*switch *settings.Backend {
 	case model.PAYMENT_PROXY_TYPE_SBERBANK:
 		return &SberBankBackend{
 			merchantId:  *settings.MerchantId,
@@ -32,7 +32,7 @@ func NewPaymentBackend(settings *model.PaymentBackendSettings) (PaymentBackend, 
 			currency: *settings.Currency,
 			language: *settings.Language,
 		}, nil
-	
-	}
+
+	}*/
 	return nil, model.NewAppError("NewPaymentBackend", "api.payment.no_driver.app_error", nil, "", http.StatusInternalServerError)
 }

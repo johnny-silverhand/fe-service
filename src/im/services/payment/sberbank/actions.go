@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"./endpoints"
-	"./schema"
+	"im/services/payment/sberbank/endpoints"
+	"im/services/payment/sberbank/schema"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -91,18 +91,18 @@ func validateRegisterOrder(order Order) error {
 
 func (c *Client) register(ctx context.Context, path string, order Order) (*schema.OrderResponse, *http.Response, error) {
 	body := make(map[string]string)
-	body["orderNumber"]    = order.OrderNumber
-	body["amount"]         = strconv.Itoa(order.Amount)
-	body["returnUrl"]      = order.ReturnURL
-	body["failUrl"]        = order.FailURL
-	body["description"]    = order.Description
-	body["pageView"]       = order.PageView
-	body["merchantLogin"]  = order.MerchantLogin
+	body["orderNumber"] = order.OrderNumber
+	body["amount"] = strconv.Itoa(order.Amount)
+	body["returnUrl"] = order.ReturnURL
+	body["failUrl"] = order.FailURL
+	body["description"] = order.Description
+	body["pageView"] = order.PageView
+	body["merchantLogin"] = order.MerchantLogin
 	body["expirationDate"] = order.ExpirationDate
-	body["bindingId"]      = order.BindingID
-	body["features"]       = order.Features
+	body["bindingId"] = order.BindingID
+	body["features"] = order.Features
 
-	req, err := c.NewRestRequest(ctx, "GET", path, body, order.JSONParams)
+	req, err := c.NewRestRequest(ctx, "POST", path, body, order.JSONParams)
 
 	if err != nil {
 		return nil, nil, err
@@ -129,7 +129,7 @@ func (c *Client) Deposit(ctx context.Context, order Order) (*schema.OrderRespons
 
 	body := make(map[string]string)
 	body["orderId"] = order.OrderNumber
-	body["amount"]  = strconv.Itoa(order.Amount)
+	body["amount"] = strconv.Itoa(order.Amount)
 
 	var orderResponse schema.OrderResponse
 	req, err := c.NewRestRequest(ctx, "GET", path, body, order.JSONParams)

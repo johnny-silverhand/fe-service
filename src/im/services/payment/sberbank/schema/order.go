@@ -10,7 +10,7 @@ type Response struct {
 type OrderResponse struct {
 	OrderId      string `json:"orderId,omitempty"`
 	FormUrl      string `json:"formUrl,omitempty"`
-	ErrorCode    int    `json:"errorCode,omitempty"`
+	ErrorCode    string `json:"errorCode,omitempty"`
 	ErrorMessage string `json:"errorMessage,omitempty"`
 }
 
