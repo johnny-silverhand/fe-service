@@ -39,6 +39,7 @@ const (
 	POST_EPHEMERAL              = "system_ephemeral"
 	POST_CHANGE_CHANNEL_PRIVACY = "system_change_chan_privacy"
 	POST_WITH_METADATA          = "system_metadata"
+	POST_WITH_TRANSACTION       = "system_transaction"
 
 	POST_FILEIDS_MAX_RUNES    = 150
 	POST_FILENAMES_MAX_RUNES  = 4000
