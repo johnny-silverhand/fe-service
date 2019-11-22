@@ -15,6 +15,7 @@ func (api *API) InitOrder() {
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
+	api.BaseRoutes.Order.Handle("/cancel", api.ApiHandler(cancelOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/prepayment", api.ApiHandler(getPaymentOrderUrl)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/status", api.ApiHandler(getPaymentOrderStatus)).Methods("GET")
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(updateOrder)).Methods("PUT")
@@ -280,6 +281,18 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
 
 	c.App.SetOrderPayed(c.Params.OrderId)
+
+	if c.Err != nil {
+		return
+	}
+
+	ReturnStatusOK(w)
+}
+
+func cancelOrder(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireOrderId()
+
+	c.App.SetOrderCancel(c.Params.OrderId)
 
 	if c.Err != nil {
 		return

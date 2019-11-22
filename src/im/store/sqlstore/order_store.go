@@ -469,3 +469,17 @@ func (s SqlOrderStore) SetOrderPayed(orderId string) store.StoreChannel {
 
 	})
 }
+
+func (s SqlOrderStore) SetOrderCancel(orderId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		ts := model.GetMillis()
+
+		_, err := s.GetMaster().Exec("UPDATE Orders SET Canceled = :Canceled, UpdateAt =:UpdateAt, CanceledAt = :CanceledAt WHERE Id = :Id ", map[string]interface{}{"Canceled": true, "UpdateAt": ts, "Id": orderId, "CanceledAt": ts})
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CancelOrder", "store.sql_order.cancel_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+
+		}
+
+	})
+}

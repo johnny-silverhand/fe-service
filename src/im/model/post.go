@@ -237,6 +237,7 @@ func (o *Post) IsValid(maxPostSize int) *AppError {
 		POST_CONVERT_CHANNEL,
 		POST_CHANNEL_DELETED,
 		POST_WITH_METADATA,
+		POST_WITH_TRANSACTION,
 		POST_CHANGE_CHANNEL_PRIVACY:
 	default:
 		if !strings.HasPrefix(o.Type, POST_CUSTOM_TYPE_PREFIX) {
