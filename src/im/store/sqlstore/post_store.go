@@ -1394,7 +1394,7 @@ func (s SqlPostStore) GetAllMessages(userId string, offset int, limit int, allow
 		var posts []*model.Post
 		_, err := s.GetReplica().Select(&posts, "SELECT * FROM Posts WHERE ChannelId IN "+
 			"(SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId )"+
-			" AND DeleteAt = 0 AND CreateAt >= :StartTime AND CreateAt <= :EndTime AND (Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL)"+
+			" AND DeleteAt = 0 AND CreateAt >= :StartTime AND CreateAt <= :EndTime AND (Type = '' OR Type = 'system_close_channel'  OR Type = 'system_metadata'  OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL)"+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset ", map[string]interface{}{"UserId": userId, "Offset": offset, "Limit": limit, "StartTime": startTime, "EndTime": endTime})
 
 		/*		_, err := s.GetReplica().Select(&posts, `SELECT * FROM Posts LEFT JOIN Channels as CC ON CC.Id = Posts.ChannelId AND CC.CreatorId = :UserId
@@ -1443,7 +1443,7 @@ func (s SqlPostStore) GetAllMessagesSince(userId string, time int64, allowFromCa
 FROM
      Posts
 WHERE
-    (Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL) AND
+    (Type = '' OR Type = 'system_close_channel' OR Type = 'system_metadata' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL) AND
     (UpdateAt > :Time  AND CreateAt >= :StartTime AND CreateAt <= :EndTime
        AND ChannelId IN (SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId))
 ORDER BY UpdateAt
@@ -1502,7 +1502,7 @@ func (s SqlPostStore) getAllMessagesAround(userId string, postId string, numMess
 			FROM
 			    Posts
 			WHERE
-				(Type = '' OR Type = 'system_close_channel' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL) AND
+				(Type = '' OR Type = 'system_close_channel' OR Type = 'system_metadata' OR Type = 'system_close_unresolved_channel' OR Type = 'system_channel_deleted_message' OR Type IS NULL) AND
 				(CreateAt `+direction+` (SELECT CreateAt FROM Posts WHERE Id = :MessageId)
 			        AND ChannelId IN (SELECT ChannelId FROM Channels, ChannelMembers WHERE Channels.Id = ChannelMembers.ChannelId AND ChannelMembers.UserId = :UserId )
 					)

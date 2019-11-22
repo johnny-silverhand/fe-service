@@ -73,6 +73,15 @@ func (a *App) CreateUserWithToken(user *model.User, pwd string) (*model.Token, *
 		return nil, result.Err
 	}
 
+	esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			if err := a.indexUser(user); err != nil {
+				mlog.Error("Encountered error indexing user", mlog.String("user_id", user.Id), mlog.Err(err))
+			}
+		})
+	}
+
 	return token, nil
 }
 
@@ -221,7 +230,7 @@ func (a *App) IsFirstUserAccount() bool {
 // indexUser fetches the required information to index a user from the database and
 // calls the elasticsearch interface method
 func (a *App) indexUser(user *model.User) *model.AppError {
-	userTeams := <-a.Srv.Store.Team().GetTeamsByUserId(user.Id)
+	/*userTeams := <-a.Srv.Store.Team().GetTeamsByUserId(user.Id)
 	if userTeams.Err != nil {
 		return userTeams.Err
 	}
@@ -229,9 +238,9 @@ func (a *App) indexUser(user *model.User) *model.AppError {
 	userTeamsIds := []string{}
 	for _, team := range userTeams.Data.([]*model.Team) {
 		userTeamsIds = append(userTeamsIds, team.Id)
-	}
+	}*/
 
-	userChannelMembers := <-a.Srv.Store.Channel().GetAllChannelMembersForUser(user.Id, false, true)
+	/*userChannelMembers := <-a.Srv.Store.Channel().GetAllChannelMembersForUser(user.Id, false, true)
 	if userChannelMembers.Err != nil {
 		return userChannelMembers.Err
 	}
@@ -239,9 +248,9 @@ func (a *App) indexUser(user *model.User) *model.AppError {
 	userChannelsIds := []string{}
 	for channelId := range userChannelMembers.Data.(map[string]string) {
 		userChannelsIds = append(userChannelsIds, channelId)
-	}
+	}*/
 
-	return a.Elasticsearch.IndexUser(user, userTeamsIds, userChannelsIds)
+	return a.Elasticsearch.IndexUser(user, []string{}, []string{})
 }
 
 func (a *App) indexUserFromId(userId string) *model.AppError {
@@ -1566,7 +1575,7 @@ func (a *App) VerifyUserEmail(userId, email string) *model.AppError {
 }
 
 func (a *App) SearchUsers(props *model.UserSearch, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {
-	if props.WithoutTeam {
+	/*if props.WithoutTeam {
 		return a.SearchUsersWithoutTeam(props.Term, options)
 	}
 	if props.InChannelId != "" {
@@ -1578,7 +1587,36 @@ func (a *App) SearchUsers(props *model.UserSearch, options *model.UserSearchOpti
 	if props.NotInTeamId != "" {
 		return a.SearchUsersNotInTeam(props.NotInTeamId, props.Term, options)
 	}
-	return a.SearchUsersInTeam(props.TeamId, props.Term, options)
+	return a.SearchUsersInTeam(props.TeamId, props.Term, options)*/
+	return a.SearchUsersInClient(props.ClientId, props.Term, options)
+}
+
+func (a *App) SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {
+	var result store.StoreResult
+
+	esInterface := a.Elasticsearch
+
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableAutocomplete {
+		usersIds, err := a.Elasticsearch.SearchUsersInClient(clientId, term, options)
+		if err != nil {
+			return nil, err
+		}
+
+		result = <-a.Srv.Store.User().GetProfileByIds(usersIds, false)
+	} else {
+		result = <-a.Srv.Store.User().Search(clientId, term, options)
+	}
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	users := result.Data.([]*model.User)
+
+	for _, user := range users {
+		a.SanitizeProfile(user, options.IsAdmin)
+	}
+
+	return users, nil
 }
 
 func (a *App) SearchUsersInChannel(channelId string, term string, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {

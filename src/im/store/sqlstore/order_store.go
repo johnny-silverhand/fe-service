@@ -434,16 +434,7 @@ func (s SqlOrderStore) GetByUserId(userId string, offset int, limit int, order m
 	return store.Do(func(result *store.StoreResult) {
 		var orders []*model.Order
 
-		query := `SELECT *
-                  FROM Orders
-WHERE UserId = :UserId `
-		//ORDER BY ` + order.Column + ` `
-
-		/*if order.Column == "price" { // cuz price is string
-			query += `+ 0 ` // hack for sorting string as integer
-		}*/
-
-		query += /*order.Type + */ ` LIMIT :Limit OFFSET :Offset `
+		query := `SELECT * FROM Orders WHERE UserId = :UserId LIMIT :Limit OFFSET :Offset`
 
 		if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllPage", "store.sql_orders.get_all_page.app_error",
