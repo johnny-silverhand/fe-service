@@ -74,6 +74,7 @@ type Store interface {
 	Category() CategoryStore
 	Promo() PromoStore
 	Office() OfficeStore
+	Client() ClientStore
 	Order() OrderStore
 	Basket() BasketStore
 	Transaction() TransactionStore
@@ -548,6 +549,22 @@ type OfficeStore interface {
 	GetAllOfficesSince(time int64, allowFromCache bool) StoreChannel
 	GetAllOfficesBefore(officeId string, numOffices int, offset int) StoreChannel
 	GetAllOfficesAfter(officeId string, numOffices int, offset int) StoreChannel
+}
+
+type ClientStore interface {
+	Save(client *model.Client) StoreChannel
+	Get(clientId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	Activate(clientId string) StoreChannel
+	Deactivate(clientId string) StoreChannel
+	Update(newClient *model.Client) StoreChannel
+	Overwrite(client *model.Client) StoreChannel
+	Delete(clientId string, time int64, deleteByID string) StoreChannel
+
+	GetAllClients(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllClientsSince(time int64, allowFromCache bool) StoreChannel
+	GetAllClientsBefore(clientId string, numClients int, offset int) StoreChannel
+	GetAllClientsAfter(clientId string, numClients int, offset int) StoreChannel
 }
 
 type TransactionStore interface {

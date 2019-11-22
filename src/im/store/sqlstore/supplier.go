@@ -91,6 +91,7 @@ type SqlSupplierOldStores struct {
 	product              store.ProductStore
 	promo                store.PromoStore
 	office               store.OfficeStore
+	client               store.ClientStore
 	order                store.OrderStore
 	basket               store.BasketStore
 	category             store.CategoryStore
@@ -1015,6 +1016,9 @@ func (ss *SqlSupplier) Category() store.CategoryStore {
 }
 func (ss *SqlSupplier) Office() store.OfficeStore {
 	return ss.oldStores.office
+}
+func (ss *SqlSupplier) Client() store.ClientStore {
+	return ss.oldStores.client
 }
 func (ss *SqlSupplier) Order() store.OrderStore {
 	return ss.oldStores.order

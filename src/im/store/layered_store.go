@@ -163,6 +163,9 @@ func (s *LayeredStore) MarkSystemRanUnitTests() {
 func (s *LayeredStore) Office() OfficeStore {
 	return s.DatabaseLayer.Office()
 }
+func (s *LayeredStore) Client() ClientStore {
+	return s.DatabaseLayer.Client()
+}
 func (s *LayeredStore) Order() OrderStore {
 	return s.DatabaseLayer.Order()
 }

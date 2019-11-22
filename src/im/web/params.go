@@ -30,6 +30,7 @@ type Params struct {
 	ExtraId          string
 	ProductId        string
 	CategoryId       string
+	ClientId         string
 	CategoryParentId string
 	CategoryDepth    string
 	DestinationId    string
