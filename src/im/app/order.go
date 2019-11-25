@@ -107,6 +107,17 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		Type:     model.POST_WITH_METADATA,
 	}
 
+	if newOrder.DiscountValue > 0 {
+		transaction := &model.Transaction{
+			UserId:      newOrder.UserId,
+			OrderId:     newOrder.Id,
+			Description: fmt.Sprintf("Списание по заказу № %s \n", newOrder.FormatOrderNumber()),
+			Value:       -newOrder.DiscountValue,
+		}
+
+		a.DeductionTransaction(transaction)
+	}
+
 	accural := newOrder.Price * 0.1
 
 	transaction := &model.Transaction{
