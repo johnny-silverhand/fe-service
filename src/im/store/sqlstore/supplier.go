@@ -155,6 +155,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.linkMetadata = NewSqlLinkMetadataStore(supplier)
 	supplier.oldStores.level = NewSqlLevelStore(supplier)
 	supplier.oldStores.extra = NewSqlExtraStore(supplier)
+	supplier.oldStores.client = NewSqlClientStore(supplier)
 
 	initSqlSupplierRoles(supplier)
 	initSqlSupplierSchemes(supplier)
@@ -189,6 +190,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.category.(*SqlCategoryStore).CreateIndexesIfNotExists()
 	supplier.oldStores.promo.(*SqlPromoStore).CreateIndexesIfNotExists()
 	supplier.oldStores.office.(*SqlOfficeStore).CreateIndexesIfNotExists()
+	supplier.oldStores.client.(*SqlClientStore).CreateIndexesIfNotExists()
 	supplier.oldStores.order.(*SqlOrderStore).CreateIndexesIfNotExists()
 	supplier.oldStores.basket.(*SqlBasketStore).CreateIndexesIfNotExists()
 	supplier.oldStores.transaction.(*SqlTransactionStore).CreateIndexesIfNotExists()

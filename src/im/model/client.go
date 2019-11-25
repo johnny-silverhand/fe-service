@@ -7,26 +7,27 @@ import (
 )
 
 type Client struct {
-	Id          string `json:"id"`
+	Id string `json:"id"`
 
 	Name        string `json:"name"`
 	Preview     string `json:"preview"`
 	Description string `json:"description"`
+	Phone       string `json:"phone"`
+	BuildNumber string `json:"build_number"`
 
-	Active      bool   `json:"active"`
+	Active bool `json:"active"`
 
-	CreateAt    int64  `json:"create_at"`
-	UpdateAt    int64  `json:"update_at"`
-	DeleteAt    int64  `json:"delete_at"`
-
+	CreateAt int64 `json:"create_at"`
+	UpdateAt int64 `json:"update_at"`
+	DeleteAt int64 `json:"delete_at"`
 }
 
 type ClientPatch struct {
 	Name        *string `json:"name"`
 	Preview     *string `json:"preview"`
 	Description *string `json:"description"`
+	Phone       *string `json:"phone"`
 	Active      *bool   `json:"active"`
-
 }
 
 func (p *Client) Patch(patch *ClientPatch) {
@@ -42,6 +43,9 @@ func (p *Client) Patch(patch *ClientPatch) {
 	}
 	if patch.Active != nil {
 		p.Active = *patch.Active
+	}
+	if patch.Phone != nil {
+		p.Phone = *patch.Phone
 	}
 }
 

@@ -21,6 +21,7 @@ func NewSqlClientStore(sqlStore SqlStore) store.ClientStore {
 		table.ColMap("Name").SetMaxSize(255)
 		table.ColMap("Preview").SetMaxSize(255)
 		table.ColMap("Description").SetMaxSize(2000)
+		table.ColMap("Phone").SetMaxSize(2000)
 
 	}
 
@@ -108,7 +109,6 @@ func (s *SqlClientStore) Get(id string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlClientStore) GetAllPage(offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var clients []*model.Client
@@ -138,7 +138,6 @@ func (s SqlClientStore) GetAllPage(offset int, limit int, order model.ColumnOrde
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -147,7 +146,6 @@ func (s SqlClientStore) GetAllPage(offset int, limit int, order model.ColumnOrde
 func (s *SqlClientStore) Overwrite(client *model.Client) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		client.UpdateAt = model.GetMillis()
-
 
 		if result.Err = client.IsValid(); result.Err != nil {
 			return
@@ -181,7 +179,6 @@ func (s *SqlClientStore) Delete(clientId string, time int64, deleteByID string) 
 	})
 }
 
-
 func (s SqlClientStore) GetAllClients(offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
@@ -189,17 +186,16 @@ func (s SqlClientStore) GetAllClients(offset int, limit int, allowFromCache bool
 			return
 		}
 
-
 		var clients []*model.Client
-		_, err := s.GetReplica().Select(&clients, "SELECT * FROM Clients WHERE " +
-			" DeleteAt = 0 " +
+		_, err := s.GetReplica().Select(&clients, "SELECT * FROM Clients WHERE "+
+			" DeleteAt = 0 "+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlClientStore.GetAllClients", "store.sql_client.get_root_clients.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewClientList()
 
@@ -217,7 +213,6 @@ func (s SqlClientStore) GetAllClients(offset int, limit int, allowFromCache bool
 
 func (s SqlClientStore) GetAllClientsSince(time int64, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		var clients []*model.Client
 		_, err := s.GetReplica().Select(&clients,
@@ -248,12 +243,12 @@ func (s SqlClientStore) GetAllClientsSince(time int64, allowFromCache bool) stor
 	})
 }
 
-func (s SqlClientStore) GetAllClientsBefore( clientId string, numClients int, offset int) store.StoreChannel {
-	return s.getAllClientsAround( clientId, numClients, offset, true)
+func (s SqlClientStore) GetAllClientsBefore(clientId string, numClients int, offset int) store.StoreChannel {
+	return s.getAllClientsAround(clientId, numClients, offset, true)
 }
 
 func (s SqlClientStore) GetAllClientsAfter(clientId string, numClients int, offset int) store.StoreChannel {
-	return s.getAllClientsAround( clientId, numClients, offset, false)
+	return s.getAllClientsAround(clientId, numClients, offset, false)
 }
 
 func (s SqlClientStore) getAllClientsAround(clientId string, numClients int, offset int, before bool) store.StoreChannel {
@@ -275,17 +270,14 @@ func (s SqlClientStore) getAllClientsAround(clientId string, numClients int, off
 			    *
 			FROM
 			    Clients
-			WHERE (CreateAt `+ direction+ ` (SELECT CreateAt FROM Clients WHERE Id = :ClientId))
-			ORDER BY CreateAt `+ sort+ `
+			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Clients WHERE Id = :ClientId))
+			ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumClients`,
 			map[string]interface{}{"ClientId": clientId, "NumClients": numClients, "Offset": offset})
 
-
-
-
 		if err != nil {
 			result.Err = model.NewAppError("SqlClientStore.getAllClientsAround", "store.sql_client.get_clients_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewClientList()
 
@@ -307,5 +299,3 @@ func (s SqlClientStore) getAllClientsAround(clientId string, numClients int, off
 		}
 	})
 }
-
-

@@ -237,6 +237,9 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Extras = api.BaseRoutes.ApiRoot.PathPrefix("/extras").Subrouter()
 	api.BaseRoutes.Extra = api.BaseRoutes.Extras.PathPrefix("/{extra_id:[A-Za-z0-9]+}").Subrouter()
 
+	api.BaseRoutes.Clients = api.BaseRoutes.ApiRoot.PathPrefix("/clients").Subrouter()
+	api.BaseRoutes.Client = api.BaseRoutes.Clients.PathPrefix("/{client_id:[A-Za-z0-9]+}").Subrouter()
+
 	api.InitUser()
 
 	api.InitTeam()

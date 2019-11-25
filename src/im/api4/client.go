@@ -15,6 +15,12 @@ func (api *API) InitClient() {
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(updateClient)).Methods("PUT")
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(deleteClient)).Methods("DELETE")
 
+	api.BaseRoutes.Client.Handle("/bonus_program", api.ApiHandler(getClientBonusProgram)).Methods("GET")
+
+}
+
+func getClientBonusProgram(c *Context, w http.ResponseWriter, r *http.Request) {
+
 }
 
 func getAllClients(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -54,7 +60,7 @@ func getAllClients(c *Context, w http.ResponseWriter, r *http.Request) {
 		list, err = c.App.GetAllClientsAfterClient(afterClient, c.Params.Page, c.Params.PerPage)
 	} else if len(beforeClient) > 0 {
 
-		list, err = c.App.GetAllClientsBeforeClient( beforeClient, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllClientsBeforeClient(beforeClient, c.Params.Page, c.Params.PerPage)
 	} else {
 		list, err = c.App.GetAllClientsPage(c.Params.Page, c.Params.PerPage)
 	}
@@ -123,7 +129,6 @@ func updateClient(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-
 
 	client.Id = c.Params.ClientId
 
