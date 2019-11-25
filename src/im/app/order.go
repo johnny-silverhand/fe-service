@@ -112,13 +112,13 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 			UserId:      newOrder.UserId,
 			OrderId:     newOrder.Id,
 			Description: fmt.Sprintf("Списание по заказу № %s \n", newOrder.FormatOrderNumber()),
-			Value:       -newOrder.DiscountValue,
+			Value:       -math.Floor(newOrder.DiscountValue),
 		}
 
 		a.DeductionTransaction(transaction)
 	}
 
-	accural := newOrder.Price * 0.1
+	accural := math.Floor(newOrder.Price * 0.1)
 
 	transaction := &model.Transaction{
 		UserId:      newOrder.UserId,
@@ -282,7 +282,7 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 		a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
 			UserId:  order.UserId,
-			Value:   math.Round(order.Price * 0.05),
+			Value:   math.Floor(order.Price * 0.05),
 		})
 
 		post := &model.Post{
@@ -315,7 +315,7 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 		a.DeductionTransaction(&model.Transaction{
 			OrderId:     order.Id,
 			UserId:      order.UserId,
-			Value:       math.Round(order.Price * 0.05),
+			Value:       -math.Floor(order.Price * 0.05),
 			Description: "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
 		})
 

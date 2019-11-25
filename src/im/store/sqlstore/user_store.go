@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"net/http"
 	"regexp"
 	"sort"
@@ -1623,7 +1624,7 @@ func (us SqlUserStore) GetByPhone(phone string) store.StoreChannel {
 }
 func (us SqlUserStore) AccrualBalance(userId string, value float64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := us.GetMaster().Exec("UPDATE Users SET Balance = Balance + :Value WHERE Id = :UserId", map[string]interface{}{"UserId": userId, "Value": value}); err != nil {
+		if _, err := us.GetMaster().Exec("UPDATE Users SET Balance = Balance + :Value WHERE Id = :UserId", map[string]interface{}{"UserId": userId, "Value": math.Abs(value)}); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.AccrualBalance", "store.sql_user.verify_phone.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusInternalServerError)
 		}
 
@@ -1632,7 +1633,7 @@ func (us SqlUserStore) AccrualBalance(userId string, value float64) store.StoreC
 }
 func (us SqlUserStore) DeductionBalance(userId string, value float64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := us.GetMaster().Exec("UPDATE Users SET Balance = Balance - :Value WHERE Id = :UserId", map[string]interface{}{"UserId": userId, "Value": value}); err != nil {
+		if _, err := us.GetMaster().Exec("UPDATE Users SET Balance = Balance - :Value WHERE Id = :UserId", map[string]interface{}{"UserId": userId, "Value": math.Abs(value)}); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.DeductionBalance", "store.sql_user.verify_phone.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusInternalServerError)
 		}
 
