@@ -39,6 +39,7 @@ const (
 	POST_EPHEMERAL              = "system_ephemeral"
 	POST_CHANGE_CHANNEL_PRIVACY = "system_change_chan_privacy"
 	POST_WITH_METADATA          = "system_metadata"
+	POST_WITH_TRANSACTION       = "system_transaction"
 
 	POST_FILEIDS_MAX_RUNES    = 150
 	POST_FILENAMES_MAX_RUNES  = 4000
@@ -236,6 +237,7 @@ func (o *Post) IsValid(maxPostSize int) *AppError {
 		POST_CONVERT_CHANNEL,
 		POST_CHANNEL_DELETED,
 		POST_WITH_METADATA,
+		POST_WITH_TRANSACTION,
 		POST_CHANGE_CHANNEL_PRIVACY:
 	default:
 		if !strings.HasPrefix(o.Type, POST_CUSTOM_TYPE_PREFIX) {
