@@ -177,17 +177,51 @@ func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit
 
 func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var products []*model.Product
 
+		var rootCategory *model.Category
+		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": categoryId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+				"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var categories []*model.Category
+		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and ClientId = :ClientId`,
+			map[string]interface{}{
+				"Lft":      rootCategory.Lft,
+				"Rgt":      rootCategory.Rgt,
+				"ClientId": rootCategory.ClientId,
+			}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+					"store.sql_products.get_categories.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_categories.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		var inQueryList []string
+		queryArgs := make(map[string]interface{})
+		for i, category := range categories {
+			inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
+			queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
+		}
+		inQuery := strings.Join(inQueryList, ", ")
+
+		var products []*model.Product
 		query := `SELECT *
                   FROM Products
-                  WHERE CategoryId = :CategoryId
+                  WHERE CategoryId IN (` + inQuery + `)
 				  AND DeleteAt = 0
                   ORDER BY ` + order.Column + ` `
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
-		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"CategoryId": categoryId, "Limit": limit, "Offset": offset}); err != nil {
+		queryArgs["Limit"] = limit
+		queryArgs["Offset"] = offset
+
+		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error",
 				nil, err.Error(),
 				http.StatusInternalServerError)

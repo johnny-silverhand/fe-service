@@ -164,6 +164,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.Cashback = product.Cashback
 	newProduct.Preview = product.Preview
 	newProduct.Description = product.Description
+	newProduct.Measure = product.Measure
 
 	//if !safeUpdate {
 	newProduct.Media = product.Media
