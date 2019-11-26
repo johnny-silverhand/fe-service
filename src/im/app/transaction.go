@@ -187,6 +187,19 @@ func (a *App) AccrualTransaction(transaction *model.Transaction) (*model.Transac
 	return rtransaction, nil
 }
 
+func (a *App) DeductionTransaction(transaction *model.Transaction) (*model.Transaction, *model.AppError) {
+	result := <-a.Srv.Store.Transaction().Save(transaction)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	a.DeductionBalance(transaction.UserId, transaction.Value)
+
+	rtransaction := result.Data.(*model.Transaction)
+
+	return rtransaction, nil
+}
+
 func (a *App) GetUserTransactions(userId string, page int, perPage int, sort string) (*model.TransactionList, *model.AppError) {
 	if result := <-a.Srv.Store.Transaction().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
 		return nil, result.Err

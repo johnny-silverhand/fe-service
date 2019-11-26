@@ -313,6 +313,7 @@ type UserStore interface {
 
 	GetByPhone(phone string) StoreChannel
 	AccrualBalance(userId string, value float64) StoreChannel
+	DeductionBalance(userId string, value float64) StoreChannel
 }
 
 type SessionStore interface {
@@ -586,6 +587,7 @@ type OrderStore interface {
 
 	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
 	SetOrderPayed(orderId string) StoreChannel
+	SetOrderCancel(orderId string) StoreChannel
 }
 
 type BasketStore interface {
