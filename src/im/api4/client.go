@@ -15,12 +15,6 @@ func (api *API) InitClient() {
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(updateClient)).Methods("PUT")
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(deleteClient)).Methods("DELETE")
 
-	api.BaseRoutes.Client.Handle("/bonus_program", api.ApiHandler(getClientBonusProgram)).Methods("GET")
-
-}
-
-func getClientBonusProgram(c *Context, w http.ResponseWriter, r *http.Request) {
-
 }
 
 func getAllClients(c *Context, w http.ResponseWriter, r *http.Request) {
