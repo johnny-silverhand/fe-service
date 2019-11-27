@@ -8,7 +8,7 @@ import (
 
 type Extra struct {
 	Id        string `json:"id"`
-	ProductId string `json:"client_id"`
+	ProductId string `json:"product_id"`
 	RefId     string `json:"ref_id"`
 	CreateAt  int64  `json:"create_at"`
 	UpdateAt  int64  `json:"update_at"`

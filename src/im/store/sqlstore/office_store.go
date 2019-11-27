@@ -108,14 +108,13 @@ func (s *SqlOfficeStore) Get(id string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlOfficeStore) GetAllPage(offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var offices []*model.Office
 
 		query := `SELECT *
                   FROM Offices`
-                  //ORDER BY ` + order.Column + ` `
+		//ORDER BY ` + order.Column + ` `
 
 		/*if order.Column == "price" { // cuz price is string
 			query += `+ 0 ` // hack for sorting string as integer
@@ -138,7 +137,6 @@ func (s SqlOfficeStore) GetAllPage(offset int, limit int, order model.ColumnOrde
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -147,7 +145,6 @@ func (s SqlOfficeStore) GetAllPage(offset int, limit int, order model.ColumnOrde
 func (s *SqlOfficeStore) Overwrite(office *model.Office) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		office.UpdateAt = model.GetMillis()
-
 
 		if result.Err = office.IsValid(); result.Err != nil {
 			return
@@ -181,25 +178,23 @@ func (s *SqlOfficeStore) Delete(officeId string, time int64, deleteByID string) 
 	})
 }
 
-
-func (s SqlOfficeStore) GetAllOffices(offset int, limit int, allowFromCache bool) store.StoreChannel {
+func (s SqlOfficeStore) GetAllOffices(offset int, limit int, allowFromCache bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
 			result.Err = model.NewAppError("SqlOfficeStore.GetAllOffices", "store.sql_office.get_offices.app_error", nil, "", http.StatusBadRequest)
 			return
 		}
 
-
 		var offices []*model.Office
-		_, err := s.GetReplica().Select(&offices, "SELECT * FROM Offices WHERE " +
-			" DeleteAt = 0 " +
+		_, err := s.GetReplica().Select(&offices, "SELECT * FROM Offices WHERE "+
+			" DeleteAt = 0 "+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOfficeStore.GetAllOffices", "store.sql_office.get_root_offices.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewOfficeList()
 
@@ -215,9 +210,8 @@ func (s SqlOfficeStore) GetAllOffices(offset int, limit int, allowFromCache bool
 	})
 }
 
-func (s SqlOfficeStore) GetAllOfficesSince(time int64, allowFromCache bool) store.StoreChannel {
+func (s SqlOfficeStore) GetAllOfficesSince(time int64, allowFromCache bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		var offices []*model.Office
 		_, err := s.GetReplica().Select(&offices,
@@ -248,15 +242,15 @@ func (s SqlOfficeStore) GetAllOfficesSince(time int64, allowFromCache bool) stor
 	})
 }
 
-func (s SqlOfficeStore) GetAllOfficesBefore( officeId string, numOffices int, offset int) store.StoreChannel {
-	return s.getAllOfficesAround( officeId, numOffices, offset, true)
+func (s SqlOfficeStore) GetAllOfficesBefore(officeId string, numOffices int, offset int, clientId *string) store.StoreChannel {
+	return s.getAllOfficesAround(officeId, numOffices, offset, true, clientId)
 }
 
-func (s SqlOfficeStore) GetAllOfficesAfter(officeId string, numOffices int, offset int) store.StoreChannel {
-	return s.getAllOfficesAround( officeId, numOffices, offset, false)
+func (s SqlOfficeStore) GetAllOfficesAfter(officeId string, numOffices int, offset int, clientId *string) store.StoreChannel {
+	return s.getAllOfficesAround(officeId, numOffices, offset, false, clientId)
 }
 
-func (s SqlOfficeStore) getAllOfficesAround(officeId string, numOffices int, offset int, before bool) store.StoreChannel {
+func (s SqlOfficeStore) getAllOfficesAround(officeId string, numOffices int, offset int, before bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -268,24 +262,24 @@ func (s SqlOfficeStore) getAllOfficesAround(officeId string, numOffices int, off
 			sort = "ASC"
 		}
 
+		var clientQuery string
+		if clientId != nil {
+			clientQuery = " AND ClientId = :ClientId "
+		} else {
+			clientQuery = ""
+		}
+
 		var offices []*model.Office
 
 		_, err := s.GetReplica().Select(&offices,
-			`SELECT
-			    *
-			FROM
-			    Offices
-			WHERE (CreateAt `+ direction+ ` (SELECT CreateAt FROM Offices WHERE Id = :OfficeId))
-			ORDER BY CreateAt `+ sort+ `
+			`SELECT * FROM Offices WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Offices WHERE Id = :OfficeId))`+clientQuery+
+				`ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumOffices`,
-			map[string]interface{}{"OfficeId": officeId, "NumOffices": numOffices, "Offset": offset})
-
-
-
+			map[string]interface{}{"OfficeId": officeId, "NumOffices": numOffices, "Offset": offset, "ClientId": clientId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOfficeStore.getAllOfficesAround", "store.sql_office.get_offices_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewOfficeList()
 
@@ -307,5 +301,3 @@ func (s SqlOfficeStore) getAllOfficesAround(officeId string, numOffices int, off
 		}
 	})
 }
-
-

@@ -200,7 +200,7 @@ func (c *Context) RequireClientId() *Context {
 		return c
 	}
 
-	if len(c.Params.CategoryId) != 26 {
+	if len(c.Params.ClientId) != 26 {
 		c.SetInvalidUrlParam("client_id")
 	}
 	return c

@@ -57,6 +57,24 @@ func (a *App) GetProductsPage(page int, perPage int, sort string, categoryId str
 	return a.GetProducts(page*perPage, perPage, sort, categoryId)
 }
 
+func (a *App) GetProductsPageByClient(page int, perPage int, sort string, clientId string) (*model.ProductList, *model.AppError) {
+	return a.GetProductsByClient(page*perPage, perPage, sort, clientId)
+}
+
+func (a *App) GetProductsByClient(offset int, limit int, sort string, clientId string) (*model.ProductList, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().GetAllPageByClient(offset, limit, model.GetOrder(sort), clientId)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+
+	return list, nil
+
+}
+
 func (a *App) GetProducts(offset int, limit int, sort string, categoryId string) (*model.ProductList, *model.AppError) {
 
 	result := <-a.Srv.Store.Product().GetAllPage(offset, limit, model.GetOrder(sort), categoryId)
@@ -164,6 +182,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.Cashback = product.Cashback
 	newProduct.Preview = product.Preview
 	newProduct.Description = product.Description
+	newProduct.Measure = product.Measure
 
 	//if !safeUpdate {
 	newProduct.Media = product.Media
@@ -231,6 +250,10 @@ func (a *App) DeleteProduct(productId, deleteByID string) (*model.Product, *mode
 }
 
 func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
+	result := <-a.Srv.Store.Product().Search(categoryId, terms, page, perPage)
+	rlist := result.Data.(*model.ProductList)
+	return a.PrepareProductListForClient(rlist), nil
+
 	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
 	esInterface := a.Elasticsearch
 	resultList := model.NewProductList()
@@ -251,6 +274,10 @@ func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int
 				}
 			}
 		}
+	} else {
+		result := <-a.Srv.Store.Product().Search(categoryId, terms, page, perPage)
+		resultList = result.Data.(*model.ProductList)
+		return a.PrepareProductListForClient(resultList), nil
 	}
 	return resultList, nil
 }

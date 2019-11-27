@@ -168,7 +168,7 @@ func (s SqlExtraStore) GetAllExtras(offset int, limit int, allowFromCache bool) 
 			result.Err = model.NewAppError("SqlExtraStore.GetAllExtras", "store.sql_extra.get_root_extras.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewExtraList()
 
@@ -285,7 +285,7 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 		    Extras ex ON (p.Id = ex.ProductId)
 		WHERE
 		    p.DeleteAt = 0
-		AND ex.ProductId IN ` + keys
+		AND ex.RefId IN ` + keys
 
 		var products []*model.Product
 		_, err := s.GetReplica().Select(&products, query, params)

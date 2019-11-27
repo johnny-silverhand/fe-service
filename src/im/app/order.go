@@ -6,6 +6,7 @@ import (
 	"im/store"
 	"math"
 	"net/http"
+	"strconv"
 )
 
 func NewBasketFromModel(pr *model.Product, order *model.Order, q int) *model.Basket {
@@ -106,7 +107,18 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		Type:     model.POST_WITH_METADATA,
 	}
 
-	accural := newOrder.Price * 0.1
+	if newOrder.DiscountValue > 0 {
+		transaction := &model.Transaction{
+			UserId:      newOrder.UserId,
+			OrderId:     newOrder.Id,
+			Description: fmt.Sprintf("Списание по заказу № %s \n", newOrder.FormatOrderNumber()),
+			Value:       -math.Floor(newOrder.DiscountValue),
+		}
+
+		a.DeductionTransaction(transaction)
+	}
+
+	accural := math.Floor(newOrder.Price * 0.1)
 
 	transaction := &model.Transaction{
 		UserId:      newOrder.UserId,
@@ -270,8 +282,51 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 		a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
 			UserId:  order.UserId,
-			Value:   math.Round(order.Price * 0.05),
+			Value:   math.Floor(order.Price * 0.05),
 		})
+
+		post := &model.Post{
+			UserId:   order.UserId,
+			Message:  "Оплата банковской картой № транзакции " + strconv.FormatInt(order.CreateAt, 10),
+			CreateAt: model.GetMillis() + 1,
+			Type:     model.POST_WITH_TRANSACTION,
+		}
+
+		a.CreatePostWithTransaction(post, false)
+
+		return nil
+	}
+}
+
+func (a *App) SetOrderCancel(orderId string) *model.AppError {
+
+	result := <-a.Srv.Store.Order().Get(orderId)
+	if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return result.Err
+	}
+
+	order := result.Data.(*model.Order)
+
+	if result := <-a.Srv.Store.Order().SetOrderCancel(order.Id); result.Err != nil {
+		return result.Err
+	} else {
+
+		a.DeductionTransaction(&model.Transaction{
+			OrderId:     order.Id,
+			UserId:      order.UserId,
+			Value:       -math.Floor(order.Price * 0.05),
+			Description: "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
+		})
+
+		post := &model.Post{
+			UserId:   order.UserId,
+			Message:  "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
+			CreateAt: model.GetMillis() + 1,
+			Type:     model.POST_WITH_TRANSACTION,
+		}
+
+		a.CreatePostWithTransaction(post, false)
 
 		return nil
 	}

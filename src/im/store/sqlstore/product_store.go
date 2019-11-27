@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"database/sql"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"im/mlog"
 	"im/model"
 	"im/store"
@@ -10,12 +11,24 @@ import (
 	"strings"
 )
 
+var (
+	PRODUCT_SEARCH_TYPE_NAMES = []string{"Name"}
+)
+
 type SqlProductStore struct {
 	SqlStore
+
+	productsQuery sq.SelectBuilder
 }
 
 func NewSqlProductStore(sqlStore SqlStore) store.ProductStore {
-	s := &SqlProductStore{sqlStore}
+	s := &SqlProductStore{
+		SqlStore: sqlStore,
+	}
+
+	s.productsQuery = s.getQueryBuilder().
+		Select("p.*").
+		From("Products p")
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Product{}, "Products").SetKeys(false, "Id")
@@ -177,18 +190,84 @@ func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit
 
 func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var products []*model.Product
 
+		var rootCategory *model.Category
+		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": categoryId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+				"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var categories []*model.Category
+		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and ClientId = :ClientId`,
+			map[string]interface{}{
+				"Lft":      rootCategory.Lft,
+				"Rgt":      rootCategory.Rgt,
+				"ClientId": rootCategory.ClientId,
+			}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+					"store.sql_products.get_categories.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_categories.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		var inQueryList []string
+		queryArgs := make(map[string]interface{})
+		for i, category := range categories {
+			inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
+			queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
+		}
+		inQuery := strings.Join(inQueryList, ", ")
+
+		var products []*model.Product
 		query := `SELECT *
                   FROM Products
-                  WHERE CategoryId = :CategoryId
+                  WHERE CategoryId IN (` + inQuery + `)
 				  AND DeleteAt = 0
                   ORDER BY ` + order.Column + ` `
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
-		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"CategoryId": categoryId, "Limit": limit, "Offset": offset}); err != nil {
+		queryArgs["Limit"] = limit
+		queryArgs["Offset"] = offset
+
+		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error",
+				nil, err.Error(),
+				http.StatusInternalServerError)
+		} else {
+
+			list := model.NewProductList()
+
+			for _, p := range products {
+				list.AddProduct(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}
+
+func (s SqlProductStore) GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		var products []*model.Product
+		query := `SELECT *
+                  FROM Products
+                  WHERE ClientId = :ClientId
+				  AND DeleteAt = 0
+                  ORDER BY ` + order.Column + ` `
+
+		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
+
+		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"Limit": limit, "Offset": offset, "ClientId": clientId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPageByClient", "store.sql_products.get_all_page_by_client.app_error",
 				nil, err.Error(),
 				http.StatusInternalServerError)
 		} else {
@@ -365,4 +444,143 @@ func (s SqlProductStore) GetAll() store.StoreChannel {
 			result.Data = list
 		}
 	})
+}
+
+func (s SqlProductStore) Search(categoryId, terms string, page, perPage int) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		var rootCategory *model.Category
+		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": categoryId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+				"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var categories []*model.Category
+		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and ClientId = :ClientId`,
+			map[string]interface{}{
+				"Lft":      rootCategory.Lft,
+				"Rgt":      rootCategory.Rgt,
+				"ClientId": rootCategory.ClientId,
+			}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+					"store.sql_products.get_categories.app_error", nil, err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_categories.app_error",
+					nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		var inQueryList []string
+		var categoryIds []string
+		queryArgs := make(map[string]interface{})
+		for i, category := range categories {
+			inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
+			queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
+			categoryIds = append(categoryIds, category.Id)
+		}
+		//inQuery := strings.Join(inQueryList, ", ")
+
+		query := s.productsQuery.
+			//Where(fmt.Sprintf("CategoryId IN (%s)", inQuery), queryArgs).
+			OrderBy("UpdateAt DESC").
+			Limit(uint64(perPage))
+		*result = s.performProductSearch(query, terms, categoryIds)
+	})
+}
+
+func (s SqlProductStore) performProductSearch(query sq.SelectBuilder, terms string, categoryIds []string) store.StoreResult {
+	result := store.StoreResult{}
+
+	// These chars must be removed from the like query.
+	for _, c := range ignoreLikeSearchChar {
+		terms = strings.Replace(terms, c, "", -1)
+	}
+
+	// These chars must be escaped in the like query.
+	for _, c := range escapeLikeSearchChar {
+		terms = strings.Replace(terms, c, "*"+c, -1)
+	}
+
+	searchType := PRODUCT_SEARCH_TYPE_NAMES
+
+	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
+
+	if strings.TrimSpace(terms) != "" {
+		query = generateProductSearchQuery(query, strings.Fields(terms), searchType, isPostgreSQL, categoryIds)
+	}
+
+	queryString, args, err := query.ToSql()
+	if err != nil {
+		result.Err = model.NewAppError("SqlUserStore.Search", "store.sql_product.app_error", nil, err.Error(), http.StatusInternalServerError)
+		return result
+	}
+
+	var products []*model.Product
+	if _, err := s.GetReplica().Select(&products, queryString, args...); err != nil {
+		result.Err = model.NewAppError("SqlUserStore.Search", "store.sql_product.search.app_error", nil,
+			fmt.Sprintf("terms=%v, search_type=%v, %v", terms, searchType, err.Error()), http.StatusInternalServerError)
+	} else {
+
+		list := model.NewProductList()
+
+		for _, p := range products {
+
+			list.AddProduct(p)
+			list.AddOrder(p.Id)
+		}
+
+		list.MakeNonNil()
+
+		result.Data = list
+
+	}
+
+	return result
+}
+
+func generateProductSearchQuery(query sq.SelectBuilder, terms []string, fields []string, isPostgreSQL bool, categoryIds []string) sq.SelectBuilder {
+	for _, term := range terms {
+		searchFields := []string{}
+		termArgs := []interface{}{}
+		for _, field := range fields {
+			if isPostgreSQL {
+				searchFields = append(searchFields, fmt.Sprintf("lower(%s) LIKE lower(?) escape '*' ", field))
+			} else {
+				searchFields = append(searchFields, fmt.Sprintf("%s LIKE ? escape '*' ", field))
+			}
+			termArgs = append(termArgs, fmt.Sprintf("%%%s%%", term))
+		}
+		query = query.Where(fmt.Sprintf("(%s)", strings.Join(searchFields, " OR ")), termArgs...)
+	}
+
+	/*for _, categoryId := range categoryIds {
+		searchFields := []string{}
+		termArgs := []interface{}{}
+
+			if isPostgreSQL {
+				searchFields = append(searchFields, fmt.Sprintf("lower(%s) LIKE lower(?) escape '*' ", "CategoryId"))
+			} else {
+				searchFields = append(searchFields, fmt.Sprintf("%s LIKE ? escape '*' ", "CategoryId"))
+			}
+			termArgs = append(termArgs, fmt.Sprintf("%s%%", strings.TrimLeft(categoryId, "@")))
+
+	}*/
+
+	var inQueryList []string
+	queryArgs := []interface{}{}
+	//queryArgs := make(map[string]interface{})
+	for _, categoryId := range categoryIds {
+		/*inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
+		queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
+		categoryIds = append(categoryIds, category.Id)*/
+		inQueryList = append(inQueryList, "?")
+		queryArgs = append(queryArgs, fmt.Sprintf("%s", strings.TrimLeft(categoryId, "@")))
+	}
+	inQuery := strings.Join(inQueryList, ", ")
+
+	query = query.Where(fmt.Sprintf("CategoryId IN (%s)", inQuery), queryArgs...)
+
+	return query
 }

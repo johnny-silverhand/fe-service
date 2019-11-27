@@ -755,7 +755,7 @@ func patchUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If eMail update is attempted by the currently logged in user, check if correct password was provided
-	if patch.Email != nil && ouser.Email != *patch.Email && c.App.Session.UserId == c.Params.UserId {
+	/*if patch.Email != nil && ouser.Email != *patch.Email && c.App.Session.UserId == c.Params.UserId {
 		if patch.Password == nil {
 			c.SetInvalidParam("password")
 			return
@@ -765,7 +765,7 @@ func patchUser(c *Context, w http.ResponseWriter, r *http.Request) {
 			c.Err = err
 			return
 		}
-	}
+	}*/
 
 	ruser, err := c.App.PatchUser(c.Params.UserId, patch, c.IsSystemAdmin())
 	if err != nil {
