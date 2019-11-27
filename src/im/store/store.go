@@ -502,6 +502,7 @@ type ProductStore interface {
 	GetAll() StoreChannel
 	/*	Publish(product *model.Product) StoreChannel
 		GetExtras(product *model.Product) StoreChannel*/
+	Search(categoryId, terms string, page, perPage int) StoreChannel
 }
 
 type CategoryStore interface {

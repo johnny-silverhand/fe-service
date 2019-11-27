@@ -232,6 +232,10 @@ func (a *App) DeleteProduct(productId, deleteByID string) (*model.Product, *mode
 }
 
 func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
+	result := <-a.Srv.Store.Product().Search(categoryId, terms, page, perPage)
+	rlist := result.Data.(*model.ProductList)
+	return a.PrepareProductListForClient(rlist), nil
+
 	paramsList := model.ParseSearchParams(terms, timeZoneOffset)
 	esInterface := a.Elasticsearch
 	resultList := model.NewProductList()
@@ -252,6 +256,10 @@ func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int
 				}
 			}
 		}
+	} else {
+		result := <-a.Srv.Store.Product().Search(categoryId, terms, page, perPage)
+		resultList = result.Data.(*model.ProductList)
+		return a.PrepareProductListForClient(resultList), nil
 	}
 	return resultList, nil
 }
