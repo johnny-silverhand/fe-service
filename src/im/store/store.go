@@ -526,6 +526,7 @@ type PromoStore interface {
 	Save(promo *model.Promo) StoreChannel
 	Get(promoId string) StoreChannel
 	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
+	GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) StoreChannel
 	Activate(promoId string) StoreChannel
 	Deactivate(promoId string) StoreChannel
 	Update(newPromo *model.Promo) StoreChannel

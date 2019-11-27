@@ -17,6 +17,22 @@ func (api *API) InitClient() {
 
 	api.BaseRoutes.Client.Handle("/offices", api.ApiHandler(getClientOffices)).Methods("GET")
 	api.BaseRoutes.Client.Handle("/products", api.ApiHandler(getClientProducts)).Methods("GET")
+	api.BaseRoutes.Client.Handle("/promos", api.ApiHandler(getClientPromos)).Methods("GET")
+}
+
+func getClientPromos(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireClientId()
+
+	if c.Err != nil {
+		return
+	}
+
+	if products, err := c.App.GetPromosPageByClient(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.ClientId); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(products.ToJson()))
+	}
 }
 
 func getClientProducts(c *Context, w http.ResponseWriter, r *http.Request) {
