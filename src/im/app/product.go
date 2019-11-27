@@ -57,6 +57,24 @@ func (a *App) GetProductsPage(page int, perPage int, sort string, categoryId str
 	return a.GetProducts(page*perPage, perPage, sort, categoryId)
 }
 
+func (a *App) GetProductsPageByClient(page int, perPage int, sort string, clientId string) (*model.ProductList, *model.AppError) {
+	return a.GetProductsByClient(page*perPage, perPage, sort, clientId)
+}
+
+func (a *App) GetProductsByClient(offset int, limit int, sort string, clientId string) (*model.ProductList, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().GetAllPageByClient(offset, limit, model.GetOrder(sort), clientId)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+
+	return list, nil
+
+}
+
 func (a *App) GetProducts(offset int, limit int, sort string, categoryId string) (*model.ProductList, *model.AppError) {
 
 	result := <-a.Srv.Store.Product().GetAllPage(offset, limit, model.GetOrder(sort), categoryId)

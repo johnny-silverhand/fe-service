@@ -83,6 +83,10 @@ func ParamsFromRequest(r *http.Request) *Params {
 		params.UserId = val
 	}
 
+	if val, ok := props["client_id"]; ok {
+		params.ClientId = val
+	}
+
 	if val := query.Get("sort"); val == "" {
 		params.Sort = "Id"
 	} else {

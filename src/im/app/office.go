@@ -74,10 +74,8 @@ func (a *App) UpdateOffice(office *model.Office, safeUpdate bool) (*model.Office
 		newOffice.Name = office.Name
 	}
 
-	
 	newOffice.Preview = office.Preview
 	newOffice.Description = office.Description
-
 
 	result = <-a.Srv.Store.Office().Update(newOffice)
 	if result.Err != nil {
@@ -95,10 +93,6 @@ func (a *App) UpdateOffice(office *model.Office, safeUpdate bool) (*model.Office
 func (a *App) PrepareOfficeForClient(originalOffice *model.Office, isNewOffice bool) *model.Office {
 	office := originalOffice.Clone()
 
-
-
-
-
 	//office.Metadata.Images = a.getCategoryForOffice(office)
 
 	return office
@@ -107,7 +101,7 @@ func (a *App) PrepareOfficeForClient(originalOffice *model.Office, isNewOffice b
 func (a *App) PrepareOfficeListForClient(originalList *model.OfficeList) *model.OfficeList {
 	list := &model.OfficeList{
 		Offices: make(map[string]*model.Office, len(originalList.Offices)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:   originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalOffice := range originalList.Offices {
@@ -127,42 +121,38 @@ func (a *App) DeleteOffice(officeId, deleteByID string) (*model.Office, *model.A
 	}
 	office := result.Data.(*model.Office)
 
-
 	if result := <-a.Srv.Store.Office().Delete(officeId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return office, nil
 }
 
+func (a *App) GetAllOfficesBeforeOffice(officeId string, page, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
 
-func (a *App) GetAllOfficesBeforeOffice(officeId string, page, perPage int) (*model.OfficeList, *model.AppError) {
-
-	if result := <-a.Srv.Store.Office().GetAllOfficesBefore( officeId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Office().GetAllOfficesBefore(officeId, perPage, page*perPage, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesAfterOffice( officeId string, page, perPage int) (*model.OfficeList, *model.AppError) {
+func (a *App) GetAllOfficesAfterOffice(officeId string, page, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
 
-
-	if result := <-a.Srv.Store.Office().GetAllOfficesAfter(officeId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Office().GetAllOfficesAfter(officeId, perPage, page*perPage, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, before bool) (*model.OfficeList, *model.AppError) {
+func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, before bool, clientId *string) (*model.OfficeList, *model.AppError) {
 	var pchan store.StoreChannel
 
 	if before {
-		pchan = a.Srv.Store.Office().GetAllOfficesBefore(officeId, limit, offset)
+		pchan = a.Srv.Store.Office().GetAllOfficesBefore(officeId, limit, offset, clientId)
 	} else {
-		pchan = a.Srv.Store.Office().GetAllOfficesAfter(officeId, limit, offset)
+		pchan = a.Srv.Store.Office().GetAllOfficesAfter(officeId, limit, offset, clientId)
 	}
 
 	if result := <-pchan; result.Err != nil {
@@ -172,16 +162,16 @@ func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, befo
 	}
 }
 
-func (a *App) GetAllOfficesSince(time int64) (*model.OfficeList, *model.AppError) {
-	if result := <-a.Srv.Store.Office().GetAllOfficesSince(time, true); result.Err != nil {
+func (a *App) GetAllOfficesSince(time int64, clientId *string) (*model.OfficeList, *model.AppError) {
+	if result := <-a.Srv.Store.Office().GetAllOfficesSince(time, true, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesPage(page int, perPage int) (*model.OfficeList, *model.AppError) {
-	if result := <-a.Srv.Store.Office().GetAllOffices(page*perPage, perPage, true); result.Err != nil {
+func (a *App) GetAllOfficesPage(page int, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
+	if result := <-a.Srv.Store.Office().GetAllOffices(page*perPage, perPage, true, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil

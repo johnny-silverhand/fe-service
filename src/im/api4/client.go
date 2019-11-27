@@ -15,6 +15,69 @@ func (api *API) InitClient() {
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(updateClient)).Methods("PUT")
 	api.BaseRoutes.Client.Handle("", api.ApiHandler(deleteClient)).Methods("DELETE")
 
+	api.BaseRoutes.Client.Handle("/offices", api.ApiHandler(getClientOffices)).Methods("GET")
+	api.BaseRoutes.Client.Handle("/products", api.ApiHandler(getClientProducts)).Methods("GET")
+}
+
+func getClientProducts(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireClientId()
+
+	if c.Err != nil {
+		return
+	}
+
+	if products, err := c.App.GetProductsPageByClient(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.ClientId); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(products.ToJson()))
+	}
+}
+
+func getClientOffices(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireClientId()
+
+	if c.Err != nil {
+		return
+	}
+
+	afterOffice := r.URL.Query().Get("after")
+	beforeOffice := r.URL.Query().Get("before")
+	sinceString := r.URL.Query().Get("since")
+
+	var since int64
+	var parseError error
+
+	if len(sinceString) > 0 {
+		since, parseError = strconv.ParseInt(sinceString, 10, 64)
+		if parseError != nil {
+			c.SetInvalidParam("since")
+			return
+		}
+	}
+
+	var list *model.OfficeList
+	var err *model.AppError
+	//etag := ""
+
+	if since > 0 {
+		list, err = c.App.GetAllOfficesSince(since, &c.Params.ClientId)
+	} else if len(afterOffice) > 0 {
+
+		list, err = c.App.GetAllOfficesAfterOffice(afterOffice, c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	} else if len(beforeOffice) > 0 {
+
+		list, err = c.App.GetAllOfficesBeforeOffice(beforeOffice, c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	} else {
+		list, err = c.App.GetAllOfficesPage(c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	}
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(list.ToJson()))
 }
 
 func getAllClients(c *Context, w http.ResponseWriter, r *http.Request) {
