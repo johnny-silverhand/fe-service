@@ -8,12 +8,10 @@ import (
 
 func (api *API) InitExtra() {
 
-
-
 	api.BaseRoutes.Extras.Handle("", api.ApiHandler(getAllExtras)).Methods("GET")
 
+	api.BaseRoutes.Extras.Handle("", api.ApiHandler(createExtra)).Methods("POST")
 	api.BaseRoutes.Extra.Handle("", api.ApiHandler(getExtra)).Methods("GET")
-	api.BaseRoutes.Extra.Handle("", api.ApiHandler(createExtra)).Methods("POST")
 	api.BaseRoutes.Extra.Handle("", api.ApiHandler(updateExtra)).Methods("PUT")
 	api.BaseRoutes.Extra.Handle("", api.ApiHandler(deleteExtra)).Methods("DELETE")
 
@@ -56,7 +54,7 @@ func getAllExtras(c *Context, w http.ResponseWriter, r *http.Request) {
 		list, err = c.App.GetAllExtrasAfterExtra(afterExtra, c.Params.Page, c.Params.PerPage)
 	} else if len(beforeExtra) > 0 {
 
-		list, err = c.App.GetAllExtrasBeforeExtra( beforeExtra, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllExtrasBeforeExtra(beforeExtra, c.Params.Page, c.Params.PerPage)
 	} else {
 		list, err = c.App.GetAllExtrasPage(c.Params.Page, c.Params.PerPage)
 	}
@@ -66,7 +64,7 @@ func getAllExtras(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-/*	if len(etag) > 0 {
+	/*	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
@@ -108,7 +106,6 @@ func updateExtra(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-	
 
 	extra.Id = c.Params.ExtraId
 
