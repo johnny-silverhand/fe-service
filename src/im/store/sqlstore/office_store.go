@@ -185,9 +185,16 @@ func (s SqlOfficeStore) GetAllOffices(offset int, limit int, allowFromCache bool
 			return
 		}
 
+		var clientQuery string
+		if clientId != nil {
+			clientQuery = " AND ClientId = :ClientId "
+		} else {
+			clientQuery = ""
+		}
+
 		var offices []*model.Office
 		_, err := s.GetReplica().Select(&offices, "SELECT * FROM Offices WHERE "+
-			" DeleteAt = 0 "+
+			" DeleteAt = 0 "+clientQuery+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {

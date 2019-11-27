@@ -19,7 +19,6 @@ func NewSqlLevelStore(sqlStore SqlStore) store.LevelStore {
 
 		table.ColMap("Id").SetMaxSize(26)
 		table.ColMap("Name").SetMaxSize(255)
-	
 
 	}
 
@@ -107,14 +106,13 @@ func (s *SqlLevelStore) Get(id string) store.StoreChannel {
 	})
 }
 
-
 func (s SqlLevelStore) GetAllPage(offset int, limit int, order model.ColumnOrder) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var levels []*model.Level
 
 		query := `SELECT *
                   FROM Levels`
-                  //ORDER BY ` + order.Column + ` `
+		//ORDER BY ` + order.Column + ` `
 
 		/*if order.Column == "price" { // cuz price is string
 			query += `+ 0 ` // hack for sorting string as integer
@@ -137,7 +135,6 @@ func (s SqlLevelStore) GetAllPage(offset int, limit int, order model.ColumnOrder
 
 			list.MakeNonNil()
 
-
 			result.Data = list
 		}
 	})
@@ -146,7 +143,6 @@ func (s SqlLevelStore) GetAllPage(offset int, limit int, order model.ColumnOrder
 func (s *SqlLevelStore) Overwrite(level *model.Level) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		level.UpdateAt = model.GetMillis()
-
 
 		if result.Err = level.IsValid(); result.Err != nil {
 			return
@@ -180,25 +176,30 @@ func (s *SqlLevelStore) Delete(levelId string, time int64, deleteByID string) st
 	})
 }
 
-
-func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool) store.StoreChannel {
+func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
 			result.Err = model.NewAppError("SqlLevelStore.GetAllLevels", "store.sql_level.get_levels.app_error", nil, "", http.StatusBadRequest)
 			return
 		}
 
+		var clientQuery string
+		if clientId != nil {
+			clientQuery = " AND ClientId = :ClientId "
+		} else {
+			clientQuery = ""
+		}
 
 		var levels []*model.Level
-		_, err := s.GetReplica().Select(&levels, "SELECT * FROM Levels WHERE " +
-			" DeleteAt = 0 " +
+		_, err := s.GetReplica().Select(&levels, "SELECT * FROM Levels WHERE "+
+			" DeleteAt = 0 "+clientQuery+
 			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlLevelStore.GetAllLevels", "store.sql_level.get_root_levels.app_error", nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		if (err == nil) {
+		if err == nil {
 
 			list := model.NewLevelList()
 
@@ -214,9 +215,8 @@ func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool) 
 	})
 }
 
-func (s SqlLevelStore) GetAllLevelsSince(time int64, allowFromCache bool) store.StoreChannel {
+func (s SqlLevelStore) GetAllLevelsSince(time int64, allowFromCache bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-
 
 		var levels []*model.Level
 		_, err := s.GetReplica().Select(&levels,
@@ -247,15 +247,15 @@ func (s SqlLevelStore) GetAllLevelsSince(time int64, allowFromCache bool) store.
 	})
 }
 
-func (s SqlLevelStore) GetAllLevelsBefore( levelId string, numLevels int, offset int) store.StoreChannel {
-	return s.getAllLevelsAround( levelId, numLevels, offset, true)
+func (s SqlLevelStore) GetAllLevelsBefore(levelId string, numLevels int, offset int, clientId *string) store.StoreChannel {
+	return s.getAllLevelsAround(levelId, numLevels, offset, true, clientId)
 }
 
-func (s SqlLevelStore) GetAllLevelsAfter(levelId string, numLevels int, offset int) store.StoreChannel {
-	return s.getAllLevelsAround( levelId, numLevels, offset, false)
+func (s SqlLevelStore) GetAllLevelsAfter(levelId string, numLevels int, offset int, clientId *string) store.StoreChannel {
+	return s.getAllLevelsAround(levelId, numLevels, offset, false, clientId)
 }
 
-func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset int, before bool) store.StoreChannel {
+func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset int, before bool, clientId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -267,24 +267,24 @@ func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset 
 			sort = "ASC"
 		}
 
+		var clientQuery string
+		if clientId != nil {
+			clientQuery = " AND ClientId = :ClientId "
+		} else {
+			clientQuery = ""
+		}
+
 		var levels []*model.Level
 
 		_, err := s.GetReplica().Select(&levels,
-			`SELECT
-			    *
-			FROM
-			    Levels
-			WHERE (CreateAt `+ direction+ ` (SELECT CreateAt FROM Levels WHERE Id = :LevelId))
-			ORDER BY CreateAt `+ sort+ `
+			`SELECT * FROM Levels WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Levels WHERE Id = :LevelId)) `+clientQuery+`
+			ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumLevels`,
-			map[string]interface{}{"LevelId": levelId, "NumLevels": numLevels, "Offset": offset})
-
-
-
+			map[string]interface{}{"LevelId": levelId, "NumLevels": numLevels, "Offset": offset, "ClientId": clientId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlLevelStore.getAllLevelsAround", "store.sql_level.get_levels_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}  else {
+		} else {
 
 			list := model.NewLevelList()
 
@@ -306,5 +306,3 @@ func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset 
 		}
 	})
 }
-
-

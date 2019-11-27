@@ -18,6 +18,59 @@ func (api *API) InitClient() {
 	api.BaseRoutes.Client.Handle("/offices", api.ApiHandler(getClientOffices)).Methods("GET")
 	api.BaseRoutes.Client.Handle("/products", api.ApiHandler(getClientProducts)).Methods("GET")
 	api.BaseRoutes.Client.Handle("/promos", api.ApiHandler(getClientPromos)).Methods("GET")
+	api.BaseRoutes.Client.Handle("/levels", api.ApiHandler(getClientLevels)).Methods("GET")
+}
+
+func getClientLevels(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireClientId()
+
+	if c.Err != nil {
+		return
+	}
+
+	afterLevel := r.URL.Query().Get("after")
+	beforeLevel := r.URL.Query().Get("before")
+	sinceString := r.URL.Query().Get("since")
+
+	var since int64
+	var parseError error
+
+	if len(sinceString) > 0 {
+		since, parseError = strconv.ParseInt(sinceString, 10, 64)
+		if parseError != nil {
+			c.SetInvalidParam("since")
+			return
+		}
+	}
+
+	/*	if !c.App.SessionHasPermissionToChannel(c.Session, c.Params.ChannelId, model.PERMISSION_READ_CHANNEL) {
+		c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
+		return
+	}*/
+
+	var list *model.LevelList
+	var err *model.AppError
+	//etag := ""
+
+	if since > 0 {
+		list, err = c.App.GetAllLevelsSince(since, &c.Params.ClientId)
+	} else if len(afterLevel) > 0 {
+
+		list, err = c.App.GetAllLevelsAfterLevel(afterLevel, c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	} else if len(beforeLevel) > 0 {
+
+		list, err = c.App.GetAllLevelsBeforeLevel(beforeLevel, c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	} else {
+		list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage, &c.Params.ClientId)
+	}
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(list.ToJson()))
+
 }
 
 func getClientPromos(c *Context, w http.ResponseWriter, r *http.Request) {

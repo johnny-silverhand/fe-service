@@ -7,14 +7,15 @@ import (
 )
 
 type Level struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-	Active bool `json:"active"`
+	Id       string  `json:"id"`
+	Name     string  `json:"name"`
+	Active   bool    `json:"active"`
 	Lvl      int64   `json:"lvl"`
 	Value    float64 `json:"value"`
 	CreateAt int64   `json:"create_at"`
 	UpdateAt int64   `json:"update_at"`
 	DeleteAt int64   `json:"delete_at"`
+	ClientId string  `json:"client_id"`
 }
 
 type LevelPatch struct {

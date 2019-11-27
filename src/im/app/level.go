@@ -74,8 +74,6 @@ func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *m
 		newLevel.Name = level.Name
 	}
 
-	
-
 	result = <-a.Srv.Store.Level().Update(newLevel)
 	if result.Err != nil {
 		return nil, result.Err
@@ -92,10 +90,6 @@ func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *m
 func (a *App) PrepareLevelForClient(originalLevel *model.Level, isNewLevel bool) *model.Level {
 	level := originalLevel.Clone()
 
-
-
-
-
 	//level.Metadata.Images = a.getCategoryForLevel(level)
 
 	return level
@@ -104,7 +98,7 @@ func (a *App) PrepareLevelForClient(originalLevel *model.Level, isNewLevel bool)
 func (a *App) PrepareLevelListForClient(originalList *model.LevelList) *model.LevelList {
 	list := &model.LevelList{
 		Levels: make(map[string]*model.Level, len(originalList.Levels)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:  originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalLevel := range originalList.Levels {
@@ -124,42 +118,38 @@ func (a *App) DeleteLevel(levelId, deleteByID string) (*model.Level, *model.AppE
 	}
 	level := result.Data.(*model.Level)
 
-
 	if result := <-a.Srv.Store.Level().Delete(levelId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return level, nil
 }
 
+func (a *App) GetAllLevelsBeforeLevel(levelId string, page, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
 
-func (a *App) GetAllLevelsBeforeLevel(levelId string, page, perPage int) (*model.LevelList, *model.AppError) {
-
-	if result := <-a.Srv.Store.Level().GetAllLevelsBefore( levelId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Level().GetAllLevelsBefore(levelId, perPage, page*perPage, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsAfterLevel( levelId string, page, perPage int) (*model.LevelList, *model.AppError) {
+func (a *App) GetAllLevelsAfterLevel(levelId string, page, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
 
-
-	if result := <-a.Srv.Store.Level().GetAllLevelsAfter(levelId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Level().GetAllLevelsAfter(levelId, perPage, page*perPage, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before bool) (*model.LevelList, *model.AppError) {
+func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before bool, clientId *string) (*model.LevelList, *model.AppError) {
 	var pchan store.StoreChannel
 
 	if before {
-		pchan = a.Srv.Store.Level().GetAllLevelsBefore(levelId, limit, offset)
+		pchan = a.Srv.Store.Level().GetAllLevelsBefore(levelId, limit, offset, clientId)
 	} else {
-		pchan = a.Srv.Store.Level().GetAllLevelsAfter(levelId, limit, offset)
+		pchan = a.Srv.Store.Level().GetAllLevelsAfter(levelId, limit, offset, clientId)
 	}
 
 	if result := <-pchan; result.Err != nil {
@@ -169,16 +159,16 @@ func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before 
 	}
 }
 
-func (a *App) GetAllLevelsSince(time int64) (*model.LevelList, *model.AppError) {
-	if result := <-a.Srv.Store.Level().GetAllLevelsSince(time, true); result.Err != nil {
+func (a *App) GetAllLevelsSince(time int64, clientId *string) (*model.LevelList, *model.AppError) {
+	if result := <-a.Srv.Store.Level().GetAllLevelsSince(time, true, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsPage(page int, perPage int) (*model.LevelList, *model.AppError) {
-	if result := <-a.Srv.Store.Level().GetAllLevels(page*perPage, perPage, true); result.Err != nil {
+func (a *App) GetAllLevelsPage(page int, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
+	if result := <-a.Srv.Store.Level().GetAllLevels(page*perPage, perPage, true, clientId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil

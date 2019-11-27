@@ -48,15 +48,15 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllLevelsSince(since)
+		list, err = c.App.GetAllLevelsSince(since, nil)
 	} else if len(afterLevel) > 0 {
 
-		list, err = c.App.GetAllLevelsAfterLevel(afterLevel, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllLevelsAfterLevel(afterLevel, c.Params.Page, c.Params.PerPage, nil)
 	} else if len(beforeLevel) > 0 {
 
-		list, err = c.App.GetAllLevelsBeforeLevel( beforeLevel, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllLevelsBeforeLevel(beforeLevel, c.Params.Page, c.Params.PerPage, nil)
 	} else {
-		list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage, nil)
 	}
 
 	if err != nil {
@@ -64,7 +64,7 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-/*	if len(etag) > 0 {
+	/*	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
@@ -106,7 +106,6 @@ func updateLevel(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-	
 
 	level.Id = c.Params.LevelId
 

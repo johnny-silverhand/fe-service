@@ -629,10 +629,10 @@ type LevelStore interface {
 	Overwrite(level *model.Level) StoreChannel
 	Delete(levelId string, time int64, deleteByID string) StoreChannel
 
-	GetAllLevels(offset int, limit int, allowFromCache bool) StoreChannel
-	GetAllLevelsSince(time int64, allowFromCache bool) StoreChannel
-	GetAllLevelsBefore(levelId string, numLevels int, offset int) StoreChannel
-	GetAllLevelsAfter(levelId string, numLevels int, offset int) StoreChannel
+	GetAllLevels(offset int, limit int, allowFromCache bool, clientId *string) StoreChannel
+	GetAllLevelsSince(time int64, allowFromCache bool, clientId *string) StoreChannel
+	GetAllLevelsBefore(levelId string, numLevels int, offset int, clientId *string) StoreChannel
+	GetAllLevelsAfter(levelId string, numLevels int, offset int, clientId *string) StoreChannel
 }
 
 type ExtraStore interface {
