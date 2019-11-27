@@ -25,6 +25,21 @@ func (a *App) GetPromosPage(page int, perPage int, sort string) (*model.PromoLis
 	return a.GetPromos(page*perPage, perPage, sort)
 }
 
+func (a *App) GetPromosPageByClient(page int, perPage int, sort string, clientId string) (*model.PromoList, *model.AppError) {
+	return a.GetPromosByClient(page*perPage, perPage, sort, clientId)
+}
+
+func (a *App) GetPromosByClient(offset int, limit int, sort string, clientId string) (*model.PromoList, *model.AppError) {
+
+	result := <-a.Srv.Store.Promo().GetAllPageByClient(offset, limit, model.GetOrder(sort), clientId)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+	return list, nil
+}
+
 func (a *App) GetPromos(offset int, limit int, sort string) (*model.PromoList, *model.AppError) {
 
 	result := <-a.Srv.Store.Promo().GetAllPage(offset, limit, model.GetOrder(sort))

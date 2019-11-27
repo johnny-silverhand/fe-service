@@ -23,6 +23,8 @@ func getAllOffices(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	c.App.Session.ToJson()
+
 	afterOffice := r.URL.Query().Get("after")
 	beforeOffice := r.URL.Query().Get("before")
 	sinceString := r.URL.Query().Get("since")
@@ -48,15 +50,15 @@ func getAllOffices(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllOfficesSince(since)
+		list, err = c.App.GetAllOfficesSince(since, nil)
 	} else if len(afterOffice) > 0 {
 
-		list, err = c.App.GetAllOfficesAfterOffice(afterOffice, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOfficesAfterOffice(afterOffice, c.Params.Page, c.Params.PerPage, nil)
 	} else if len(beforeOffice) > 0 {
 
-		list, err = c.App.GetAllOfficesBeforeOffice( beforeOffice, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOfficesBeforeOffice(beforeOffice, c.Params.Page, c.Params.PerPage, nil)
 	} else {
-		list, err = c.App.GetAllOfficesPage(c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOfficesPage(c.Params.Page, c.Params.PerPage, nil)
 	}
 
 	if err != nil {
@@ -64,7 +66,7 @@ func getAllOffices(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-/*	if len(etag) > 0 {
+	/*	if len(etag) > 0 {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
@@ -106,7 +108,6 @@ func updateOffice(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("id")
 		return
 	}
-	
 
 	office.Id = c.Params.OfficeId
 

@@ -254,6 +254,38 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 	})
 }
 
+func (s SqlProductStore) GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		var products []*model.Product
+		query := `SELECT *
+                  FROM Products
+                  WHERE ClientId = :ClientId
+				  AND DeleteAt = 0
+                  ORDER BY ` + order.Column + ` `
+
+		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
+
+		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"Limit": limit, "Offset": offset, "ClientId": clientId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPageByClient", "store.sql_products.get_all_page_by_client.app_error",
+				nil, err.Error(),
+				http.StatusInternalServerError)
+		} else {
+
+			list := model.NewProductList()
+
+			for _, p := range products {
+				list.AddProduct(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}
+
 func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var products []*model.Product

@@ -120,6 +120,9 @@ type Routes struct {
 	Extras *mux.Router // 'api/v4/extras'
 	Extra  *mux.Router // 'api/v4/extras/{extra_id:[A-Za-z0-9_-]+}'
 
+	Clients *mux.Router // 'api/v4/clients'
+	Client  *mux.Router // 'api/v4/clients/{client_id:[A-Za-z0-9_-]+}'
+
 }
 
 type API struct {
@@ -234,6 +237,9 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Extras = api.BaseRoutes.ApiRoot.PathPrefix("/extras").Subrouter()
 	api.BaseRoutes.Extra = api.BaseRoutes.Extras.PathPrefix("/{extra_id:[A-Za-z0-9]+}").Subrouter()
 
+	api.BaseRoutes.Clients = api.BaseRoutes.ApiRoot.PathPrefix("/clients").Subrouter()
+	api.BaseRoutes.Client = api.BaseRoutes.Clients.PathPrefix("/{client_id:[A-Za-z0-9]+}").Subrouter()
+
 	api.InitUser()
 
 	api.InitTeam()
@@ -273,6 +279,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitLevel()
 	api.InitExtra()
 	api.InitBasket()
+	api.InitClient()
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api
