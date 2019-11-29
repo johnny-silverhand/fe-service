@@ -534,6 +534,11 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if props.AppId == "" {
+		c.SetInvalidParam("app_id")
+		return
+	}
+
 	/*if props.TeamId == "" && props.NotInChannelId != "" {
 		c.SetInvalidParam("team_id")
 		return

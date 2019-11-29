@@ -228,7 +228,7 @@ func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *
 	return nil
 }
 
-func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, clientId string) *model.AppError {
+func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, appId string) *model.AppError {
 
 	st := product.ToJson()
 
@@ -497,7 +497,7 @@ func (m *ElasticsearcInterfaceImpl) SearchProductsHint(searchParams []*model.Sea
 	return products, nil
 }
 
-func (m *ElasticsearcInterfaceImpl) SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]string, *model.AppError) {
+func (m *ElasticsearcInterfaceImpl) SearchUsersInApp(appId, term string, options *model.UserSearchOptions) ([]string, *model.AppError) {
 
 	/*var term []string
 	for _, param := range options {

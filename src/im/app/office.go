@@ -128,31 +128,31 @@ func (a *App) DeleteOffice(officeId, deleteByID string) (*model.Office, *model.A
 	return office, nil
 }
 
-func (a *App) GetAllOfficesBeforeOffice(officeId string, page, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
+func (a *App) GetAllOfficesBeforeOffice(officeId string, page, perPage int, appId *string) (*model.OfficeList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Office().GetAllOfficesBefore(officeId, perPage, page*perPage, clientId); result.Err != nil {
+	if result := <-a.Srv.Store.Office().GetAllOfficesBefore(officeId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesAfterOffice(officeId string, page, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
+func (a *App) GetAllOfficesAfterOffice(officeId string, page, perPage int, appId *string) (*model.OfficeList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Office().GetAllOfficesAfter(officeId, perPage, page*perPage, clientId); result.Err != nil {
+	if result := <-a.Srv.Store.Office().GetAllOfficesAfter(officeId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, before bool, clientId *string) (*model.OfficeList, *model.AppError) {
+func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, before bool, appId *string) (*model.OfficeList, *model.AppError) {
 	var pchan store.StoreChannel
 
 	if before {
-		pchan = a.Srv.Store.Office().GetAllOfficesBefore(officeId, limit, offset, clientId)
+		pchan = a.Srv.Store.Office().GetAllOfficesBefore(officeId, limit, offset, appId)
 	} else {
-		pchan = a.Srv.Store.Office().GetAllOfficesAfter(officeId, limit, offset, clientId)
+		pchan = a.Srv.Store.Office().GetAllOfficesAfter(officeId, limit, offset, appId)
 	}
 
 	if result := <-pchan; result.Err != nil {
@@ -162,16 +162,16 @@ func (a *App) GetAllOfficesAroundOffice(officeId string, offset, limit int, befo
 	}
 }
 
-func (a *App) GetAllOfficesSince(time int64, clientId *string) (*model.OfficeList, *model.AppError) {
-	if result := <-a.Srv.Store.Office().GetAllOfficesSince(time, true, clientId); result.Err != nil {
+func (a *App) GetAllOfficesSince(time int64, appId *string) (*model.OfficeList, *model.AppError) {
+	if result := <-a.Srv.Store.Office().GetAllOfficesSince(time, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil
 	}
 }
 
-func (a *App) GetAllOfficesPage(page int, perPage int, clientId *string) (*model.OfficeList, *model.AppError) {
-	if result := <-a.Srv.Store.Office().GetAllOffices(page*perPage, perPage, true, clientId); result.Err != nil {
+func (a *App) GetAllOfficesPage(page int, perPage int, appId *string) (*model.OfficeList, *model.AppError) {
+	if result := <-a.Srv.Store.Office().GetAllOffices(page*perPage, perPage, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OfficeList), nil

@@ -34,7 +34,7 @@ func NewSqlProductStore(sqlStore SqlStore) store.ProductStore {
 		table := db.AddTableWithName(model.Product{}, "Products").SetKeys(false, "Id")
 
 		table.ColMap("Id").SetMaxSize(26)
-		table.ColMap("ClientId").SetMaxSize(26)
+		table.ColMap("AppId").SetMaxSize(26)
 		table.ColMap("Name").SetMaxSize(255)
 		table.ColMap("Preview").SetMaxSize(2000)
 		table.ColMap("Description").SetMaxSize(32)
@@ -48,7 +48,7 @@ func NewSqlProductStore(sqlStore SqlStore) store.ProductStore {
 }
 
 func (s SqlProductStore) CreateIndexesIfNotExists() {
-	s.CreateIndexIfNotExists("idx_products_clientid", "Products", "ClientId")
+	s.CreateIndexIfNotExists("idx_products_clientid", "Products", "AppId")
 	s.CreateIndexIfNotExists("idx_products_update_at", "Products", "UpdateAt")
 	s.CreateIndexIfNotExists("idx_products_create_at", "Products", "CreateAt")
 	s.CreateIndexIfNotExists("idx_products_delete_at", "Products", "DeleteAt")
@@ -199,11 +199,11 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 		}
 
 		var categories []*model.Category
-		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and ClientId = :ClientId`,
+		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and AppId = :AppId`,
 			map[string]interface{}{
-				"Lft":      rootCategory.Lft,
-				"Rgt":      rootCategory.Rgt,
-				"ClientId": rootCategory.ClientId,
+				"Lft":   rootCategory.Lft,
+				"Rgt":   rootCategory.Rgt,
+				"AppId": rootCategory.AppId,
 			}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
@@ -254,19 +254,19 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 	})
 }
 
-func (s SqlProductStore) GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) store.StoreChannel {
+func (s SqlProductStore) GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
 		var products []*model.Product
 		query := `SELECT *
                   FROM Products
-                  WHERE ClientId = :ClientId
+                  WHERE AppId = :AppId
 				  AND DeleteAt = 0
                   ORDER BY ` + order.Column + ` `
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
-		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"Limit": limit, "Offset": offset, "ClientId": clientId}); err != nil {
+		if _, err := s.GetReplica().Select(&products, query, map[string]interface{}{"Limit": limit, "Offset": offset, "AppId": appId}); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPageByClient", "store.sql_products.get_all_page_by_client.app_error",
 				nil, err.Error(),
 				http.StatusInternalServerError)
@@ -286,14 +286,14 @@ func (s SqlProductStore) GetAllPageByClient(offset int, limit int, order model.C
 	})
 }
 
-func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
+func (s SqlProductStore) GetAllByAppId(appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var products []*model.Product
 		if err := s.GetReplica().SelectOne(&products,
 			`SELECT *
                     FROM Products
-                    WHERE ClientId = :ClientId AND DeleteAt = 0`, map[string]interface{}{"ClientId": clientId}); err != nil {
-			result.Err = model.NewAppError("SqlProductStore.GetAllByClientId", "store.sql_products.get_all_by_client_id.app_error", nil, err.Error(), http.StatusNotFound)
+                    WHERE AppId = :AppId AND DeleteAt = 0`, map[string]interface{}{"appId": appId}); err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllByAppId", "store.sql_products.get_all_by_app_id.app_error", nil, err.Error(), http.StatusNotFound)
 		} else {
 
 			list := model.NewProductList()
@@ -310,7 +310,7 @@ func (s SqlProductStore) GetAllByClientId(clientId string) store.StoreChannel {
 	})
 }
 
-func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
+/*func (s SqlProductStore) GetAllByAppIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
 
 	return store.Do(func(result *store.StoreResult) {
 
@@ -324,7 +324,7 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 			descendantsQuery := `SELECT Children.* FROM Categories  AS Children, Categories AS Parent WHERE Parent.Id=:ParentId AND Children.Left BETWEEN Parent.Left AND Parent.Right`
 
 			if _, err := s.GetReplica().Select(&descendants, descendantsQuery, map[string]interface{}{"ParentId": categoryId}); err != nil {
-				result.Err = model.NewAppError("SqlProductStore.GetAllByClientIdPage", "store.sql_products.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+				result.Err = model.NewAppError("SqlProductStore.GetAllByAppIdPage", "store.sql_products.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 			} else {
 
 				for i, node := range descendants {
@@ -348,12 +348,12 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 		query += ` ORDER BY ` + order.Column + ` `
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
-		queryArgs["ClientId"] = clientId
+		queryArgs["AppId"] = clientId
 		queryArgs["Limit"] = limit
 		queryArgs["Offset"] = offset
 
 		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
-			result.Err = model.NewAppError("SqlProductStore.GetAllByClientIdPage", "store.sql_products.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			result.Err = model.NewAppError("SqlProductStore.GetAllByAppIdPage", "store.sql_products.get_all_by_client_id_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 
 			list := model.NewProductList()
@@ -370,7 +370,7 @@ func (s SqlProductStore) GetAllByClientIdPage(clientId string, offset int, limit
 		}
 
 	})
-}
+}*/
 
 func (s *SqlProductStore) Delete(productId string, time int64, deleteByID string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
@@ -457,11 +457,11 @@ func (s SqlProductStore) Search(categoryId, terms string, page, perPage int) sto
 		}
 
 		var categories []*model.Category
-		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and ClientId = :ClientId`,
+		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and AppId = :AppId`,
 			map[string]interface{}{
-				"Lft":      rootCategory.Lft,
-				"Rgt":      rootCategory.Rgt,
-				"ClientId": rootCategory.ClientId,
+				"Lft":   rootCategory.Lft,
+				"Rgt":   rootCategory.Rgt,
+				"AppId": rootCategory.AppId,
 			}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlProductStore.GetAllPage",

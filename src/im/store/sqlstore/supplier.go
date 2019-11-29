@@ -91,7 +91,7 @@ type SqlSupplierOldStores struct {
 	product              store.ProductStore
 	promo                store.PromoStore
 	office               store.OfficeStore
-	client               store.ClientStore
+	application          store.ApplicationStore
 	order                store.OrderStore
 	basket               store.BasketStore
 	category             store.CategoryStore
@@ -155,7 +155,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.linkMetadata = NewSqlLinkMetadataStore(supplier)
 	supplier.oldStores.level = NewSqlLevelStore(supplier)
 	supplier.oldStores.extra = NewSqlExtraStore(supplier)
-	supplier.oldStores.client = NewSqlClientStore(supplier)
+	supplier.oldStores.application = NewSqlApplicationStore(supplier)
 
 	initSqlSupplierRoles(supplier)
 	initSqlSupplierSchemes(supplier)
@@ -190,7 +190,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.category.(*SqlCategoryStore).CreateIndexesIfNotExists()
 	supplier.oldStores.promo.(*SqlPromoStore).CreateIndexesIfNotExists()
 	supplier.oldStores.office.(*SqlOfficeStore).CreateIndexesIfNotExists()
-	supplier.oldStores.client.(*SqlClientStore).CreateIndexesIfNotExists()
+	supplier.oldStores.application.(*SqlApplicationStore).CreateIndexesIfNotExists()
 	supplier.oldStores.order.(*SqlOrderStore).CreateIndexesIfNotExists()
 	supplier.oldStores.basket.(*SqlBasketStore).CreateIndexesIfNotExists()
 	supplier.oldStores.transaction.(*SqlTransactionStore).CreateIndexesIfNotExists()
@@ -1019,8 +1019,8 @@ func (ss *SqlSupplier) Category() store.CategoryStore {
 func (ss *SqlSupplier) Office() store.OfficeStore {
 	return ss.oldStores.office
 }
-func (ss *SqlSupplier) Client() store.ClientStore {
-	return ss.oldStores.client
+func (ss *SqlSupplier) Application() store.ApplicationStore {
+	return ss.oldStores.application
 }
 func (ss *SqlSupplier) Order() store.OrderStore {
 	return ss.oldStores.order

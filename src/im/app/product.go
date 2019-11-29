@@ -57,13 +57,13 @@ func (a *App) GetProductsPage(page int, perPage int, sort string, categoryId str
 	return a.GetProducts(page*perPage, perPage, sort, categoryId)
 }
 
-func (a *App) GetProductsPageByClient(page int, perPage int, sort string, clientId string) (*model.ProductList, *model.AppError) {
-	return a.GetProductsByClient(page*perPage, perPage, sort, clientId)
+func (a *App) GetProductsPageByApp(page int, perPage int, sort string, appId string) (*model.ProductList, *model.AppError) {
+	return a.GetProductsByApp(page*perPage, perPage, sort, appId)
 }
 
-func (a *App) GetProductsByClient(offset int, limit int, sort string, clientId string) (*model.ProductList, *model.AppError) {
+func (a *App) GetProductsByApp(offset int, limit int, sort string, appId string) (*model.ProductList, *model.AppError) {
 
-	result := <-a.Srv.Store.Product().GetAllPageByClient(offset, limit, model.GetOrder(sort), clientId)
+	result := <-a.Srv.Store.Product().GetAllPageByApp(offset, limit, model.GetOrder(sort), appId)
 
 	if result.Err != nil {
 		return nil, result.Err
@@ -107,7 +107,7 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 		a.Srv.Go(func() {
-			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+			if err := esInterface.IndexProduct(rproduct, rproduct.AppId); err != nil {
 				mlog.Error("Encountered error indexing product", mlog.String("product_id", rproduct.Id), mlog.Err(err))
 			}
 		})
@@ -208,7 +208,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 				mlog.Error(fmt.Sprintf("Couldn't get channel %v for post %v for Elasticsearch indexing.", rpost.ChannelId, rpost.Id))
 				return
 			}*/
-			if err := esInterface.IndexProduct(rproduct, rproduct.ClientId); err != nil {
+			if err := esInterface.IndexProduct(rproduct, rproduct.AppId); err != nil {
 				mlog.Error("Encountered error indexing product", mlog.String("product_id", product.Id), mlog.Err(err))
 			}
 		})

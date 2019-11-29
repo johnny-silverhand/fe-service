@@ -45,10 +45,10 @@ func moveCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	storedCategory.ParentId = category.ParentId
 	if len(category.ParentId) > 0 {
-		err = c.App.MoveClientCategoryBySp(storedCategory)
+		err = c.App.MoveCategory(storedCategory)
 	} else {
-		_, err = c.App.DeleteOneCategory(storedCategory)
-		_, err = c.App.CreateCategoryBySp(storedCategory)
+		_, err = c.App.DeleteCategory(storedCategory)
+		_, err = c.App.CreateCategory(storedCategory)
 	}
 
 	if err == nil {
@@ -70,7 +70,7 @@ func orderCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	storedCategory.ParentId = category.ParentId
 	if len(category.DestinationId) > 0 {
 		storedCategory.DestinationId = category.DestinationId
-		err = c.App.OrderCategoryBySp(storedCategory)
+		err = c.App.OrderCategory(storedCategory)
 	}
 
 	if err == nil {
@@ -131,7 +131,7 @@ func createCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = model.NewAppError("createCategory", "api.category", nil, "nil object", http.StatusForbidden)
 		return
 	}
-	result, err := c.App.CreateCategoryBySp(category)
+	result, err := c.App.CreateCategory(category)
 	if err != nil {
 		c.Err = err
 		return
@@ -175,7 +175,7 @@ func deleteCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	c.App.DeleteOneCategory(category)
+	c.App.DeleteCategory(category)
 	/*
 		if err != nil {
 			c.Err = err

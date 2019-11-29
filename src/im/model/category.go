@@ -8,7 +8,7 @@ import (
 
 type Category struct {
 	Id            string       `json:"id"`
-	ClientId      string       `json:"client_id"`
+	AppId         string       `json:"app_id"`
 	Name          string       `json:"name"`
 	ParentId      string       `json:"parent_id"`
 	CreateAt      int64        `json:"create_at"`
@@ -24,7 +24,7 @@ type Category struct {
 
 type CategoryPatch struct {
 	Id       string `db:"id"`
-	ClientId string `db:"client_id"`
+	AppId    string `db:"app_id"`
 	Name     string `db:"name"`
 	ParentId string `db:"parent_id"`
 	CreateAt *int64 `db:"create_at"`
@@ -41,7 +41,7 @@ func (c *Category) NewCp(id string, name string) *CategoryPatch {
 
 func (category *Category) SetPatch() *CategoryPatch {
 	patch := CategoryPatch{}
-	patch.ClientId = category.ClientId
+	patch.AppId = category.AppId
 	patch.ParentId = category.ParentId
 	patch.Name = category.Name
 	return &patch

@@ -45,7 +45,7 @@ func (a *App) PurgeElasticsearchIndexes() *model.AppError {
 
 func indexProducts(products map[string]*model.Product, esInterface einterfaces.ElasticsearchInterface) {
 	for _, product := range products {
-		if err := esInterface.IndexProduct(product, product.ClientId); err != nil {
+		if err := esInterface.IndexProduct(product, product.AppId); err != nil {
 			mlog.Error("Encountered error indexing product", mlog.String("product_id", product.Id), mlog.Err(err))
 		}
 	}

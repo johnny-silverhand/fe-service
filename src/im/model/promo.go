@@ -13,8 +13,8 @@ const (
 )
 
 type Promo struct {
-	Id       string `json:"id"`
-	ClientId string `json:"client_id"`
+	Id    string `json:"id"`
+	AppId string `json:"app_id"`
 
 	Name        string `json:"name"`
 	Preview     string `json:"preview"`

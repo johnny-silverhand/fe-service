@@ -15,7 +15,7 @@ type Level struct {
 	CreateAt int64   `json:"create_at"`
 	UpdateAt int64   `json:"update_at"`
 	DeleteAt int64   `json:"delete_at"`
-	ClientId string  `json:"client_id"`
+	AppId    string  `json:"app_id"`
 }
 
 type LevelPatch struct {

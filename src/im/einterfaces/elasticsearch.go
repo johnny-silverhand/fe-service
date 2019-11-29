@@ -14,7 +14,7 @@ type ElasticsearchInterface interface {
 
 	SearchPostsHint(searchParams []*model.SearchParams, page, perPage int) ([]*model.Post, *model.AppError)
 
-	IndexProduct(product *model.Product, clientId string) *model.AppError
+	IndexProduct(product *model.Product, appId string) *model.AppError
 	SearchProductsHint(searchParams []*model.SearchParams, page, perPage int) ([]*model.Product, *model.AppError)
 	DeleteProduct(productId *model.Product) *model.AppError
 
@@ -26,7 +26,7 @@ type ElasticsearchInterface interface {
 	SearchUsersInChannel(teamId, channelId, term string, options *model.UserSearchOptions) ([]string, []string, *model.AppError)
 	SearchUsersInTeam(teamId, term string, options *model.UserSearchOptions) ([]string, *model.AppError)
 
-	SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]string, *model.AppError)
+	SearchUsersInApp(appId string, term string, options *model.UserSearchOptions) ([]string, *model.AppError)
 
 	DeleteUser(user *model.User) *model.AppError
 	TestConfig(cfg *model.Config) *model.AppError

@@ -1588,23 +1588,23 @@ func (a *App) SearchUsers(props *model.UserSearch, options *model.UserSearchOpti
 		return a.SearchUsersNotInTeam(props.NotInTeamId, props.Term, options)
 	}
 	return a.SearchUsersInTeam(props.TeamId, props.Term, options)*/
-	return a.SearchUsersInClient(props.ClientId, props.Term, options)
+	return a.SearchUsersInApp(props.AppId, props.Term, options)
 }
 
-func (a *App) SearchUsersInClient(clientId, term string, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {
+func (a *App) SearchUsersInApp(appId, term string, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {
 	var result store.StoreResult
 
 	esInterface := a.Elasticsearch
 
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableAutocomplete {
-		usersIds, err := a.Elasticsearch.SearchUsersInClient(clientId, term, options)
+		usersIds, err := a.Elasticsearch.SearchUsersInApp(appId, term, options)
 		if err != nil {
 			return nil, err
 		}
 
 		result = <-a.Srv.Store.User().GetProfileByIds(usersIds, false)
 	} else {
-		result = <-a.Srv.Store.User().Search(clientId, term, options)
+		result = <-a.Srv.Store.User().Search(appId, term, options)
 	}
 
 	if result.Err != nil {

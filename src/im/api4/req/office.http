@@ -12,7 +12,7 @@ X-CSRF-Token: p5xniqn15jbt7j1mh4up9wr37o
 X-Requested-With: XMLHttpRequest
 
 {
-  "client_id": "client_id",
+  "app_id": "app_id",
   "name": "office2",
   "preview": "preview",
   "description": "description",

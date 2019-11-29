@@ -1077,13 +1077,13 @@ func (us SqlUserStore) GetAnyUnreadPostCountForChannel(userId string, channelId 
 	})
 }
 
-func (us SqlUserStore) Search(clientId string, term string, options *model.UserSearchOptions) store.StoreChannel {
+func (us SqlUserStore) Search(appId string, term string, options *model.UserSearchOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := us.usersQuery.
 			OrderBy("Username ASC").
 			Limit(uint64(options.Limit))
 
-		// TODO filter by ClientId
+		// TODO filter by AppId
 		/*if clientId != "" {
 			query = query.Join("TeamMembers tm ON ( tm.UserId = u.Id AND tm.DeleteAt = 0 AND tm.TeamId = ? )", clientId)
 		}*/

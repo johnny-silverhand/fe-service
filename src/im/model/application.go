@@ -6,12 +6,13 @@ import (
 	"net/http"
 )
 
-type Client struct {
+type Application struct {
 	Id string `json:"id"`
 
 	Name        string `json:"name"`
 	Preview     string `json:"preview"`
 	Description string `json:"description"`
+
 	Phone       string `json:"phone"`
 	BuildNumber string `json:"build_number"`
 
@@ -22,7 +23,7 @@ type Client struct {
 	DeleteAt int64 `json:"delete_at"`
 }
 
-type ClientPatch struct {
+type ApplicationPatch struct {
 	Name        *string `json:"name"`
 	Preview     *string `json:"preview"`
 	Description *string `json:"description"`
@@ -30,7 +31,7 @@ type ClientPatch struct {
 	Active      *bool   `json:"active"`
 }
 
-func (p *Client) Patch(patch *ClientPatch) {
+func (p *Application) Patch(patch *ApplicationPatch) {
 
 	if patch.Name != nil {
 		p.Name = *patch.Name
@@ -49,21 +50,21 @@ func (p *Client) Patch(patch *ClientPatch) {
 	}
 }
 
-func (client *Client) ToJson() string {
-	b, _ := json.Marshal(client)
+func (application *Application) ToJson() string {
+	b, _ := json.Marshal(application)
 	return string(b)
 }
 
-func ClientFromJson(data io.Reader) *Client {
-	var client *Client
-	json.NewDecoder(data).Decode(&client)
-	return client
+func ApplicationFromJson(data io.Reader) *Application {
+	var application *Application
+	json.NewDecoder(data).Decode(&application)
+	return application
 }
-func (o *Client) Clone() *Client {
+func (o *Application) Clone() *Application {
 	copy := *o
 	return &copy
 }
-func (o *Client) PreSave() {
+func (o *Application) PreSave() {
 	if o.Id == "" {
 		o.Id = NewId()
 	}
@@ -76,26 +77,26 @@ func (o *Client) PreSave() {
 	o.PreCommit()
 }
 
-func (o *Client) PreCommit() {
+func (o *Application) PreCommit() {
 
 }
 
-func (o *Client) MakeNonNil() {
+func (o *Application) MakeNonNil() {
 
 }
 
-func (o *Client) IsValid() *AppError {
+func (o *Application) IsValid() *AppError {
 
 	if len(o.Id) != 26 {
-		return NewAppError("Client.IsValid", "model.client.is_valid.id.app_error", nil, "", http.StatusBadRequest)
+		return NewAppError("Application.IsValid", "model.application.is_valid.id.app_error", nil, "", http.StatusBadRequest)
 	}
 
 	if o.CreateAt == 0 {
-		return NewAppError("Client.IsValid", "model.client.is_valid.create_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
+		return NewAppError("Application.IsValid", "model.application.is_valid.create_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
 
 	if o.UpdateAt == 0 {
-		return NewAppError("Client.IsValid", "model.client.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
+		return NewAppError("Application.IsValid", "model.application.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
 
 	return nil

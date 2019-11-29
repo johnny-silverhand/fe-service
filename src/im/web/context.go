@@ -195,17 +195,6 @@ func (c *Context) RequireTokenId() *Context {
 	return c
 }
 
-func (c *Context) RequireClientId() *Context {
-	if c.Err != nil {
-		return c
-	}
-
-	if len(c.Params.ClientId) != 26 {
-		c.SetInvalidUrlParam("client_id")
-	}
-	return c
-}
-
 func (c *Context) RequireCategoryId() *Context {
 	if c.Err != nil {
 		return c

@@ -1,4 +1,3 @@
-
 package store
 
 import (
@@ -19,7 +18,7 @@ type LayeredStoreDatabaseLayer interface {
 }
 
 type LayeredStore struct {
-	TmpContext      context.Context
+	TmpContext context.Context
 
 	RoleStore       RoleStore
 	SchemeStore     SchemeStore
@@ -27,7 +26,6 @@ type LayeredStore struct {
 	LocalCacheLayer *LocalCacheSupplier
 	RedisLayer      *RedisSupplier
 	LayerChainHead  LayeredStoreSupplier
-
 }
 
 func NewLayeredStore(db LayeredStoreDatabaseLayer, cluster einterfaces.ClusterInterface) Store {
@@ -39,7 +37,6 @@ func NewLayeredStore(db LayeredStoreDatabaseLayer, cluster einterfaces.ClusterIn
 
 	store.RoleStore = &LayeredRoleStore{store}
 	store.SchemeStore = &LayeredSchemeStore{store}
-
 
 	// Setup the chain
 	if ENABLE_EXPERIMENTAL_REDIS {
@@ -123,7 +120,6 @@ func (s *LayeredStore) FileInfo() FileInfoStore {
 	return s.DatabaseLayer.FileInfo()
 }
 
-
 func (s *LayeredStore) Job() JobStore {
 	return s.DatabaseLayer.Job()
 }
@@ -163,8 +159,8 @@ func (s *LayeredStore) MarkSystemRanUnitTests() {
 func (s *LayeredStore) Office() OfficeStore {
 	return s.DatabaseLayer.Office()
 }
-func (s *LayeredStore) Client() ClientStore {
-	return s.DatabaseLayer.Client()
+func (s *LayeredStore) Application() ApplicationStore {
+	return s.DatabaseLayer.Application()
 }
 func (s *LayeredStore) Order() OrderStore {
 	return s.DatabaseLayer.Order()

@@ -14,17 +14,6 @@ func (a *App) GetSingleCategory(categoryId string) (*model.Post, *model.AppError
 	return result.Data.(*model.Post), nil
 }
 
-func (a *App) GetCategoriesByClientIdPage(clientId string, page int, perPage int) ([]*model.Category, *model.AppError) {
-	return a.GetCategoriesByClientId(clientId, page*perPage, perPage)
-}
-func (a *App) GetCategoriesByClientId(clientId string, offset int, limit int) ([]*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().GetAllByClientIdPage(clientId, offset, limit)
-	if result.Err != nil {
-		return nil, result.Err
-	}
-	return result.Data.([]*model.Category), nil
-}
-
 func (a *App) GetCategory(categoryId string) (*model.Category, *model.AppError) {
 	result := <-a.Srv.Store.Category().Get(categoryId)
 	if result.Err != nil {
@@ -47,23 +36,23 @@ func (a *App) GetCategories(offset int, limit int) ([]*model.Category, *model.Ap
 }
 
 func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
+	result := <-a.Srv.Store.Category().Create(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 	return result.Data.(*model.Category), nil
 }
 
-func (a *App) CreateCategoryBySp(category *model.Category) (*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().CreateCategoryBySp(category)
+/*func (a *App) CreateCategory(category *model.Category) (*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().Create(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
 	return result.Data.(*model.Category), nil
-}
+}*/
 
 func (a *App) DeleteOneCategory(category *model.Category) (map[string]int, *model.AppError) {
-	result := <-a.Srv.Store.Category().DeleteCategoryBySp(category)
+	result := <-a.Srv.Store.Category().Delete(category)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -90,18 +79,18 @@ func (a *App) GetDescendants(category *model.Category) ([]*model.Category, *mode
 	return result.Data.([]*model.Category), nil
 }
 
-func (a *App) MoveClientCategory(category *model.Category, parentCategory *model.Category) *model.AppError {
-	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
+/*func (a *App) MoveCategory(category *model.Category, parentCategory *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().Move(category)
+	return result.Err
+}*/
+
+func (a *App) MoveCategory(category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().Move(category)
 	return result.Err
 }
 
-func (a *App) MoveClientCategoryBySp(category *model.Category) *model.AppError {
-	result := <-a.Srv.Store.Category().MoveCategoryBySp(category)
-	return result.Err
-}
-
-func (a *App) OrderCategoryBySp(category *model.Category) *model.AppError {
-	result := <-a.Srv.Store.Category().OrderCategoryBySp(category)
+func (a *App) OrderCategory(category *model.Category) *model.AppError {
+	result := <-a.Srv.Store.Category().Order(category)
 	return result.Err
 }
 

@@ -89,16 +89,13 @@ type Routes struct {
 	Roles   *mux.Router // 'api/v4/roles'
 	Schemes *mux.Router // 'api/v4/schemes'
 
-	Categories         *mux.Router // 'api/v4/categories'
-	Category           *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9_-]+}'
-	CategoriesByClient *mux.Router // 'api/v4/categories/client/{client_id:[A-Za-z0-9_-]+}'
+	Categories *mux.Router // 'api/v4/categories'
+	Category   *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9_-]+}'
 
 	ProductsForCategory *mux.Router // 'api/v4/categories/{category_id:[A-Za-z0-9]+}/products'
 
 	Products *mux.Router // 'api/v4/products'
 	Product  *mux.Router // 'api/v4/products/{product_id:[A-Za-z0-9_-]+}'
-
-	ProductsByClient *mux.Router // 'api/v4/products/client/{client_id:[A-Za-z0-9_-]+}'
 
 	Promos *mux.Router // 'api/v4/promos'
 	Promo  *mux.Router // 'api/v4/promos/{promo_id:[A-Za-z0-9_-]+}'
@@ -120,8 +117,8 @@ type Routes struct {
 	Extras *mux.Router // 'api/v4/extras'
 	Extra  *mux.Router // 'api/v4/extras/{extra_id:[A-Za-z0-9_-]+}'
 
-	Clients *mux.Router // 'api/v4/clients'
-	Client  *mux.Router // 'api/v4/clients/{client_id:[A-Za-z0-9_-]+}'
+	Applications *mux.Router // 'api/v4/applications'
+	Application  *mux.Router // 'api/v4/applications/{application_id:[A-Za-z0-9_-]+}'
 
 }
 
@@ -209,11 +206,9 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 
 	api.BaseRoutes.Categories = api.BaseRoutes.ApiRoot.PathPrefix("/categories").Subrouter()
 	api.BaseRoutes.Category = api.BaseRoutes.Categories.PathPrefix("/{category_id:[A-Za-z0-9]+}").Subrouter()
-	api.BaseRoutes.CategoriesByClient = api.BaseRoutes.Categories.PathPrefix("/client/{client_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.Products = api.BaseRoutes.ApiRoot.PathPrefix("/products").Subrouter()
 	api.BaseRoutes.Product = api.BaseRoutes.Products.PathPrefix("/{product_id:[A-Za-z0-9]+}").Subrouter()
-	api.BaseRoutes.ProductsByClient = api.BaseRoutes.Products.PathPrefix("/client/{client_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.ProductsForCategory = api.BaseRoutes.Category.PathPrefix("/products").Subrouter()
 
@@ -237,8 +232,8 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Extras = api.BaseRoutes.ApiRoot.PathPrefix("/extras").Subrouter()
 	api.BaseRoutes.Extra = api.BaseRoutes.Extras.PathPrefix("/{extra_id:[A-Za-z0-9]+}").Subrouter()
 
-	api.BaseRoutes.Clients = api.BaseRoutes.ApiRoot.PathPrefix("/clients").Subrouter()
-	api.BaseRoutes.Client = api.BaseRoutes.Clients.PathPrefix("/{client_id:[A-Za-z0-9]+}").Subrouter()
+	api.BaseRoutes.Applications = api.BaseRoutes.ApiRoot.PathPrefix("/applications").Subrouter()
+	api.BaseRoutes.Application = api.BaseRoutes.Applications.PathPrefix("/{app_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.InitUser()
 
@@ -279,7 +274,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitLevel()
 	api.InitExtra()
 	api.InitBasket()
-	api.InitClient()
+	api.InitApplication()
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api

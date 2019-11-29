@@ -8,7 +8,7 @@ import (
 
 type Transaction struct {
 	Id          string  `json:"id"`
-	ClientId    string  `json:"client_id"`
+	AppId       string  `json:"app_id"`
 	UserId      string  `json:"user_id"`
 	OrderId     string  `json:"order_id"`
 	Description string  `json:"description"`

@@ -143,17 +143,17 @@ func (s SqlPromoStore) GetAllPage(offset int, limit int, order model.ColumnOrder
 	})
 }
 
-func (s SqlPromoStore) GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) store.StoreChannel {
+func (s SqlPromoStore) GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var promos []*model.Promo
 
 		query := `SELECT *
-                  FROM Promos WHERE ClientId = :ClientId `
+                  FROM Promos WHERE AppId = :AppId `
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
-		if _, err := s.GetReplica().Select(&promos, query, map[string]interface{}{"Limit": limit, "Offset": offset, "ClientId": clientId}); err != nil {
-			result.Err = model.NewAppError("SqlPromoStore.GetAllPageByClient", "store.sql_promos.get_all_page_by_client.app_error",
+		if _, err := s.GetReplica().Select(&promos, query, map[string]interface{}{"Limit": limit, "Offset": offset, "AppId": appId}); err != nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetAllPageByApp", "store.sql_promos.get_all_page_by_app.app_error",
 				nil, err.Error(),
 				http.StatusInternalServerError)
 		} else {

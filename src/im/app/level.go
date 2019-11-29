@@ -125,31 +125,31 @@ func (a *App) DeleteLevel(levelId, deleteByID string) (*model.Level, *model.AppE
 	return level, nil
 }
 
-func (a *App) GetAllLevelsBeforeLevel(levelId string, page, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
+func (a *App) GetAllLevelsBeforeLevel(levelId string, page, perPage int, appId *string) (*model.LevelList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Level().GetAllLevelsBefore(levelId, perPage, page*perPage, clientId); result.Err != nil {
+	if result := <-a.Srv.Store.Level().GetAllLevelsBefore(levelId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsAfterLevel(levelId string, page, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
+func (a *App) GetAllLevelsAfterLevel(levelId string, page, perPage int, appId *string) (*model.LevelList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Level().GetAllLevelsAfter(levelId, perPage, page*perPage, clientId); result.Err != nil {
+	if result := <-a.Srv.Store.Level().GetAllLevelsAfter(levelId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before bool, clientId *string) (*model.LevelList, *model.AppError) {
+func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before bool, appId *string) (*model.LevelList, *model.AppError) {
 	var pchan store.StoreChannel
 
 	if before {
-		pchan = a.Srv.Store.Level().GetAllLevelsBefore(levelId, limit, offset, clientId)
+		pchan = a.Srv.Store.Level().GetAllLevelsBefore(levelId, limit, offset, appId)
 	} else {
-		pchan = a.Srv.Store.Level().GetAllLevelsAfter(levelId, limit, offset, clientId)
+		pchan = a.Srv.Store.Level().GetAllLevelsAfter(levelId, limit, offset, appId)
 	}
 
 	if result := <-pchan; result.Err != nil {
@@ -159,16 +159,16 @@ func (a *App) GetAllLevelsAroundLevel(levelId string, offset, limit int, before 
 	}
 }
 
-func (a *App) GetAllLevelsSince(time int64, clientId *string) (*model.LevelList, *model.AppError) {
-	if result := <-a.Srv.Store.Level().GetAllLevelsSince(time, true, clientId); result.Err != nil {
+func (a *App) GetAllLevelsSince(time int64, appId *string) (*model.LevelList, *model.AppError) {
+	if result := <-a.Srv.Store.Level().GetAllLevelsSince(time, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil
 	}
 }
 
-func (a *App) GetAllLevelsPage(page int, perPage int, clientId *string) (*model.LevelList, *model.AppError) {
-	if result := <-a.Srv.Store.Level().GetAllLevels(page*perPage, perPage, true, clientId); result.Err != nil {
+func (a *App) GetAllLevelsPage(page int, perPage int, appId *string) (*model.LevelList, *model.AppError) {
+	if result := <-a.Srv.Store.Level().GetAllLevels(page*perPage, perPage, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.LevelList), nil

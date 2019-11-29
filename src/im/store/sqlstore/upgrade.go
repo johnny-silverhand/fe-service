@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	VERSION_5_14_0           = "5.14.0"
 	VERSION_5_13_0           = "5.13.0"
 	VERSION_5_12_0           = "5.12.0"
 	VERSION_5_11_0           = "5.11.0"
@@ -628,7 +629,6 @@ func UpgradeDatabaseToVersion510(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion511(sqlStore SqlStore) {
-	// TODO: Uncomment following condition when version 5.11.0 is released
 	if shouldPerformUpgrade(sqlStore, VERSION_5_10_0, VERSION_5_11_0) {
 
 		sqlStore.CreateColumnIfNotExists("Promos", "Status", "varchar(100)", "varchar(100)", "draft")
@@ -639,7 +639,6 @@ func UpgradeDatabaseToVersion511(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion512(sqlStore SqlStore) {
-	// TODO: Uncomment following condition when version 5.11.0 is released
 	if shouldPerformUpgrade(sqlStore, VERSION_5_11_0, VERSION_5_12_0) {
 
 		sqlStore.CreateColumnIfNotExists("Products", "Measure", "varchar(100)", "varchar(100)", "")
@@ -649,9 +648,22 @@ func UpgradeDatabaseToVersion512(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion513(sqlStore SqlStore) {
-	// TODO: Uncomment following condition when version 5.11.0 is released
-	/*if shouldPerformUpgrade(sqlStore, VERSION_5_12_0, VERSION_5_13_0) {
+	if shouldPerformUpgrade(sqlStore, VERSION_5_12_0, VERSION_5_13_0) {
+		sqlStore.CreateColumnIfNotExistsNoDefault("Levels", "AppId", "varchar(255)", "varchar(255)")
+		sqlStore.CreateColumnIfNotExistsNoDefault("Users", "AppId", "varchar(255)", "varchar(255)")
 
+		sqlStore.RenameColumnIfExists("Categories", "ClientId", "AppId", "varchar(255)")
+		sqlStore.RenameColumnIfExists("Products", "ClientId", "AppId", "varchar(255)")
+		sqlStore.RenameColumnIfExists("Promos", "ClientId", "AppId", "varchar(255)")
+		sqlStore.RenameColumnIfExists("Offices", "ClientId", "AppId", "varchar(255)")
+		sqlStore.RenameColumnIfExists("Transactions", "ClientId", "AppId", "varchar(255)")
 		saveSchemaVersion(sqlStore, VERSION_5_13_0)
+	}
+}
+
+func UpgradeDatabaseToVersion514(sqlStore SqlStore) {
+	/*if shouldPerformUpgrade(sqlStore, VERSION_5_13_0, VERSION_5_14_0) {
+
+		saveSchemaVersion(sqlStore, VERSION_5_14_0)
 	}*/
 }

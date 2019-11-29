@@ -74,7 +74,7 @@ type Store interface {
 	Category() CategoryStore
 	Promo() PromoStore
 	Office() OfficeStore
-	Client() ClientStore
+	Application() ApplicationStore
 	Order() OrderStore
 	Basket() BasketStore
 	Transaction() TransactionStore
@@ -292,7 +292,7 @@ type UserStore interface {
 	GetAnyUnreadPostCountForChannel(userId string, channelId string) StoreChannel
 	GetRecentlyActiveUsersForTeam(teamId string, offset, limit int) StoreChannel
 	GetNewUsersForTeam(teamId string, offset, limit int) StoreChannel
-	Search(clientId string, term string, options *model.UserSearchOptions) StoreChannel
+	Search(appId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchNotInTeam(notInTeamId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchInChannel(channelId string, term string, options *model.UserSearchOptions) StoreChannel
 	SearchNotInChannel(teamId string, channelId string, term string, options *model.UserSearchOptions) StoreChannel
@@ -363,9 +363,9 @@ type OAuthStore interface {
 	SaveAccessData(accessData *model.AccessData) StoreChannel
 	UpdateAccessData(accessData *model.AccessData) StoreChannel
 	GetAccessData(token string) StoreChannel
-	GetAccessDataByUserForApp(userId, clientId string) StoreChannel
+	GetAccessDataByUserForApp(userId, appId string) StoreChannel
 	GetAccessDataByRefreshToken(token string) StoreChannel
-	GetPreviousAccessData(userId, clientId string) StoreChannel
+	GetPreviousAccessData(userId, appId string) StoreChannel
 	RemoveAccessData(token string) StoreChannel
 }
 
@@ -491,9 +491,11 @@ type ProductStore interface {
 	Save(product *model.Product) StoreChannel
 	Get(productId string) StoreChannel
 	GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
-	GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) StoreChannel
-	GetAllByClientId(clientId string) StoreChannel
-	GetAllByClientIdPage(clientId string, offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
+
+	GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) StoreChannel
+	GetAllByAppId(appId string) StoreChannel
+	//GetAllByAppPage(appId string, offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
+
 	//Delete(productId string) StoreChannel
 	Delete(productId string, time int64, deleteByID string) StoreChannel
 	GetAllByCategoryId(categoryId string, offset int, limit int, allowFromCache bool) StoreChannel
@@ -507,15 +509,22 @@ type ProductStore interface {
 }
 
 type CategoryStore interface {
-	CreateCategoryBySp(category *model.Category) StoreChannel
+	Create(category *model.Category) StoreChannel
+	Move(category *model.Category) StoreChannel
+	//Delete(category *model.Category) StoreChannel
+	Order(category *model.Category) StoreChannel
+
+	/*CreateCategoryBySp(category *model.Category) StoreChannel
 	MoveCategoryBySp(category *model.Category) StoreChannel
 	DeleteCategoryBySp(category *model.Category) StoreChannel
-	OrderCategoryBySp(category *model.Category) StoreChannel
+	OrderCategoryBySp(category *model.Category) StoreChannel*/
+
 	Update(category *model.Category) StoreChannel
 	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel
-	GetAllByClientId(clientId string) StoreChannel
-	GetAllByClientIdPage(clientId string, offset int, limit int) StoreChannel
+	GetAllByApp(appId string) StoreChannel
+	GetAllByAppPage(appId string, offset int, limit int) StoreChannel
+
 	Delete(category *model.Category) StoreChannel
 	GetDescendants(category *model.Category) StoreChannel
 	GetCategoryPath(categoryId string) StoreChannel
@@ -526,7 +535,7 @@ type PromoStore interface {
 	Save(promo *model.Promo) StoreChannel
 	Get(promoId string) StoreChannel
 	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
-	GetAllPageByClient(offset int, limit int, order model.ColumnOrder, clientId string) StoreChannel
+	GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) StoreChannel
 	Activate(promoId string) StoreChannel
 	Deactivate(promoId string) StoreChannel
 	Update(newPromo *model.Promo) StoreChannel
@@ -549,26 +558,26 @@ type OfficeStore interface {
 	Overwrite(office *model.Office) StoreChannel
 	Delete(officeId string, time int64, deleteByID string) StoreChannel
 
-	GetAllOffices(offset int, limit int, allowFromCache bool, clientId *string) StoreChannel
-	GetAllOfficesSince(time int64, allowFromCache bool, clientId *string) StoreChannel
-	GetAllOfficesBefore(officeId string, numOffices int, offset int, clientId *string) StoreChannel
-	GetAllOfficesAfter(officeId string, numOffices int, offset int, clientId *string) StoreChannel
+	GetAllOffices(offset int, limit int, allowFromCache bool, appId *string) StoreChannel
+	GetAllOfficesSince(time int64, allowFromCache bool, appId *string) StoreChannel
+	GetAllOfficesBefore(officeId string, numOffices int, offset int, appId *string) StoreChannel
+	GetAllOfficesAfter(officeId string, numOffices int, offset int, appId *string) StoreChannel
 }
 
-type ClientStore interface {
-	Save(client *model.Client) StoreChannel
-	Get(clientId string) StoreChannel
+type ApplicationStore interface {
+	Save(application *model.Application) StoreChannel
+	Get(appId string) StoreChannel
 	GetAllPage(offset int, limit int, order model.ColumnOrder) StoreChannel
-	Activate(clientId string) StoreChannel
-	Deactivate(clientId string) StoreChannel
-	Update(newClient *model.Client) StoreChannel
-	Overwrite(client *model.Client) StoreChannel
-	Delete(clientId string, time int64, deleteByID string) StoreChannel
+	Activate(appId string) StoreChannel
+	Deactivate(appId string) StoreChannel
+	Update(newApplication *model.Application) StoreChannel
+	Overwrite(application *model.Application) StoreChannel
+	Delete(appId string, time int64, deleteByID string) StoreChannel
 
-	GetAllClients(offset int, limit int, allowFromCache bool) StoreChannel
-	GetAllClientsSince(time int64, allowFromCache bool) StoreChannel
-	GetAllClientsBefore(clientId string, numClients int, offset int) StoreChannel
-	GetAllClientsAfter(clientId string, numClients int, offset int) StoreChannel
+	GetAllApplications(offset int, limit int, allowFromCache bool) StoreChannel
+	GetAllApplicationsSince(time int64, allowFromCache bool) StoreChannel
+	GetAllApplicationsBefore(appId string, numApplications int, offset int) StoreChannel
+	GetAllApplicationsAfter(appId string, numApplications int, offset int) StoreChannel
 }
 
 type TransactionStore interface {
@@ -629,10 +638,10 @@ type LevelStore interface {
 	Overwrite(level *model.Level) StoreChannel
 	Delete(levelId string, time int64, deleteByID string) StoreChannel
 
-	GetAllLevels(offset int, limit int, allowFromCache bool, clientId *string) StoreChannel
-	GetAllLevelsSince(time int64, allowFromCache bool, clientId *string) StoreChannel
-	GetAllLevelsBefore(levelId string, numLevels int, offset int, clientId *string) StoreChannel
-	GetAllLevelsAfter(levelId string, numLevels int, offset int, clientId *string) StoreChannel
+	GetAllLevels(offset int, limit int, allowFromCache bool, appId *string) StoreChannel
+	GetAllLevelsSince(time int64, allowFromCache bool, appId *string) StoreChannel
+	GetAllLevelsBefore(levelId string, numLevels int, offset int, appId *string) StoreChannel
+	GetAllLevelsAfter(levelId string, numLevels int, offset int, appId *string) StoreChannel
 }
 
 type ExtraStore interface {

@@ -30,7 +30,6 @@ type Params struct {
 	ExtraId          string
 	ProductId        string
 	CategoryId       string
-	ClientId         string
 	CategoryParentId string
 	CategoryDepth    string
 	DestinationId    string
@@ -81,10 +80,6 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, ok := props["user_id"]; ok {
 		params.UserId = val
-	}
-
-	if val, ok := props["client_id"]; ok {
-		params.ClientId = val
 	}
 
 	if val := query.Get("sort"); val == "" {

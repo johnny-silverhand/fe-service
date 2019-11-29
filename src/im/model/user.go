@@ -87,6 +87,7 @@ type User struct {
 	PhoneNew      string `json:"phone_new"`
 
 	Balance float64 `json:"balance"`
+	AppId   string  `json:"app_id"`
 }
 
 type UserPatch struct {

@@ -12,7 +12,7 @@ const USER_SEARCH_DEFAULT_LIMIT = 100
 type UserSearch struct {
 	Term           string `json:"term"`
 	TeamId         string `json:"team_id"`
-	ClientId       string `json:"client_id"`
+	AppId          string `json:"app_id"`
 	NotInTeamId    string `json:"not_in_team_id"`
 	InChannelId    string `json:"in_channel_id"`
 	NotInChannelId string `json:"not_in_channel_id"`
