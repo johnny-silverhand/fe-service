@@ -13,6 +13,8 @@ type Application struct {
 	Preview     string `json:"preview"`
 	Description string `json:"description"`
 
+	PaymentDetails string `json:"payment_details"`
+
 	Phone       string `json:"phone"`
 	BuildNumber string `json:"build_number"`
 
@@ -24,11 +26,12 @@ type Application struct {
 }
 
 type ApplicationPatch struct {
-	Name        *string `json:"name"`
-	Preview     *string `json:"preview"`
-	Description *string `json:"description"`
-	Phone       *string `json:"phone"`
-	Active      *bool   `json:"active"`
+	Name           *string `json:"name"`
+	Preview        *string `json:"preview"`
+	Description    *string `json:"description"`
+	PaymentDetails *string `json:"payment_details"`
+	Phone          *string `json:"phone"`
+	Active         *bool   `json:"active"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -47,6 +50,9 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.Phone != nil {
 		p.Phone = *patch.Phone
+	}
+	if patch.PaymentDetails != nil {
+		p.PaymentDetails = *patch.Phone
 	}
 }
 
@@ -69,11 +75,14 @@ func (o *Application) PreSave() {
 		o.Id = NewId()
 	}
 
+	mills := GetMillis()
+
 	if o.CreateAt == 0 {
-		o.CreateAt = GetMillis()
+		o.CreateAt = mills
 	}
 
-	o.UpdateAt = o.CreateAt
+	o.UpdateAt = mills
+
 	o.PreCommit()
 }
 
