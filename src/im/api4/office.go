@@ -173,6 +173,10 @@ func deleteOffice(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func attachOfficeId(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireOfficeId()
+	if c.Err != nil {
+		return
+	}
 	/*props := model.MapFromJson(r.Body)*/
 
 	officeId := c.Params.OfficeId
