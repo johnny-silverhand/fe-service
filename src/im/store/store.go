@@ -328,6 +328,7 @@ type SessionStore interface {
 	UpdateLastActivityAt(sessionId string, time int64) StoreChannel
 	UpdateRoles(userId string, roles string) StoreChannel
 	UpdateDeviceId(id string, deviceId string, expiresAt int64) StoreChannel
+	UpdateOfficeId(id string, officeId string, expiresAt int64) StoreChannel
 	AnalyticsSessionCount() StoreChannel
 	Cleanup(expiryTime int64, batchSize int64)
 }

@@ -29,6 +29,7 @@ func NewSqlSessionStore(sqlStore SqlStore) store.SessionStore {
 		table.ColMap("DeviceId").SetMaxSize(512)
 		table.ColMap("Roles").SetMaxSize(64)
 		table.ColMap("Props").SetMaxSize(1000)
+		table.ColMap("OfficeId").SetMaxSize(26)
 	}
 
 	return us
@@ -199,6 +200,16 @@ func (me SqlSessionStore) UpdateDeviceId(id string, deviceId string, expiresAt i
 			result.Err = model.NewAppError("SqlSessionStore.UpdateDeviceId", "store.sql_session.update_device_id.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = deviceId
+		}
+	})
+}
+
+func (me SqlSessionStore) UpdateOfficeId(id string, officeId string, expiresAt int64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := me.GetMaster().Exec("UPDATE Sessions SET OfficeId = :OfficeId, ExpiresAt = :ExpiresAt WHERE Id = :Id", map[string]interface{}{"OfficeId": officeId, "Id": id, "ExpiresAt": expiresAt}); err != nil {
+			result.Err = model.NewAppError("SqlSessionStore.UpdateOfficeId", "store.sql_session.update_office_id.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = officeId
 		}
 	})
 }

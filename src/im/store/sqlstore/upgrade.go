@@ -657,6 +657,8 @@ func UpgradeDatabaseToVersion513(sqlStore SqlStore) {
 		sqlStore.RenameColumnIfExists("Promos", "ClientId", "AppId", "varchar(255)")
 		sqlStore.RenameColumnIfExists("Offices", "ClientId", "AppId", "varchar(255)")
 		sqlStore.RenameColumnIfExists("Transactions", "ClientId", "AppId", "varchar(255)")
+
+		sqlStore.CreateColumnIfNotExists("Sessions", "OfficeId", "varchar(255)", "varchar(26)", "")
 		saveSchemaVersion(sqlStore, VERSION_5_13_0)
 	}
 }

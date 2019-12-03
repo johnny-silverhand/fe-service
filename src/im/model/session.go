@@ -1,4 +1,3 @@
-
 package model
 
 import (
@@ -34,6 +33,7 @@ type Session struct {
 	IsOAuth        bool          `json:"is_oauth"`
 	Props          StringMap     `json:"props"`
 	TeamMembers    []*TeamMember `json:"team_members" db:"-"`
+	OfficeId       string        `json:"office_id"`
 }
 
 func (me *Session) DeepCopy() *Session {

@@ -25,7 +25,6 @@ func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppE
 
 func (a *App) GetSession(token string) (*model.Session, *model.AppError) {
 
-
 	var session *model.Session
 	if ts, ok := a.Srv.sessionCache.Get(token); ok {
 		session = ts.(*model.Session)
@@ -206,6 +205,14 @@ func (a *App) RevokeSession(session *model.Session) *model.AppError {
 
 func (a *App) AttachDeviceId(sessionId string, deviceId string, expiresAt int64) *model.AppError {
 	if result := <-a.Srv.Store.Session().UpdateDeviceId(sessionId, deviceId, expiresAt); result.Err != nil {
+		return result.Err
+	}
+
+	return nil
+}
+
+func (a *App) AttachOfficeId(sessionId string, officeId string, expiresAt int64) *model.AppError {
+	if result := <-a.Srv.Store.Session().UpdateOfficeId(sessionId, officeId, expiresAt); result.Err != nil {
 		return result.Err
 	}
 
