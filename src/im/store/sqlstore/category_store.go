@@ -242,7 +242,7 @@ func (s SqlCategoryStore) Create(category *model.Category) store.StoreChannel {
 	}
 
 	if _, err := s.GetMaster().Exec(`
-			call r_tree_traversal('insert',:Id, :AppId, :ParentId,:Name, :CreateAt, :UpdateAt);`,
+			call r_tree_traversal('insert',:Id, :AppId, :ParentId, :Name, :CreateAt, :UpdateAt);`,
 		map[string]interface{}{
 			"Id":       category.Id,
 			"AppId":    category.AppId,

@@ -511,22 +511,11 @@ type ProductStore interface {
 type CategoryStore interface {
 	Create(category *model.Category) StoreChannel
 	Move(category *model.Category) StoreChannel
-	//Delete(category *model.Category) StoreChannel
 	Order(category *model.Category) StoreChannel
-
-	/*CreateCategoryBySp(category *model.Category) StoreChannel
-	MoveCategoryBySp(category *model.Category) StoreChannel
-	DeleteCategoryBySp(category *model.Category) StoreChannel
-	OrderCategoryBySp(category *model.Category) StoreChannel*/
-
 	Update(category *model.Category) StoreChannel
 	Get(categoryId string) StoreChannel
 	GetAllPage(offset int, limit int) StoreChannel
-	GetAllByApp(appId string) StoreChannel
-	GetAllByAppPage(appId string, offset int, limit int) StoreChannel
-
 	Delete(category *model.Category) StoreChannel
-	GetDescendants(category *model.Category) StoreChannel
 	GetCategoryPath(categoryId string) StoreChannel
 	GetCategoriesByIds(categoryIds []string) StoreChannel
 }
