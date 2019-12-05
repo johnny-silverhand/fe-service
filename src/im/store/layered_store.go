@@ -179,6 +179,10 @@ func (s *LayeredStore) Extra() ExtraStore {
 	return s.DatabaseLayer.Extra()
 }
 
+func (s *LayeredStore) ProductOffice() ProductOfficeStore {
+	return s.DatabaseLayer.ProductOffice()
+}
+
 func (s *LayeredStore) Close() {
 	s.DatabaseLayer.Close()
 }

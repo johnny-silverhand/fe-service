@@ -117,6 +117,8 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 	newPromo.Media = promo.Media
 	//}
 
+	a.deleteMediaFromPromo(oldPromo, newPromo)
+
 	if len(newPromo.Media) > 0 {
 		if err := a.attachMediaToPromo(newPromo); err != nil {
 			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", newPromo.Id), mlog.Any("file_ids", newPromo.FileIds), mlog.Err(result.Err))
@@ -150,6 +152,52 @@ func (a *App) PreparePromoForClient(originalPromo *model.Promo, isNewPromo bool)
 	//promo.Metadata.Images = a.getCategoryForPromo(promo)
 
 	return promo
+}
+
+func (a *App) deleteMediaFromPromo(oldPromo, newPromo *model.Promo) *model.AppError {
+	promo := a.PreparePromoForClient(oldPromo, false)
+
+	var mediaIds []string
+	var newIds []string
+	var diff []string
+
+	for _, media := range promo.Media {
+		mediaIds = append(mediaIds, media.Id)
+	}
+	for _, media := range newPromo.Media {
+		newIds = append(newIds, media.Id)
+	}
+
+	for _, s1 := range mediaIds {
+		found := false
+		for _, s2 := range newIds {
+			if s1 == s2 {
+				found = true
+				break
+			}
+		}
+		// String not found. We add it to return slice
+		if !found {
+			diff = append(diff, s1)
+		}
+	}
+
+	for _, mediaId := range diff {
+		result := <-a.Srv.Store.FileInfo().PermanentDelete(mediaId)
+		if result.Err != nil {
+			mlog.Warn("Failed to delete media from promo", mlog.String("promo_id", promo.Id), mlog.String("promo_id", promo.Id), mlog.Err(result.Err))
+		}
+	}
+	a.Srv.Store.FileInfo().ClearCaches() // RemoveFromCache dont work???
+
+	return nil
+
+	/*result := <-a.Srv.Store.FileInfo().DeleteForProduct(product.Id)
+	if result.Err != nil {
+		mlog.Warn("Failed to delete offices from product", mlog.String("product_id", product.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+	}
+
+	return nil*/
 }
 
 func (a *App) getMediaForPromo(promo *model.Promo) ([]*model.FileInfo, *model.AppError) {

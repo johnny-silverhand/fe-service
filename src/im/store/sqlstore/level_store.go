@@ -193,7 +193,7 @@ func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool, 
 		var levels []*model.Level
 		_, err := s.GetReplica().Select(&levels, "SELECT * FROM Levels WHERE "+
 			" DeleteAt = 0 "+appQuery+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+			" ORDER BY Lvl ASC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlLevelStore.GetAllLevels", "store.sql_level.get_root_levels.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -220,7 +220,7 @@ func (s SqlLevelStore) GetAllLevelsSince(time int64, allowFromCache bool, appId 
 
 		var levels []*model.Level
 		_, err := s.GetReplica().Select(&levels,
-			`SELECT * FROM Levels WHERE UpdateAt > :Time  ORDER BY UpdateAt`,
+			`SELECT * FROM Levels WHERE UpdateAt > :Time  ORDER BY Lvl ASC`,
 			map[string]interface{}{"Time": time})
 
 		if err != nil {
@@ -258,13 +258,13 @@ func (s SqlLevelStore) GetAllLevelsAfter(levelId string, numLevels int, offset i
 func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset int, before bool, appId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
-		var sort string
+		//var sort string
 		if before {
 			direction = "<"
-			sort = "DESC"
+			//sort = "DESC"
 		} else {
 			direction = ">"
-			sort = "ASC"
+			//sort = "ASC"
 		}
 
 		var appQuery string
@@ -278,7 +278,7 @@ func (s SqlLevelStore) getAllLevelsAround(levelId string, numLevels int, offset 
 
 		_, err := s.GetReplica().Select(&levels,
 			`SELECT * FROM Levels WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Levels WHERE Id = :LevelId)) `+appQuery+`
-			ORDER BY CreateAt `+sort+`
+			ORDER BY Lvl ASC
 			OFFSET :Offset LIMIT :NumLevels`,
 			map[string]interface{}{"LevelId": levelId, "NumLevels": numLevels, "Offset": offset, "AppId": appId})
 

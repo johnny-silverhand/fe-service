@@ -34,6 +34,8 @@ type Product struct {
 	FileIds  StringArray `json:"file_ids,omitempty"`
 	Category *Category   `json:"category,omitempty" db:"-"`
 	Media    []*FileInfo `db:"-" json:"media,omitempty"`
+
+	Offices []*Office `db:"-" json:"offices,omitempty"`
 }
 
 type ProductPatch struct {

@@ -25,6 +25,11 @@ func (fs SqlFileInfoStore) ClearCaches() {
 
 }
 
+func (fs SqlFileInfoStore) RemoveFromCache(metadataId string) {
+	fileInfoCache.Remove(metadataId)
+
+}
+
 func NewSqlFileInfoStore(sqlStore SqlStore) store.FileInfoStore {
 	s := &SqlFileInfoStore{
 		SqlStore: sqlStore,
@@ -182,7 +187,7 @@ func (fs SqlFileInfoStore) GetForProduct(productId string, readFromMaster bool, 
 				AND MetadataType = :MetadataType
 				AND DeleteAt = 0
 			ORDER BY
-				CreateAt`, map[string]interface{}{"MetadataId": productId, "MetadataType" : model.METADATA_TYPE_PRODUCT}); err != nil {
+				CreateAt`, map[string]interface{}{"MetadataId": productId, "MetadataType": model.METADATA_TYPE_PRODUCT}); err != nil {
 			result.Err = model.NewAppError("SqlFileInfoStore.GetForPost",
 				"store.sql_file_info.get_for_product.app_error", nil, "metadata_id="+productId+", "+err.Error(), http.StatusInternalServerError)
 		} else {
@@ -220,7 +225,7 @@ func (fs SqlFileInfoStore) GetForMetadata(metadataId string, readFromMaster bool
 				MetadataId = :MetadataId
 				AND DeleteAt = 0
 			ORDER BY
-				CreateAt`, map[string]interface{}{"MetadataId": metadataId, "MetadataType" : model.METADATA_TYPE_PRODUCT}); err != nil {
+				CreateAt`, map[string]interface{}{"MetadataId": metadataId, "MetadataType": model.METADATA_TYPE_PRODUCT}); err != nil {
 			result.Err = model.NewAppError("SqlFileInfoStore.GetForPost",
 				"store.sql_file_info.get_for_metadata.app_error", nil, "metadata_id="+metadataId+", "+err.Error(), http.StatusInternalServerError)
 		} else {
@@ -292,10 +297,10 @@ func (fs SqlFileInfoStore) AttachTo(fileId, metadataId, metadataType string) sto
 			`UPDATE
 					FileInfo
 				SET
-					MetadataId = :MetadataId
+					MetadataId = :MetadataId,
+					MetadataType = :MetadataType
 				WHERE
-					Id = :Id
-					AND MetadataId = ''`,
+					Id = :Id`,
 			map[string]interface{}{"MetadataId": metadataId, "MetadataType": metadataType, "Id": fileId})
 		if err != nil {
 			result.Err = model.NewAppError("SqlFileInfoStore.AttachTo",
@@ -330,6 +335,42 @@ func (fs SqlFileInfoStore) DeleteForPost(postId string) store.StoreChannel {
 				"store.sql_file_info.delete_for_post.app_error", nil, "post_id="+postId+", err="+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = postId
+		}
+	})
+}
+
+func (fs SqlFileInfoStore) DeleteForProduct(productId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := fs.GetMaster().Exec(
+			`UPDATE
+				FileInfo
+			SET
+				DeleteAt = :DeleteAt
+			WHERE
+				MetadataId = :MetadataId AND
+				MetadataType = :MetadataType`, map[string]interface{}{"DeleteAt": model.GetMillis(), "MetadataId": productId, "MetadataType": model.METADATA_TYPE_PRODUCT}); err != nil {
+			result.Err = model.NewAppError("SqlFileInfoStore.DeleteForProduct",
+				"store.sql_file_info.delete_for_product.app_error", nil, "product_id="+productId+", err="+err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = productId
+		}
+	})
+}
+
+func (fs SqlFileInfoStore) DeleteForPromo(promoId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := fs.GetMaster().Exec(
+			`UPDATE
+				FileInfo
+			SET
+				DeleteAt = :DeleteAt
+			WHERE
+				MetadataId = :MetadataId AND
+				MetadataType = :MetadataType`, map[string]interface{}{"DeleteAt": model.GetMillis(), "MetadataId": promoId, "MetadataType": model.METADATA_TYPE_PROMO}); err != nil {
+			result.Err = model.NewAppError("SqlFileInfoStore.DeleteForPromo",
+				"store.sql_file_info.delete_for_promo.app_error", nil, "promo_id="+promoId+", err="+err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = promoId
 		}
 	})
 }

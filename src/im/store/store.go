@@ -80,6 +80,8 @@ type Store interface {
 	Transaction() TransactionStore
 	Level() LevelStore
 	Extra() ExtraStore
+
+	ProductOffice() ProductOfficeStore
 }
 
 type TeamStore interface {
@@ -430,10 +432,28 @@ type FileInfoStore interface {
 	AttachToPost(fileId string, postId string, creatorId string) StoreChannel
 	AttachTo(fileId string, metadataId string, metadataType string) StoreChannel
 	DeleteForPost(postId string) StoreChannel
+	DeleteForProduct(productId string) StoreChannel
+	DeleteForPromo(promoId string) StoreChannel
 	PermanentDelete(fileId string) StoreChannel
 	PermanentDeleteBatch(endTime int64, limit int64) StoreChannel
 	PermanentDeleteByUser(userId string) StoreChannel
 	ClearCaches()
+	RemoveFromCache(metadataId string)
+}
+
+type ProductOfficeStore interface {
+	Save(productOffice *model.ProductOffice) StoreChannel
+	Get(id string) StoreChannel
+	GetForProduct(productId string, readFromMaster bool, allowFromCache bool) StoreChannel
+	DeleteForProduct(productId string) StoreChannel
+
+	/*AttachToPost(productOfficeId string, postId string, creatorId string) StoreChannel
+	AttachTo(productOfficeId string, metadataId string, metadataType string) StoreChannel
+	DeleteForPost(postId string) StoreChannel
+	PermanentDelete(productOfficeId string) StoreChannel
+	PermanentDeleteBatch(endTime int64, limit int64) StoreChannel
+	PermanentDeleteByUser(userId string) StoreChannel
+	ClearCaches()*/
 }
 
 type JobStore interface {

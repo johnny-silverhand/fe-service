@@ -99,6 +99,7 @@ type SqlSupplierOldStores struct {
 	linkMetadata         store.LinkMetadataStore
 	level                store.LevelStore
 	extra                store.ExtraStore
+	productOffice        store.ProductOfficeStore
 }
 
 type SqlSupplier struct {
@@ -156,6 +157,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.level = NewSqlLevelStore(supplier)
 	supplier.oldStores.extra = NewSqlExtraStore(supplier)
 	supplier.oldStores.application = NewSqlApplicationStore(supplier)
+	supplier.oldStores.productOffice = NewSqlProductOfficeStore(supplier)
 
 	initSqlSupplierRoles(supplier)
 	initSqlSupplierSchemes(supplier)
@@ -198,6 +200,7 @@ func NewSqlSupplier(settings model.SqlSettings) *SqlSupplier {
 	supplier.oldStores.level.(*SqlLevelStore).CreateIndexesIfNotExists()
 	supplier.oldStores.extra.(*SqlExtraStore).CreateIndexesIfNotExists()
 	supplier.oldStores.preference.(*SqlPreferenceStore).DeleteUnusedFeatures()
+	supplier.oldStores.productOffice.(*SqlProductOfficeStore).CreateIndexesIfNotExists()
 
 	return supplier
 }
@@ -1036,6 +1039,9 @@ func (ss *SqlSupplier) Level() store.LevelStore {
 }
 func (ss *SqlSupplier) Extra() store.ExtraStore {
 	return ss.oldStores.extra
+}
+func (ss *SqlSupplier) ProductOffice() store.ProductOfficeStore {
+	return ss.oldStores.productOffice
 }
 func (ss *SqlSupplier) DropAllTables() {
 	ss.master.TruncateTables()

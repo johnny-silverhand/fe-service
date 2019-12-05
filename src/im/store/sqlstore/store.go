@@ -1,4 +1,3 @@
-
 package sqlstore
 
 import (
@@ -93,6 +92,8 @@ type SqlStore interface {
 	Category() store.CategoryStore
 
 	Basket() store.BasketStore
+
+	ProductOffice() store.ProductOfficeStore
 
 	LinkMetadata() store.LinkMetadataStore
 	getQueryBuilder() sq.StatementBuilderType

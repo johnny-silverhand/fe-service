@@ -11,7 +11,7 @@ func (api *API) InitLevel() {
 	api.BaseRoutes.Levels.Handle("", api.ApiHandler(getAllLevels)).Methods("GET")
 
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(getLevel)).Methods("GET")
-	api.BaseRoutes.Level.Handle("", api.ApiHandler(createLevel)).Methods("POST")
+	api.BaseRoutes.Levels.Handle("", api.ApiHandler(createLevel)).Methods("POST")
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(updateLevel)).Methods("PUT")
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(deleteLevel)).Methods("DELETE")
 

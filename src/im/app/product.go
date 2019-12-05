@@ -102,6 +102,12 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 		}
 	}
 
+	if len(product.Offices) > 0 {
+		if err := a.attachOfficeToProduct(product); err != nil {
+			mlog.Error("Encountered error attaching offices to product", mlog.String("product_id", product.Id), mlog.Any("offices", product.Offices), mlog.Err(result.Err))
+		}
+	}
+
 	rproduct := result.Data.(*model.Product)
 
 	esInterface := a.Elasticsearch
@@ -129,6 +135,86 @@ func (a *App) attachMediaToProduct(product *model.Product) *model.AppError {
 	}
 
 	return nil
+}
+
+func (a *App) attachOfficeToProduct(product *model.Product) *model.AppError {
+	var attachedIds []string
+	for _, office := range product.Offices {
+		//
+		result := <-a.Srv.Store.ProductOffice().Save(model.NewProductOffice(office.Id, product.Id))
+		if result.Err != nil {
+			mlog.Warn("Failed to attach file to post", mlog.String("office_id", office.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+			continue
+		}
+
+		attachedIds = append(attachedIds, office.Id)
+	}
+
+	return nil
+}
+
+func (a *App) deleteMediaFromProduct(oldProduct, newProduct *model.Product) *model.AppError {
+	product := a.PrepareProductForClient(oldProduct, false)
+
+	var mediaIds []string
+	var newIds []string
+	var diff []string
+
+	for _, media := range product.Media {
+		mediaIds = append(mediaIds, media.Id)
+	}
+	for _, media := range newProduct.Media {
+		newIds = append(newIds, media.Id)
+	}
+
+	for _, s1 := range mediaIds {
+		found := false
+		for _, s2 := range newIds {
+			if s1 == s2 {
+				found = true
+				break
+			}
+		}
+		// String not found. We add it to return slice
+		if !found {
+			diff = append(diff, s1)
+		}
+	}
+
+	for _, mediaId := range diff {
+		result := <-a.Srv.Store.FileInfo().PermanentDelete(mediaId)
+		if result.Err != nil {
+			mlog.Warn("Failed to delete media from product", mlog.String("product_id", newProduct.Id), mlog.String("product_id", newProduct.Id), mlog.Err(result.Err))
+		}
+	}
+	a.Srv.Store.FileInfo().ClearCaches()
+
+	return nil
+
+	/*result := <-a.Srv.Store.FileInfo().DeleteForProduct(product.Id)
+	if result.Err != nil {
+		mlog.Warn("Failed to delete offices from product", mlog.String("product_id", product.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+	}
+
+	return nil*/
+}
+
+func (a *App) deleteOfficeFromProduct(product *model.Product) *model.AppError {
+	result := <-a.Srv.Store.ProductOffice().DeleteForProduct(product.Id)
+	if result.Err != nil {
+		mlog.Warn("Failed to delete offices from product", mlog.String("product_id", product.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+	}
+
+	return nil
+}
+
+func (a *App) GetOfficesForProduct(productId string) ([]*model.Office, *model.AppError) {
+	result := <-a.Srv.Store.ProductOffice().GetForProduct(productId, false, true)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.([]*model.Office), nil
 }
 
 func (a *App) GetFileInfosForMetadata(metadataId string) ([]*model.FileInfo, *model.AppError) {
@@ -186,13 +272,41 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 
 	//if !safeUpdate {
 	newProduct.Media = product.Media
+	newProduct.Offices = product.Offices
+
+	/*oldProduct = a.PrepareProductForClient(oldProduct, false)
+	oldmedia := oldProduct.Media
+	newmedia := newProduct.Media*/
+
+	/*if len(oldProduct.Media) > 0 {
+		if err := a.deleteMediaFromProduct(oldProduct); err != nil {
+			mlog.Error("Encountered error deleting media from product", mlog.String("product_id", oldProduct.Id), mlog.Any("file_ids", oldProduct.FileIds), mlog.Err(result.Err))
+		}
+	}*/
+
+	/*if len(oldProduct.Offices) > 0 {
+		if err := a.deleteOfficeFromProduct(oldProduct); err != nil {
+			mlog.Error("Encountered error deleting offices from product", mlog.String("product_id", oldProduct.Id), mlog.Any("offices", oldProduct.Offices), mlog.Err(result.Err))
+		}
+	}*/
+
 	//}
+
+	a.deleteMediaFromProduct(oldProduct, newProduct)
+	a.deleteOfficeFromProduct(oldProduct)
+
 	if len(newProduct.Media) > 0 {
 		if err := a.attachMediaToProduct(newProduct); err != nil {
 			mlog.Error("Encountered error attaching files to post", mlog.String("post_id", newProduct.Id), mlog.Any("file_ids", newProduct.FileIds), mlog.Err(result.Err))
 		}
-
 	}
+
+	if len(newProduct.Offices) > 0 {
+		if err := a.attachOfficeToProduct(newProduct); err != nil {
+			mlog.Error("Encountered error attaching offices to product", mlog.String("product_id", newProduct.Id), mlog.Any("offices", newProduct.Offices), mlog.Err(result.Err))
+		}
+	}
+
 	result = <-a.Srv.Store.Product().Update(newProduct)
 	if result.Err != nil {
 		return nil, result.Err
