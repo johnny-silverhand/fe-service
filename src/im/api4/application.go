@@ -9,7 +9,7 @@ import (
 func (api *API) InitApplication() {
 
 	api.BaseRoutes.Applications.Handle("", api.ApiHandler(getAllApplications)).Methods("GET")
-	api.BaseRoutes.Applications.Handle("", api.ApiHandler(createApplication)).Methods("APP")
+	api.BaseRoutes.Applications.Handle("", api.ApiHandler(createApplication)).Methods("POST")
 
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(getApplication)).Methods("GET")
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(updateApplication)).Methods("PUT")
