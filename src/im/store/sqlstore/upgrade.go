@@ -649,8 +649,8 @@ func UpgradeDatabaseToVersion512(sqlStore SqlStore) {
 
 func UpgradeDatabaseToVersion513(sqlStore SqlStore) {
 	if shouldPerformUpgrade(sqlStore, VERSION_5_12_0, VERSION_5_13_0) {
-		sqlStore.CreateColumnIfNotExistsNoDefault("Levels", "AppId", "varchar(255)", "varchar(255)")
-		sqlStore.CreateColumnIfNotExistsNoDefault("Users", "AppId", "varchar(255)", "varchar(255)")
+		sqlStore.CreateColumnIfNotExists("Levels", "AppId", "varchar(255)", "varchar(255)", "")
+		sqlStore.CreateColumnIfNotExists("Users", "AppId", "varchar(255)", "varchar(255)", "")
 
 		sqlStore.RenameColumnIfExists("Categories", "ClientId", "AppId", "varchar(255)")
 		sqlStore.RenameColumnIfExists("Products", "ClientId", "AppId", "varchar(255)")
