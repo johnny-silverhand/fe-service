@@ -193,7 +193,7 @@ func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool, 
 		var levels []*model.Level
 		_, err := s.GetReplica().Select(&levels, "SELECT * FROM Levels WHERE "+
 			" DeleteAt = 0 "+appQuery+
-			" ORDER BY Lvl ASC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+			" ORDER BY Lvl ASC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlLevelStore.GetAllLevels", "store.sql_level.get_root_levels.app_error", nil, err.Error(), http.StatusInternalServerError)

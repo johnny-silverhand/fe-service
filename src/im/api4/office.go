@@ -22,9 +22,12 @@ func (api *API) InitOffice() {
 
 func getAllOffices(c *Context, w http.ResponseWriter, r *http.Request) {
 	//c.RequireUserId()
+	c.RequireAppId()
 	if c.Err != nil {
 		return
 	}
+
+	var appId = c.Params.AppId
 
 	c.App.Session.ToJson()
 
@@ -53,15 +56,15 @@ func getAllOffices(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllOfficesSince(since, nil)
+		list, err = c.App.GetAllOfficesSince(since, &appId)
 	} else if len(afterOffice) > 0 {
 
-		list, err = c.App.GetAllOfficesAfterOffice(afterOffice, c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllOfficesAfterOffice(afterOffice, c.Params.Page, c.Params.PerPage, &appId)
 	} else if len(beforeOffice) > 0 {
 
-		list, err = c.App.GetAllOfficesBeforeOffice(beforeOffice, c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllOfficesBeforeOffice(beforeOffice, c.Params.Page, c.Params.PerPage, &appId)
 	} else {
-		list, err = c.App.GetAllOfficesPage(c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllOfficesPage(c.Params.Page, c.Params.PerPage, &appId)
 	}
 
 	if err != nil {

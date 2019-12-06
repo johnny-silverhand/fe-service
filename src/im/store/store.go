@@ -511,7 +511,7 @@ type LinkMetadataStore interface {
 type ProductStore interface {
 	Save(product *model.Product) StoreChannel
 	Get(productId string) StoreChannel
-	GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) StoreChannel
+	GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string, officeId *string) StoreChannel
 
 	GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) StoreChannel
 	GetAllByAppId(appId string) StoreChannel

@@ -140,6 +140,8 @@ func ParamsFromRequest(r *http.Request) *Params {
 	}
 	if val, ok := props["office_id"]; ok {
 		params.OfficeId = val
+	} else {
+		params.OfficeId = query.Get("office_id")
 	}
 	if val, ok := props["transaction_id"]; ok {
 		params.TransactionId = val
@@ -156,6 +158,8 @@ func ParamsFromRequest(r *http.Request) *Params {
 	}
 	if val, ok := props["app_id"]; ok {
 		params.AppId = val
+	} else {
+		params.AppId = query.Get("app_id")
 	}
 
 	if val, ok := props["email"]; ok {

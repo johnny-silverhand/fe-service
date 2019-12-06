@@ -188,7 +188,7 @@ func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit
 	})
 }
 
-func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string) store.StoreChannel {
+func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string, officeId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
 		var rootCategory *model.Category
@@ -222,17 +222,26 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 		}
 		inQuery := strings.Join(inQueryList, ", ")
 
+		var officeQuery string
+		if officeId != nil && *officeId != "" {
+			officeQuery = " INNER JOIN Offices ON Offices.Id = :OfficeId "
+		} else {
+			officeQuery = ""
+		}
+
 		var products []*model.Product
-		query := `SELECT *
-                  FROM Products
-                  WHERE CategoryId IN (` + inQuery + `)
-				  AND DeleteAt = 0
+		query := `SELECT p.*
+                  FROM Products p
+					` + officeQuery + `
+                  WHERE p.CategoryId IN (` + inQuery + `)
+				  AND p.DeleteAt = 0
                   ORDER BY ` + order.Column + ` `
 
 		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
 
 		queryArgs["Limit"] = limit
 		queryArgs["Offset"] = offset
+		queryArgs["OfficeId"] = officeId
 
 		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error",

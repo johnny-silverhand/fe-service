@@ -19,6 +19,8 @@ func (api *API) InitLevel() {
 
 func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 	//c.RequireUserId()
+	c.RequireAppId()
+
 	if c.Err != nil {
 		return
 	}
@@ -48,15 +50,15 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllLevelsSince(since, nil)
+		list, err = c.App.GetAllLevelsSince(since, &c.Params.AppId)
 	} else if len(afterLevel) > 0 {
 
-		list, err = c.App.GetAllLevelsAfterLevel(afterLevel, c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllLevelsAfterLevel(afterLevel, c.Params.Page, c.Params.PerPage, &c.Params.AppId)
 	} else if len(beforeLevel) > 0 {
 
-		list, err = c.App.GetAllLevelsBeforeLevel(beforeLevel, c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllLevelsBeforeLevel(beforeLevel, c.Params.Page, c.Params.PerPage, &c.Params.AppId)
 	} else {
-		list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage, nil)
+		list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage, &c.Params.AppId)
 	}
 
 	if err != nil {
