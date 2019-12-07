@@ -195,7 +195,7 @@ func (s SqlOfficeStore) GetAllOffices(offset int, limit int, allowFromCache bool
 		var offices []*model.Office
 		_, err := s.GetReplica().Select(&offices, "SELECT * FROM Offices WHERE "+
 			" DeleteAt = 0 "+appQuery+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOfficeStore.GetAllOffices", "store.sql_office.get_root_offices.app_error", nil, err.Error(), http.StatusInternalServerError)
