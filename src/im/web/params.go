@@ -141,9 +141,9 @@ func ParamsFromRequest(r *http.Request) *Params {
 	if val, ok := props["office_id"]; ok {
 		params.OfficeId = val
 	} else if val := query.Get("office_id"); val != "" {
-		params.AppId = val
+		params.OfficeId = val
 	} else {
-		params.AppId = r.Header.Get("office_id")
+		params.OfficeId = r.Header.Get("office_id")
 	}
 
 	if val, ok := props["transaction_id"]; ok {
