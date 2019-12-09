@@ -196,7 +196,7 @@ func (a *App) SendUserInfoEmail(userId string, email string, verified bool, loca
 		map[string]interface{}{"SiteName": a.ClientConfig()["SiteName"],
 			"ServerURL": rawUrl.Host})
 
-	bodyPage := a.NewEmailTemplate("welcome_body", locale)
+	bodyPage := a.NewEmailTemplate("user_info", locale)
 	bodyPage.Props["SiteURL"] = siteURL
 	//bodyPage.Props["Title"] = T("api.templates.welcome_body.title", map[string]interface{}{"ServerURL": rawUrl.Host})
 	bodyPage.Props["Info"] = T("api.templates.welcome_body.info")
