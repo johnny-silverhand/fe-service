@@ -166,12 +166,14 @@ func (a *App) CreateUserWithInviteId(user *model.User, inviteId string) (*model.
 }
 
 func (a *App) CreateUserAsAdmin(user *model.User) (*model.User, *model.AppError) {
+	pwd := user.Password
 	ruser, err := a.CreateUser(user)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := a.SendWelcomeEmail(ruser.Id, ruser.Email, ruser.EmailVerified, ruser.Locale, a.GetSiteURL()); err != nil {
+	user.Password = pwd
+	if err := a.SendUserInfoEmail(ruser.Id, ruser.Email, ruser.EmailVerified, ruser.Locale, a.GetSiteURL(), user); err != nil {
 		mlog.Error(err.Error())
 	}
 

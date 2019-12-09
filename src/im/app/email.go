@@ -171,7 +171,6 @@ func (a *App) SendWelcomeEmail(userId string, email string, verified bool, local
 	bodyPage.Props["Info3"] = T("api.templates.welcome_body.info3")
 	bodyPage.Props["SiteURL"] = siteURL
 
-
 	if !verified {
 		token, err := a.CreateVerifyEmailToken(userId, email)
 		if err != nil {
@@ -180,6 +179,44 @@ func (a *App) SendWelcomeEmail(userId string, email string, verified bool, local
 		link := fmt.Sprintf("%s/do_verify_email?token=%s&email=%s", siteURL, token.Token, url.QueryEscape(email))
 		bodyPage.Props["VerifyUrl"] = link
 	}
+
+	if err := a.SendMail(email, subject, bodyPage.Render()); err != nil {
+		return model.NewAppError("SendWelcomeEmail", "api.user.send_welcome_email_and_forget.failed.error", nil, err.Error(), http.StatusInternalServerError)
+	}
+
+	return nil
+}
+
+func (a *App) SendUserInfoEmail(userId string, email string, verified bool, locale, siteURL string, user *model.User) *model.AppError {
+	T := utils.GetUserTranslations(locale)
+
+	rawUrl, _ := url.Parse(siteURL)
+
+	subject := T("api.templates.welcome_subject",
+		map[string]interface{}{"SiteName": a.ClientConfig()["SiteName"],
+			"ServerURL": rawUrl.Host})
+
+	bodyPage := a.NewEmailTemplate("welcome_body", locale)
+	bodyPage.Props["SiteURL"] = siteURL
+	//bodyPage.Props["Title"] = T("api.templates.welcome_body.title", map[string]interface{}{"ServerURL": rawUrl.Host})
+	bodyPage.Props["Info"] = T("api.templates.welcome_body.info")
+	bodyPage.Props["Button"] = T("api.templates.welcome_body.button")
+	bodyPage.Props["Info2"] = T("api.templates.welcome_body.info2")
+	bodyPage.Props["Info3"] = T("api.templates.welcome_body.info3")
+	bodyPage.Props["SiteURL"] = siteURL
+
+	bodyPage.Props["Title2"] = "Данные для входа"
+	bodyPage.Props["Email"] = user.Email
+	bodyPage.Props["Password"] = user.Password
+
+	/*if !verified {
+		token, err := a.CreateVerifyEmailToken(userId, email)
+		if err != nil {
+			return err
+		}
+		link := fmt.Sprintf("%s/do_verify_email?token=%s&email=%s", siteURL, token.Token, url.QueryEscape(email))
+		bodyPage.Props["VerifyUrl"] = link
+	}*/
 
 	if err := a.SendMail(email, subject, bodyPage.Render()); err != nil {
 		return model.NewAppError("SendWelcomeEmail", "api.user.send_welcome_email_and_forget.failed.error", nil, err.Error(), http.StatusInternalServerError)
@@ -367,7 +404,6 @@ func (a *App) NewEmailTemplate(name, locale string) *utils.HTMLTemplate {
 	t.Props["EmailInfo2"] = localT("api.templates.email_info2")
 	t.Props["EmailInfo3"] = localT("api.templates.email_info3",
 		map[string]interface{}{"SiteName": a.Config().TeamSettings.SiteName})
-
 
 	return t
 }

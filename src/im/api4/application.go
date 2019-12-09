@@ -227,9 +227,12 @@ func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 		Nickname:      result.Name,
 		Email:         result.Email,
 		EmailVerified: true,
+		AppId:         result.Id,
+		Password:      "123",
 	}
 
-	c.App.AutoCreateUser(newUser)
+	//c.App.AutoCreateUser(newUser)
+	c.App.CreateUserAsAdmin(newUser)
 
 	w.Write([]byte(result.ToJson()))
 }
