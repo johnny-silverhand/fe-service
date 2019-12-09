@@ -119,7 +119,7 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getCategories(c *Context, w http.ResponseWriter, r *http.Request) {
-	categories, err := c.App.GetCategoriesPage(0, c.Params.PerPage)
+	categories, err := c.App.GetCategoriesPage(0, c.Params.PerPage, &c.Params.AppId)
 	if err != nil {
 		c.Err = err
 		return

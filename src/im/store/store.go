@@ -536,7 +536,7 @@ type CategoryStore interface {
 	Order(category *model.Category) StoreChannel
 	Update(category *model.Category) StoreChannel
 	Get(categoryId string) StoreChannel
-	GetAllPage(offset int, limit int) StoreChannel
+	GetAllPage(offset int, limit int, appId *string) StoreChannel
 	Delete(category *model.Category) StoreChannel
 	GetCategoryPath(categoryId string) StoreChannel
 	GetCategoriesByIds(categoryIds []string) StoreChannel

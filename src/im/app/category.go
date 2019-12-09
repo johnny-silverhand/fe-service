@@ -14,12 +14,12 @@ func (a *App) GetCategory(categoryId string) (*model.Category, *model.AppError) 
 	return result.Data.(*model.Category), nil
 }
 
-func (a *App) GetCategoriesPage(page int, perPage int) ([]*model.Category, *model.AppError) {
-	return a.GetCategories(page*perPage, perPage)
+func (a *App) GetCategoriesPage(page int, perPage int, appId *string) ([]*model.Category, *model.AppError) {
+	return a.GetCategories(page*perPage, perPage, appId)
 }
 
-func (a *App) GetCategories(offset int, limit int) ([]*model.Category, *model.AppError) {
-	result := <-a.Srv.Store.Category().GetAllPage(offset, limit)
+func (a *App) GetCategories(offset int, limit int, appId *string) ([]*model.Category, *model.AppError) {
+	result := <-a.Srv.Store.Category().GetAllPage(offset, limit, appId)
 	if result.Err != nil {
 		return nil, result.Err
 	}

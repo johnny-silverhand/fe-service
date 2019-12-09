@@ -73,23 +73,31 @@ func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	})
 }
 
-func (s SqlCategoryStore) GetAllPage(offset int, limit int) store.StoreChannel {
+func (s SqlCategoryStore) GetAllPage(offset int, limit int, appId *string) store.StoreChannel {
 
 	return store.Do(func(result *store.StoreResult) {
+
+		appQuery := ""
+
+		if appId != nil {
+			appQuery = " where c.AppId = :AppId "
+		}
+
 		var query = `select c.*, childs.cnt as CntChild 
 					from categories c 
-					 left join (
+					left join (
 						select ParentId, count(Id) cnt
 						from categories
 						where ParentId is not null
 						group by ParentId ) childs on c.Id = childs.ParentId
+					` + appQuery + `
 					 order by UpdateAt Desc, Id Desc
 					 limit :Limit
 					 offset :Offset`
 
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
-			query, map[string]interface{}{"Limit": limit, "Offset": offset}); err != nil {
+			query, map[string]interface{}{"Limit": limit, "Offset": offset, "AppId": appId}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetAllPage", "store.sql_category.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = categories
