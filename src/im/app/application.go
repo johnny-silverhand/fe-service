@@ -78,6 +78,7 @@ func (a *App) UpdateApplication(application *model.Application, safeUpdate bool)
 	newApplication.Description = application.Description
 	newApplication.Phone = application.Phone
 	newApplication.PaymentDetails = application.PaymentDetails
+	newApplication.Email = application.Email
 
 	result = <-a.Srv.Store.Application().Update(newApplication)
 	if result.Err != nil {
