@@ -219,6 +219,14 @@ func (a *App) AttachOfficeId(sessionId string, officeId string, expiresAt int64)
 	return nil
 }
 
+func (a *App) AttachAppId(sessionId string, appId string, expiresAt int64) *model.AppError {
+	if result := <-a.Srv.Store.Session().UpdateAppId(sessionId, appId, expiresAt); result.Err != nil {
+		return result.Err
+	}
+
+	return nil
+}
+
 func (a *App) UpdateLastActivityAtIfNeeded(session model.Session) {
 	now := model.GetMillis()
 

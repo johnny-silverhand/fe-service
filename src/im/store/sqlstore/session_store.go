@@ -214,6 +214,16 @@ func (me SqlSessionStore) UpdateOfficeId(id string, officeId string, expiresAt i
 	})
 }
 
+func (me SqlSessionStore) UpdateAppId(id string, appId string, expiresAt int64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := me.GetMaster().Exec("UPDATE Sessions SET AppId = :AppId, ExpiresAt = :ExpiresAt WHERE Id = :Id", map[string]interface{}{"AppId": appId, "Id": id, "ExpiresAt": expiresAt}); err != nil {
+			result.Err = model.NewAppError("SqlSessionStore.UpdateAppId", "store.sql_session.update_app_id.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = appId
+		}
+	})
+}
+
 func (me SqlSessionStore) AnalyticsSessionCount() store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query :=
