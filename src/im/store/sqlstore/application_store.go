@@ -56,15 +56,15 @@ func (s SqlApplicationStore) Deactivate(appId string) store.StoreChannel {
 func (s *SqlApplicationStore) Save(application *model.Application) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
+		if len(application.Id) > 0 {
+			result.Err = model.NewAppError("SqlApplicationStore.Save", "store.sql_application.save.existing.app_error", nil, "id="+application.Id, http.StatusBadRequest)
+			return
+		}
+
 		if application.Name == "Фудэкспресс1" {
 			application.Id = "469kzyabijfqxgxpg8fosg8rwa"
 		} else if application.Name == "Фудэкспресс2" {
 			application.Id = "469kzyabijfqxgxpg8fosg8rwb"
-		}
-
-		if len(application.Id) > 0 {
-			result.Err = model.NewAppError("SqlApplicationStore.Save", "store.sql_application.save.existing.app_error", nil, "id="+application.Id, http.StatusBadRequest)
-			return
 		}
 
 		application.PreSave()
