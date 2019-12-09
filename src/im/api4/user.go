@@ -72,6 +72,7 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/phone/verify/send", api.ApiHandler(sendVerificationSms)).Methods("POST")
 
 	api.BaseRoutes.Users.Handle("/attach_device", api.ApiSessionRequired(attachDeviceId)).Methods("POST")
+	api.BaseRoutes.Users.Handle("/attach_office", api.ApiSessionRequired(attachOfficeId)).Methods("POST")
 
 }
 
@@ -1649,5 +1650,57 @@ func sendVerificationSms(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ReturnStatusOK(w)
+}
+
+func attachOfficeId(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireOfficeId()
+	if c.Err != nil {
+		return
+	}
+	/*props := model.MapFromJson(r.Body)*/
+
+	officeId := c.Params.OfficeId
+	if len(officeId) == 0 {
+		c.SetInvalidParam("office_id")
+		return
+	}
+
+	// A special case where we logout of all other sessions with the same office id
+	/*if err := c.App.RevokeSessionsForDeviceId(c.App.Session.UserId, officeId, c.App.Session.Id); err != nil {
+		c.Err = err
+		return
+	}*/
+
+	c.App.ClearSessionCacheForUser(c.App.Session.UserId)
+	c.App.Session.SetExpireInDays(*c.App.Config().ServiceSettings.SessionLengthMobileInDays)
+
+	maxAge := *c.App.Config().ServiceSettings.SessionLengthMobileInDays * 60 * 60 * 24
+
+	secure := false
+	if app.GetProtocol(r) == "https" {
+		secure = true
+	}
+
+	expiresAt := time.Unix(model.GetMillis()/1000+int64(maxAge), 0)
+	sessionCookie := &http.Cookie{
+		Name:     model.SESSION_COOKIE_TOKEN,
+		Value:    c.App.Session.Token,
+		Path:     "/",
+		MaxAge:   maxAge,
+		Expires:  expiresAt,
+		HttpOnly: true,
+		Domain:   c.App.GetCookieDomain(),
+		Secure:   secure,
+	}
+
+	http.SetCookie(w, sessionCookie)
+
+	if err := c.App.AttachOfficeId(c.App.Session.Id, officeId, c.App.Session.ExpiresAt); err != nil {
+		c.Err = err
+		return
+	}
+
+	c.LogAudit("")
 	ReturnStatusOK(w)
 }
