@@ -407,6 +407,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		Sort:           sort,
 		Page:           c.Params.Page,
 		PerPage:        c.Params.PerPage,
+		AppId:          c.Params.AppId,
 	}
 
 	var profiles []*model.User

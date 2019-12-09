@@ -21,4 +21,6 @@ type UserGetOptions struct {
 	Page int
 	// Page size
 	PerPage int
+	// application id
+	AppId string
 }

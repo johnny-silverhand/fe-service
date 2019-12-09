@@ -34,6 +34,7 @@ type Session struct {
 	Props          StringMap     `json:"props"`
 	TeamMembers    []*TeamMember `json:"team_members" db:"-"`
 	OfficeId       string        `json:"office_id"`
+	AppId          string        `json:"app_id"`
 }
 
 func (me *Session) DeepCopy() *Session {

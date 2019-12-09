@@ -31,7 +31,6 @@ func (a *App) CheckForClientSideCert(r *http.Request) (string, string, string) {
 func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken string, ldapOnly bool) (user *model.User, err *model.AppError) {
 	// Do statistics
 
-
 	if len(password) == 0 {
 		return nil, model.NewAppError("AuthenticateUserForLogin", "api.user.login.blank_pwd.app_error", nil, "", http.StatusBadRequest)
 	}
@@ -41,12 +40,11 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken string, l
 		return nil, err
 	}
 
-
 	// and then authenticate them
-/*	if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
-		return nil, err
-	}
-*/
+	/*	if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
+			return nil, err
+		}
+	*/
 	return user, nil
 }
 
@@ -73,14 +71,12 @@ func (a *App) GetUserForLogin(id, loginId string) (*model.User, *model.AppError)
 		return result.Data.(*model.User), nil
 	}
 
-
-
 	return nil, model.NewAppError("GetUserForLogin", "store.sql_user.get_for_login.app_error", nil, "", http.StatusBadRequest)
 }
 
 func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, deviceId string) (*model.Session, *model.AppError) {
 
-	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), DeviceId: deviceId, IsOAuth: false}
+	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), DeviceId: deviceId, IsOAuth: false, AppId: user.AppId}
 	session.GenerateCSRF()
 	maxAge := *a.Config().ServiceSettings.SessionLengthWebInDays * 60 * 60 * 24
 
@@ -156,8 +152,6 @@ func (a *App) DoLogin(w http.ResponseWriter, r *http.Request, user *model.User, 
 	http.SetCookie(w, sessionCookie)
 	http.SetCookie(w, userCookie)
 	http.SetCookie(w, csrfCookie)
-
-
 
 	return session, nil
 }

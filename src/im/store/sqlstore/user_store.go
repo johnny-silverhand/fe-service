@@ -395,6 +395,10 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 			query = query.Where("u.DeleteAt != 0")
 		}
 
+		if options.AppId != "" {
+			query = query.Where("u.AppId = '" + options.AppId + "'")
+		}
+
 		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -452,6 +456,10 @@ func (us SqlUserStore) GetProfiles(options *model.UserGetOptions) store.StoreCha
 
 		if options.Inactive {
 			query = query.Where("u.DeleteAt != 0")
+		}
+
+		if options.AppId != "" {
+			query = query.Where("u.AppId = '" + options.AppId + "'")
 		}
 
 		queryString, args, err := query.ToSql()

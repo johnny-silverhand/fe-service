@@ -212,11 +212,25 @@ func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if app.Email == "" {
+		c.SetInvalidParam("email")
+		return
+	}
+
 	result, err := c.App.CreateApplication(app)
 	if err != nil {
 		c.Err = err
 		return
 	}
+
+	newUser := &model.User{
+		Nickname:      result.Name,
+		Email:         result.Email,
+		EmailVerified: true,
+	}
+
+	c.App.AutoCreateUser(newUser)
+
 	w.Write([]byte(result.ToJson()))
 }
 
