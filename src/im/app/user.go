@@ -270,7 +270,9 @@ func (a *App) CreateUser(user *model.User) (*model.User, *model.AppError) {
 		return nil, model.NewAppError("CreateUser", "api.user.create_user.accepted_domain.app_error", nil, "", http.StatusBadRequest)
 	}
 
-	user.Roles = model.SYSTEM_USER_ROLE_ID
+	if user.Roles == "" {
+		user.Roles = model.SYSTEM_USER_ROLE_ID
+	}
 
 	// Below is a special case where the first user in the entire
 	// system is granted the system_admin role
