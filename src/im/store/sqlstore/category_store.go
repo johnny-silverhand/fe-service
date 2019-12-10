@@ -250,7 +250,7 @@ func (s SqlCategoryStore) Create(category *model.Category) store.StoreChannel {
 	}
 
 	if _, err := s.GetMaster().Exec(`
-			call r_tree_traversal('insert',:Id, :AppId, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			call r_tree_traversal('insert', :Id, :ParentId, :Name, :AppId, :CreateAt, :UpdateAt);`,
 		map[string]interface{}{
 			"Id":       category.Id,
 			"AppId":    category.AppId,
@@ -270,7 +270,7 @@ func (s SqlCategoryStore) Create(category *model.Category) store.StoreChannel {
 func (s SqlCategoryStore) Delete(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if _, err := s.GetMaster().Exec(`
-			call r_tree_traversal('delete', :Id, :AppId, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			call r_tree_traversal('delete', :Id, :ParentId, :Name, :AppId, :CreateAt, :UpdateAt);`,
 			map[string]interface{}{
 				"Id":       category.Id,
 				"AppId":    category.AppId,
@@ -287,7 +287,7 @@ func (s SqlCategoryStore) Delete(category *model.Category) store.StoreChannel {
 func (s SqlCategoryStore) Move(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if _, err := s.GetMaster().Exec(`
-			call r_tree_traversal('move',:Id, :AppId, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			call r_tree_traversal('move', :Id, :ParentId, :Name, :AppId, :CreateAt, :UpdateAt);`,
 			map[string]interface{}{
 				"Id":       category.Id,
 				"AppId":    category.AppId,
@@ -304,7 +304,7 @@ func (s SqlCategoryStore) Move(category *model.Category) store.StoreChannel {
 func (s SqlCategoryStore) Order(category *model.Category) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if _, err := s.GetMaster().Exec(`
-			call r_tree_traversal('order', :Id, :AppId, :ParentId, :Name, :CreateAt, :UpdateAt);`,
+			call r_tree_traversal('order', :Id, :ParentId, :Name, :AppId, :CreateAt, :UpdateAt);`,
 			map[string]interface{}{
 				"Id":       category.Id,
 				"AppId":    category.AppId,
