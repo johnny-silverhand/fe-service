@@ -229,6 +229,7 @@ func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 		EmailVerified: true,
 		AppId:         result.Id,
 		Password:      "123",
+		Roles:         "system_admin",
 	}
 
 	//c.App.AutoCreateUser(newUser)
