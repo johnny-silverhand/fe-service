@@ -553,10 +553,10 @@ type PromoStore interface {
 	Overwrite(promo *model.Promo) StoreChannel
 	Delete(promoId string, time int64, deleteByID string) StoreChannel
 
-	GetAllPromos(offset int, limit int, allowFromCache bool) StoreChannel
-	GetAllPromosSince(time int64, allowFromCache bool) StoreChannel
-	GetAllPromosBefore(promoId string, numPromos int, offset int) StoreChannel
-	GetAllPromosAfter(promoId string, numPromos int, offset int) StoreChannel
+	GetAllPromos(offset int, limit int, allowFromCache bool, appId *string) StoreChannel
+	GetAllPromosSince(time int64, allowFromCache bool, appId *string) StoreChannel
+	GetAllPromosBefore(promoId string, numPromos int, offset int, appId *string) StoreChannel
+	GetAllPromosAfter(promoId string, numPromos int, offset int, appId *string) StoreChannel
 }
 
 type OfficeStore interface {

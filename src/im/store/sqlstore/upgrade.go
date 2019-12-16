@@ -670,6 +670,8 @@ func UpgradeDatabaseToVersion514(sqlStore SqlStore) {
 	if shouldPerformUpgrade(sqlStore, VERSION_5_13_0, VERSION_5_14_0) {
 		sqlStore.CreateColumnIfNotExists("Sessions", "AppId", "varchar(26)", "varchar(26)", "")
 		sqlStore.CreateColumnIfNotExists("Applications", "Email", "varchar(100)", "varchar(100)", "")
+		sqlStore.CreateColumnIfNotExists("Promos", "AppId", "varchar(26)", "varchar(26)", "")
+		sqlStore.CreateColumnIfNotExistsNoDefault("Applications", "Settings", "text(10000)", "text(10000)")
 
 		saveSchemaVersion(sqlStore, VERSION_5_14_0)
 	}

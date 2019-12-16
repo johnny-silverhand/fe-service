@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"im/model"
 	"im/store"
 	"net/http"
@@ -44,6 +45,39 @@ func (a *App) CreateApplication(application *model.Application) (*model.Applicat
 
 	rapplication := result.Data.(*model.Application)
 
+	team := &model.Team{
+		DisplayName:     rapplication.Name,
+		Name:            rapplication.Id,
+		Description:     rapplication.Description,
+		Email:           rapplication.Email,
+		Type:            "O",
+		CompanyName:     rapplication.Name,
+		AllowOpenInvite: true,
+	}
+
+	if rteam, err := a.CreateTeam(team); err != nil {
+
+		fmt.Println(err.Error())
+
+	} else {
+		user := &model.User{
+			Username:      rapplication.Email,
+			Password:      "123",
+			Email:         rapplication.Email,
+			EmailVerified: true,
+			Nickname:      rapplication.Email,
+			FirstName:     "Оператор",
+			LastName:      rapplication.Name,
+			Locale:        "ru",
+			AppId:         rapplication.Id,
+			Roles:         "channel_admin",
+		}
+
+		if ruser, err := a.CreateUserWithInviteId(user, rteam.InviteId); err == nil {
+			a.UpdateTeamMemberRoles(rteam.Id, ruser.Id, "team_user team_admin channel_user")
+		}
+	}
+
 	return rapplication, nil
 }
 
@@ -78,7 +112,22 @@ func (a *App) UpdateApplication(application *model.Application, safeUpdate bool)
 	newApplication.Description = application.Description
 	newApplication.Phone = application.Phone
 	newApplication.PaymentDetails = application.PaymentDetails
-	newApplication.Email = application.Email
+
+	if newApplication.Email != application.Email {
+		if ruser, err := a.GetUserByEmail(newApplication.Email); err != nil {
+			return nil, err
+		} else {
+			ruser.Username = application.Email
+			ruser.Nickname = application.Email
+			ruser.Email = application.Email
+			if _, err := a.UpdateUser(ruser, false); err != nil {
+				return nil, err
+			}
+		}
+		newApplication.Email = application.Email
+	}
+
+	newApplication.Settings = application.Settings
 
 	result = <-a.Srv.Store.Application().Update(newApplication)
 	if result.Err != nil {

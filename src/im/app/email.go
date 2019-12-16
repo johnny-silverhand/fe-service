@@ -200,7 +200,7 @@ func (a *App) SendUserInfoEmail(userId string, email string, verified bool, loca
 	bodyPage.Props["SiteURL"] = siteURL
 	//bodyPage.Props["Title"] = T("api.templates.welcome_body.title", map[string]interface{}{"ServerURL": rawUrl.Host})
 	bodyPage.Props["Info"] = T("api.templates.welcome_body.info")
-	bodyPage.Props["Button"] = T("api.templates.welcome_body.button")
+	bodyPage.Props["Button"] = "Войти на сайт"
 	bodyPage.Props["Info2"] = T("api.templates.welcome_body.info2")
 	bodyPage.Props["Info3"] = T("api.templates.welcome_body.info3")
 	bodyPage.Props["SiteURL"] = siteURL
@@ -208,6 +208,9 @@ func (a *App) SendUserInfoEmail(userId string, email string, verified bool, loca
 	bodyPage.Props["Title2"] = "Данные для входа"
 	bodyPage.Props["Email"] = user.Email
 	bodyPage.Props["Password"] = user.Password
+
+	link := "http://foodexpress2.russianit.ru"
+	bodyPage.Props["Url"] = link
 
 	/*if !verified {
 		token, err := a.CreateVerifyEmailToken(userId, email)

@@ -161,10 +161,10 @@ func ParamsFromRequest(r *http.Request) *Params {
 	}
 	if val, ok := props["app_id"]; ok {
 		params.AppId = val
-	} else if val := query.Get("app_id"); val != "" {
+	} else if val = r.Header.Get("AppId"); val != "" {
 		params.AppId = val
 	} else {
-		params.AppId = r.Header.Get("app_id")
+		params.AppId = query.Get("app_id")
 	}
 
 	if val, ok := props["email"]; ok {

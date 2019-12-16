@@ -2596,10 +2596,26 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 
 		var name = utils.GenerateChannelName(user.Nickname, user.Phone)
 
+		team := new(model.Team)
+		if err := s.GetMaster().SelectOne(&team, "SELECT * FROM Teams WHERE Name = :AppId", map[string]interface{}{"AppId": user.AppId}); err != nil {
+			result.Err = model.NewAppError("SqlChannelStore.CreateUnresolvedChannel", "store.sql_channel.create_unresolved_channel.open_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		/*teamId := "qbo8zjqmb38jfgcagigc7ucwt2"
+
+		if user.AppId == "469kzyabijfqxgxpg8fosg8rwa" {
+			teamId = "jr8ndka6zpbuff1xxx7bg3buj1"
+		} else if user.AppId == "469kzyabijfqxgxpg8fosg8rwb" {
+			teamId = "jr8ndka6zpbuff1xxx7bg3buj2"
+		}*/
+
 		channel.Name = name
 		channel.DisplayName = name
 		channel.Header = name
-		channel.TeamId = "qbo8zjqmb38jfgcagigc7ucwt2"
+
+		channel.TeamId = team.Id
+
 		channel.CreatorId = user.Id
 		channel.Type = model.CHANNEL_OPEN
 

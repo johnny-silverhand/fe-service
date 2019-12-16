@@ -217,25 +217,13 @@ func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := c.App.CreateApplication(app)
+	rapplication, err := c.App.CreateApplication(app)
 	if err != nil {
 		c.Err = err
 		return
 	}
 
-	newUser := &model.User{
-		Nickname:      result.Name,
-		Email:         result.Email,
-		EmailVerified: true,
-		AppId:         result.Id,
-		Password:      "123",
-		Roles:         "system_admin",
-	}
-
-	//c.App.AutoCreateUser(newUser)
-	c.App.CreateUserAsAdmin(newUser)
-
-	w.Write([]byte(result.ToJson()))
+	w.Write([]byte(rapplication.ToJson()))
 }
 
 func getApplication(c *Context, w http.ResponseWriter, r *http.Request) {

@@ -173,11 +173,17 @@ func (s SqlTeamStore) Save(team *model.Team) store.StoreChannel {
 			return
 		}
 
+		/*if team.Name == "Фудэкспресс1" {
+			team.Id = "jr8ndka6zpbuff1xxx7bg3buj1"
+		} else if team.Name == "Фудэкспресс2" {
+			team.Id = "jr8ndka6zpbuff1xxx7bg3buj2"
+		}*/
+
 		team.PreSave()
 
-		if result.Err = team.IsValid(); result.Err != nil {
+		/*if result.Err = team.IsValid(); result.Err != nil {
 			return
-		}
+		}*/
 
 		if err := s.GetMaster().Insert(team); err != nil {
 			if IsUniqueConstraintError(err, []string{"Name", "teams_name_key"}) {

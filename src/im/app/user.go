@@ -145,7 +145,7 @@ func (a *App) CreateUserWithInviteId(user *model.User, inviteId string) (*model.
 	}
 	team := result.Data.(*model.Team)
 
-	user.EmailVerified = false
+	user.EmailVerified = true
 
 	ruser, err := a.CreateUser(user)
 	if err != nil {
@@ -165,7 +165,7 @@ func (a *App) CreateUserWithInviteId(user *model.User, inviteId string) (*model.
 	return ruser, nil
 }
 
-func (a *App) CreateUserAsAdmin(user *model.User) (*model.User, *model.AppError) {
+func (a *App) CreateUserAsClient(user *model.User) (*model.User, *model.AppError) {
 	pwd := user.Password
 	ruser, err := a.CreateUser(user)
 	if err != nil {
@@ -174,6 +174,18 @@ func (a *App) CreateUserAsAdmin(user *model.User) (*model.User, *model.AppError)
 
 	user.Password = pwd
 	if err := a.SendUserInfoEmail(ruser.Id, ruser.Email, ruser.EmailVerified, ruser.Locale, a.GetSiteURL(), user); err != nil {
+		mlog.Error(err.Error())
+	}
+
+	return ruser, nil
+}
+
+func (a *App) CreateUserAsAdmin(user *model.User) (*model.User, *model.AppError) {
+	ruser, err := a.CreateUser(user)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.SendWelcomeEmail(ruser.Id, ruser.Email, ruser.EmailVerified, ruser.Locale, a.GetSiteURL()); err != nil {
 		mlog.Error(err.Error())
 	}
 

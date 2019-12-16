@@ -25,6 +25,8 @@ type Application struct {
 	DeleteAt int64 `json:"delete_at"`
 
 	Email string `json:"email"`
+
+	Settings string `json:"settings"`
 }
 
 type ApplicationPatch struct {
@@ -34,6 +36,7 @@ type ApplicationPatch struct {
 	PaymentDetails *string `json:"payment_details"`
 	Phone          *string `json:"phone"`
 	Active         *bool   `json:"active"`
+	Settings       *string `json:"settings"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -55,6 +58,9 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.PaymentDetails != nil {
 		p.PaymentDetails = *patch.Phone
+	}
+	if patch.Settings != nil {
+		p.Settings = *patch.Settings
 	}
 }
 

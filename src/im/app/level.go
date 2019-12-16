@@ -76,6 +76,9 @@ func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *m
 	if newLevel.Lvl != level.Lvl {
 		newLevel.Lvl = level.Lvl
 	}
+	if newLevel.Value != level.Value {
+		newLevel.Value = level.Value
+	}
 
 	result = <-a.Srv.Store.Level().Update(newLevel)
 	if result.Err != nil {

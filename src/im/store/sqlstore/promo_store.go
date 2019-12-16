@@ -208,17 +208,23 @@ func (s *SqlPromoStore) Delete(promoId string, time int64, deleteByID string) st
 	})
 }
 
-func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool) store.StoreChannel {
+func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool, appId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_promos.app_error", nil, "", http.StatusBadRequest)
 			return
 		}
 
+		appQuery := ""
+
+		if appId != nil {
+			appQuery = " AND AppId = :AppId "
+		}
+
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos, "SELECT * FROM Promos WHERE "+
-			" DeleteAt = 0 "+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+			" DeleteAt = 0 "+appQuery+
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -240,13 +246,19 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool) 
 	})
 }
 
-func (s SqlPromoStore) GetAllPromosSince(time int64, allowFromCache bool) store.StoreChannel {
+func (s SqlPromoStore) GetAllPromosSince(time int64, allowFromCache bool, appId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+
+		appQuery := ""
+
+		if appId != nil {
+			appQuery = " AND AppId = :AppId "
+		}
 
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos,
-			`SELECT * FROM Promos WHERE UpdateAt > :Time  ORDER BY UpdateAt`,
-			map[string]interface{}{"Time": time})
+			`SELECT * FROM Promos WHERE UpdateAt > :Time `+appQuery+` ORDER BY UpdateAt`,
+			map[string]interface{}{"Time": time, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromosSince", "store.sql_promo.get_promos_since.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -272,15 +284,15 @@ func (s SqlPromoStore) GetAllPromosSince(time int64, allowFromCache bool) store.
 	})
 }
 
-func (s SqlPromoStore) GetAllPromosBefore(promoId string, numPromos int, offset int) store.StoreChannel {
-	return s.getAllPromosAround(promoId, numPromos, offset, true)
+func (s SqlPromoStore) GetAllPromosBefore(promoId string, numPromos int, offset int, appId *string) store.StoreChannel {
+	return s.getAllPromosAround(promoId, numPromos, offset, true, appId)
 }
 
-func (s SqlPromoStore) GetAllPromosAfter(promoId string, numPromos int, offset int) store.StoreChannel {
-	return s.getAllPromosAround(promoId, numPromos, offset, false)
+func (s SqlPromoStore) GetAllPromosAfter(promoId string, numPromos int, offset int, appId *string) store.StoreChannel {
+	return s.getAllPromosAround(promoId, numPromos, offset, false, appId)
 }
 
-func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset int, before bool) store.StoreChannel {
+func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset int, before bool, appId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -292,6 +304,12 @@ func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset 
 			sort = "ASC"
 		}
 
+		appQuery := ""
+
+		if appId != nil {
+			appQuery = " AND AppId = :AppId "
+		}
+
 		var promos []*model.Promo
 
 		_, err := s.GetReplica().Select(&promos,
@@ -299,10 +317,10 @@ func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset 
 			    *
 			FROM
 			    Promos
-			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Promos WHERE Id = :PromoId))
+			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Promos WHERE Id = :PromoId)) `+appQuery+`
 			ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumPromos`,
-			map[string]interface{}{"PromoId": promoId, "NumPromos": numPromos, "Offset": offset})
+			map[string]interface{}{"PromoId": promoId, "NumPromos": numPromos, "Offset": offset, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.getAllPromosAround", "store.sql_promo.get_promos_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)

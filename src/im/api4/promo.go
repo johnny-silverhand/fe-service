@@ -56,6 +56,11 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	appId := c.App.Session.AppId
+	if len(appId) == 0 {
+		appId = c.Params.AppId
+	}
+
 	afterPromo := r.URL.Query().Get("after")
 	beforePromo := r.URL.Query().Get("before")
 	sinceString := r.URL.Query().Get("since")
@@ -81,15 +86,15 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllPromosSince(since)
+		list, err = c.App.GetAllPromosSince(since, &appId)
 	} else if len(afterPromo) > 0 {
 
-		list, err = c.App.GetAllPromosAfterPromo(afterPromo, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllPromosAfterPromo(afterPromo, c.Params.Page, c.Params.PerPage, &appId)
 	} else if len(beforePromo) > 0 {
 
-		list, err = c.App.GetAllPromosBeforePromo(beforePromo, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllPromosBeforePromo(beforePromo, c.Params.Page, c.Params.PerPage, &appId)
 	} else {
-		list, err = c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage, &appId)
 	}
 
 	if err != nil {
@@ -154,6 +159,9 @@ func updatePromo(c *Context, w http.ResponseWriter, r *http.Request) {
 func createPromo(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	promo := model.PromoFromJson(r.Body)
+	if promo.AppId == "" {
+		promo.AppId = c.App.Session.AppId
+	}
 
 	if promo == nil {
 		c.SetInvalidParam("promo")

@@ -227,8 +227,6 @@ func (a *App) CreateChannel(channel *model.Channel, addMember bool) (*model.Chan
 		a.InvalidateCacheForUser(channel.CreatorId)
 	}
 
-
-
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 		if sc.Type == "O" {
@@ -266,8 +264,6 @@ func (a *App) GetOrCreateDirectChannel(userId, otherUserId string) (*model.Chann
 
 			a.InvalidateCacheForUser(userId)
 			a.InvalidateCacheForUser(otherUserId)
-
-
 
 			esInterface := a.Elasticsearch
 			if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -756,7 +752,6 @@ func (a *App) DeleteChannel(channel *model.Channel, userId string) *model.AppErr
 		}
 	}
 
-
 	if channel.DeleteAt > 0 {
 		err := model.NewAppError("deleteChannel", "api.channel.delete_channel.deleted.app_error", nil, "", http.StatusBadRequest)
 		return err
@@ -784,7 +779,6 @@ func (a *App) DeleteChannel(channel *model.Channel, userId string) *model.AppErr
 			mlog.Error(fmt.Sprintf("Failed to post archive message %v", err))
 		}
 	}
-
 
 	deleteAt := model.GetMillis()
 
@@ -890,7 +884,6 @@ func (a *App) AddChannelMember(userId string, channel *model.Channel, userReques
 	if err != nil {
 		return nil, err
 	}
-
 
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -1216,7 +1209,7 @@ func (a *App) GetChannelMembersByIds(channelId string, userIds []string) (*model
 	}
 	return result.Data.(*model.ChannelMembers), nil
 }
-func (a *App) GetChannelAllMembersForUser( userId string) (*model.ChannelMembers, *model.AppError) {
+func (a *App) GetChannelAllMembersForUser(userId string) (*model.ChannelMembers, *model.AppError) {
 	result := <-a.Srv.Store.Channel().GetAllMembersForUser(userId)
 	if result.Err != nil {
 		return nil, result.Err
@@ -1313,8 +1306,6 @@ func (a *App) JoinChannel(channel *model.Channel, userId string) *model.AppError
 	if err != nil {
 		return err
 	}
-
-
 
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -1520,8 +1511,6 @@ func (a *App) removeUserFromChannel(userIdToRemove string, removerUserId string,
 
 	a.InvalidateCacheForUser(userIdToRemove)
 	a.InvalidateCacheForChannelMembers(channel.Id)
-
-
 
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -1784,8 +1773,6 @@ func (a *App) PermanentDeleteChannel(channel *model.Channel) *model.AppError {
 		return result.Err
 	}
 
-
-
 	if result := <-a.Srv.Store.Channel().PermanentDelete(channel.Id); result.Err != nil {
 		return result.Err
 	}
@@ -1917,7 +1904,6 @@ func (a *App) FillInChannelsProps(channelList *model.ChannelList) *model.AppErro
 		allChannelMentions := make(map[string]bool)
 		channelMentions := make(map[*model.Channel][]string, len(channelList))
 
-
 		allChannelMentionNames := make([]string, 0, len(allChannelMentions))
 		for channelName := range allChannelMentions {
 			allChannelMentionNames = append(allChannelMentionNames, channelName)
@@ -1958,8 +1944,6 @@ func (a *App) FillInChannelsProps(channelList *model.ChannelList) *model.AppErro
 	return nil
 }
 
-
-
 func (a *App) FindOpennedChannel(userId string) (*model.Channel, *model.AppError) {
 	if result := <-a.Srv.Store.Channel().FindOpennedChannel(userId); result.Err != nil {
 		return nil, result.Err
@@ -1967,8 +1951,6 @@ func (a *App) FindOpennedChannel(userId string) (*model.Channel, *model.AppError
 		return result.Data.(*model.Channel), nil
 	}
 }
-
-
 
 func (a *App) CreateUnresolvedChannel(userId string) (*model.Channel, *model.AppError) {
 
@@ -1986,7 +1968,14 @@ func (a *App) CreateUnresolvedChannel(userId string) (*model.Channel, *model.App
 	}
 	channelMemberIds := []string{}
 	var members []*model.TeamMember
-	if members, err = a.GetTeamMembers("qbo8zjqmb38jfgcagigc7ucwt2", 0, 50); err != nil {
+
+	var team *model.Team
+	if team, err = a.GetTeamByName(user.AppId); err != nil {
+		return nil, err
+	}
+
+	if members, err = a.GetTeamMembers(team.Id, 0, 50); err != nil {
+
 		return nil, err
 	} else {
 
@@ -1997,11 +1986,9 @@ func (a *App) CreateUnresolvedChannel(userId string) (*model.Channel, *model.App
 
 	}
 
-
 	if result := <-a.Srv.Store.Channel().CreateUnresolvedChannel(user, channelMemberIds, 0); result.Err != nil {
 		return nil, result.Err
 	} else {
-
 
 		var rchannel = result.Data.(*model.Channel)
 		//a.postJoinChannelMessage(user, rchannel)

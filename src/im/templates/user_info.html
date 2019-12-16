@@ -20,6 +20,9 @@
                                                     <h2 style="font-weight: normal; margin-top: 10px;">{{.Props.Title2}}</h2>
                                                     <p>Email: {{.Props.Email}}</p>
                                                     <p>Пароль: {{.Props.Password}}</p>
+                                                    <p style="margin: 20px 0 15px">
+                                                        <a href="{{.Props.Url}}" style="background: #2389D7; border-radius: 3px; color: #fff; border: none; outline: none; min-width: 200px; padding: 15px 25px; font-size: 14px; font-family: inherit; cursor: pointer; -webkit-appearance: none;text-decoration: none;">{{.Props.Button}}</a>
+                                                    </p>
                                                 </td>
                                             </tr>
                                             {{if .Props.AppDownloadLink}}
