@@ -81,10 +81,10 @@ func (a *App) CreateApplication(application *model.Application) (*model.Applicat
 	return rapplication, nil
 }
 
-func (a *App) UpdateApplication(application *model.Application, safeUpdate bool) (*model.Application, *model.AppError) {
+func (a *App) UpdateApplication(id string, patch *model.ApplicationPatch, safeUpdate bool) (*model.Application, *model.AppError) {
 	//application.SanitizeProps()
 
-	result := <-a.Srv.Store.Application().Get(application.Id)
+	result := <-a.Srv.Store.Application().Get(id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -92,42 +92,55 @@ func (a *App) UpdateApplication(application *model.Application, safeUpdate bool)
 	oldApplication := result.Data.(*model.Application)
 
 	if oldApplication == nil {
-		err := model.NewAppError("UpdateApplication", "api.application.update_application.find.app_error", nil, "id="+application.Id, http.StatusBadRequest)
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.find.app_error", nil, "id="+id, http.StatusBadRequest)
 		return nil, err
 	}
 
 	if oldApplication.DeleteAt != 0 {
-		err := model.NewAppError("UpdateApplication", "api.application.update_application.permissions_details.app_error", map[string]interface{}{"ApplicationId": application.Id}, "", http.StatusBadRequest)
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.permissions_details.app_error", map[string]interface{}{"ApplicationId": id}, "", http.StatusBadRequest)
 		return nil, err
 	}
 
 	newApplication := &model.Application{}
 	*newApplication = *oldApplication
+	newApplication.Patch(patch)
 
-	if newApplication.Name != application.Name {
-		newApplication.Name = application.Name
+	/*if newApplication.Name != oldApplication.Name {
+		newApplication.Name = oldApplication.Name
 	}
 
-	newApplication.Preview = application.Preview
-	newApplication.Description = application.Description
-	newApplication.Phone = application.Phone
-	newApplication.PaymentDetails = application.PaymentDetails
+	if newApplication.Preview != oldApplication.Preview {
+		newApplication.Preview = oldApplication.Preview
+	}
 
-	if newApplication.Email != application.Email {
-		if ruser, err := a.GetUserByEmail(newApplication.Email); err != nil {
+	if newApplication.Description != oldApplication.Description {
+		newApplication.Description = oldApplication.Description
+	}
+
+	if newApplication.Phone != oldApplication.Phone {
+		newApplication.Phone = oldApplication.Phone
+	}
+
+	if newApplication.PaymentDetails != oldApplication.PaymentDetails {
+		newApplication.PaymentDetails = oldApplication.PaymentDetails
+	}
+
+	if newApplication.Settings != oldApplication.Settings {
+		newApplication.Settings = oldApplication.Settings
+	}*/
+
+	if newApplication.Email != oldApplication.Email {
+		if ruser, err := a.GetUserByEmail(oldApplication.Email); err != nil {
 			return nil, err
 		} else {
-			ruser.Username = application.Email
-			ruser.Nickname = application.Email
-			ruser.Email = application.Email
+			ruser.Username = newApplication.Email
+			ruser.Nickname = newApplication.Email
+			ruser.Email = newApplication.Email
 			if _, err := a.UpdateUser(ruser, false); err != nil {
 				return nil, err
 			}
 		}
-		newApplication.Email = application.Email
 	}
-
-	newApplication.Settings = application.Settings
 
 	result = <-a.Srv.Store.Application().Update(newApplication)
 	if result.Err != nil {

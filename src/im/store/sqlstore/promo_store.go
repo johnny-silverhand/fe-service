@@ -208,8 +208,14 @@ func (s *SqlPromoStore) Delete(promoId string, time int64, deleteByID string) st
 	})
 }
 
-func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool, appId *string) store.StoreChannel {
+func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+
+		if options == nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_promos.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
+
 		if limit > 1000 {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_promos.app_error", nil, "", http.StatusBadRequest)
 			return
@@ -217,14 +223,14 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool, 
 
 		appQuery := ""
 
-		if appId != nil {
+		if options.AppId != "" {
 			appQuery = " AND AppId = :AppId "
 		}
 
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos, "SELECT * FROM Promos WHERE "+
 			" DeleteAt = 0 "+appQuery+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": options.AppId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -246,19 +252,24 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, allowFromCache bool, 
 	})
 }
 
-func (s SqlPromoStore) GetAllPromosSince(time int64, allowFromCache bool, appId *string) store.StoreChannel {
+func (s SqlPromoStore) GetAllPromosSince(time int64, options *model.PromoGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+
+		if options == nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetAllPromosSince", "store.sql_promo.get_promos_since.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
 
 		appQuery := ""
 
-		if appId != nil {
+		if options.AppId != "" {
 			appQuery = " AND AppId = :AppId "
 		}
 
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos,
 			`SELECT * FROM Promos WHERE UpdateAt > :Time `+appQuery+` ORDER BY UpdateAt`,
-			map[string]interface{}{"Time": time, "AppId": appId})
+			map[string]interface{}{"Time": time, "AppId": options.AppId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromosSince", "store.sql_promo.get_promos_since.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -284,15 +295,15 @@ func (s SqlPromoStore) GetAllPromosSince(time int64, allowFromCache bool, appId 
 	})
 }
 
-func (s SqlPromoStore) GetAllPromosBefore(promoId string, numPromos int, offset int, appId *string) store.StoreChannel {
-	return s.getAllPromosAround(promoId, numPromos, offset, true, appId)
+func (s SqlPromoStore) GetAllPromosBefore(promoId string, numPromos int, offset int, options *model.PromoGetOptions) store.StoreChannel {
+	return s.getAllPromosAround(promoId, numPromos, offset, true, options)
 }
 
-func (s SqlPromoStore) GetAllPromosAfter(promoId string, numPromos int, offset int, appId *string) store.StoreChannel {
-	return s.getAllPromosAround(promoId, numPromos, offset, false, appId)
+func (s SqlPromoStore) GetAllPromosAfter(promoId string, numPromos int, offset int, options *model.PromoGetOptions) store.StoreChannel {
+	return s.getAllPromosAround(promoId, numPromos, offset, false, options)
 }
 
-func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset int, before bool, appId *string) store.StoreChannel {
+func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset int, before bool, options *model.PromoGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -304,9 +315,14 @@ func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset 
 			sort = "ASC"
 		}
 
+		if options == nil {
+			result.Err = model.NewAppError("SqlPromoStore.getAllPromosAround", "store.sql_promo.get_promos_around.get.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
+
 		appQuery := ""
 
-		if appId != nil {
+		if options.AppId != "" {
 			appQuery = " AND AppId = :AppId "
 		}
 
@@ -320,7 +336,7 @@ func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset 
 			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Promos WHERE Id = :PromoId)) `+appQuery+`
 			ORDER BY CreateAt `+sort+`
 			OFFSET :Offset LIMIT :NumPromos`,
-			map[string]interface{}{"PromoId": promoId, "NumPromos": numPromos, "Offset": offset, "AppId": appId})
+			map[string]interface{}{"PromoId": promoId, "NumPromos": numPromos, "Offset": offset, "AppId": options.AppId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.getAllPromosAround", "store.sql_promo.get_promos_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)

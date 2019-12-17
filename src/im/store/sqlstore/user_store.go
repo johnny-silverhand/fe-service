@@ -1630,6 +1630,23 @@ func (us SqlUserStore) GetByPhone(phone string) store.StoreChannel {
 		result.Data = &user
 	})
 }
+
+func (us SqlUserStore) GetByPhoneApp(phone string, appId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		reg, _ := regexp.Compile("[^0-9]+")
+		phone = reg.ReplaceAllString(phone, "")
+
+		user := model.User{}
+
+		if err := us.GetReplica().SelectOne(&user, "SELECT * FROM Users WHERE Phone = :Phone AND AppId = :AppId AND Roles = :Roles", map[string]interface{}{"Phone": phone, "AppId": appId, "Roles": model.CHANNEL_USER_ROLE_ID}); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetByPhoneApp", store.MISSING_ACCOUNT_ERROR, nil, "phone="+phone+", "+err.Error(), http.StatusInternalServerError)
+		}
+
+		result.Data = &user
+	})
+}
+
 func (us SqlUserStore) AccrualBalance(userId string, value float64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		curTime := model.GetMillis()

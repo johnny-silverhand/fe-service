@@ -56,9 +56,14 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appId := c.App.Session.AppId
-	if len(appId) == 0 {
-		appId = c.Params.AppId
+	promoGetOptions := &model.PromoGetOptions{
+		AppId:      c.App.Session.AppId,
+		CategoryId: c.Params.CategoryId,
+		OfficeId:   c.Params.OfficeId,
+	}
+
+	if len(promoGetOptions.AppId) == 0 {
+		promoGetOptions.AppId = c.Params.AppId
 	}
 
 	afterPromo := r.URL.Query().Get("after")
@@ -86,15 +91,15 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	if since > 0 {
-		list, err = c.App.GetAllPromosSince(since, &appId)
+		list, err = c.App.GetAllPromosSince(since, promoGetOptions)
 	} else if len(afterPromo) > 0 {
 
-		list, err = c.App.GetAllPromosAfterPromo(afterPromo, c.Params.Page, c.Params.PerPage, &appId)
+		list, err = c.App.GetAllPromosAfterPromo(afterPromo, c.Params.Page, c.Params.PerPage, promoGetOptions)
 	} else if len(beforePromo) > 0 {
 
-		list, err = c.App.GetAllPromosBeforePromo(beforePromo, c.Params.Page, c.Params.PerPage, &appId)
+		list, err = c.App.GetAllPromosBeforePromo(beforePromo, c.Params.Page, c.Params.PerPage, promoGetOptions)
 	} else {
-		list, err = c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage, &appId)
+		list, err = c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage, promoGetOptions)
 	}
 
 	if err != nil {

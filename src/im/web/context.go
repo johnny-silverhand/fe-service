@@ -335,6 +335,10 @@ func (c *Context) RequireAppId() *Context {
 		return c
 	}
 
+	if c.Params.AppId == model.ME {
+		c.Params.AppId = c.App.Session.AppId
+	}
+
 	if len(c.Params.AppId) != 26 {
 		c.SetInvalidUrlParam("app_id")
 	}

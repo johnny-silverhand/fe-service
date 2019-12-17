@@ -103,7 +103,6 @@ func getCategoryPath(c *Context, w http.ResponseWriter, r *http.Request) {
 func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
 
-	var officeId = c.Params.OfficeId
 	if c.Err != nil {
 		return
 	}
@@ -111,7 +110,11 @@ func getCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	} else {
-		productList, _ := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, category.Id, &officeId)
+		productGetOptions := &model.ProductGetOptions{
+			CategoryId: category.Id,
+			OfficeId:   c.Params.OfficeId,
+		}
+		productList, _ := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions)
 		category.ProductList = productList
 
 		w.Write([]byte(category.ToJson()))

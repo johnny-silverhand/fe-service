@@ -159,13 +159,14 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		if len(order.Phone) > 0 {
 
-			user, err := c.App.GetUserByPhone(order.Phone)
+			user, err := c.App.GetUserByPhoneApp(order.Phone, c.Params.AppId)
 
 			if err != nil {
 
 				newUser := &model.User{
 					Phone:         order.Phone,
 					Username:      order.Phone,
+					AppId:         c.Params.AppId,
 					EmailVerified: true,
 				}
 

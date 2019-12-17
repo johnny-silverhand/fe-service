@@ -37,6 +37,7 @@ type ApplicationPatch struct {
 	Phone          *string `json:"phone"`
 	Active         *bool   `json:"active"`
 	Settings       *string `json:"settings"`
+	Email          *string `json:"email"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -62,11 +63,20 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	if patch.Settings != nil {
 		p.Settings = *patch.Settings
 	}
+	if patch.Email != nil {
+		p.Email = *patch.Email
+	}
 }
 
 func (application *Application) ToJson() string {
 	b, _ := json.Marshal(application)
 	return string(b)
+}
+
+func ApplicationPatchFromJson(data io.Reader) *ApplicationPatch {
+	var patch *ApplicationPatch
+	json.NewDecoder(data).Decode(&patch)
+	return patch
 }
 
 func ApplicationFromJson(data io.Reader) *Application {

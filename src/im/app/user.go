@@ -2037,6 +2037,22 @@ func (a *App) GetUserByPhone(phone string) (*model.User, *model.AppError) {
 	}
 }
 
+func (a *App) GetUserByPhoneApp(phone string, appId string) (*model.User, *model.AppError) {
+
+	reg, _ := regexp.Compile("[^0-9]+")
+	phone = reg.ReplaceAllString(phone, "")
+
+	if result := <-a.Srv.Store.User().GetByPhoneApp(phone, appId); result.Err != nil && result.Err.Id == "store.sql_user.missing_account.const" {
+		result.Err.StatusCode = http.StatusNotFound
+		return nil, result.Err
+	} else if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return nil, result.Err
+	} else {
+		return result.Data.(*model.User), nil
+	}
+}
+
 func (a *App) CreateStageToken(user *model.User, pwd string) (*model.Token, *model.AppError) {
 
 	token := model.NewStageToken(user.Id, pwd)

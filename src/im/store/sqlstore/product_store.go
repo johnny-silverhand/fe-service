@@ -188,11 +188,16 @@ func (s SqlProductStore) GetAllByCategoryId(categoryId string, offset int, limit
 	})
 }
 
-func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string, officeId *string) store.StoreChannel {
+func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.ProductGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
+		if options == nil {
+			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
+
 		var rootCategory *model.Category
-		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": categoryId}); err != nil {
+		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": options.CategoryId}); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage",
 				"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
@@ -223,7 +228,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
 		inQuery := strings.Join(inQueryList, ", ")
 
 		var officeQuery string
-		if officeId != nil && *officeId != "" {
+		if options.OfficeId != "" {
 			officeQuery = " INNER JOIN Offices ON Offices.Id = :OfficeId "
 		} else {
 			officeQuery = ""
@@ -234,14 +239,15 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, order model.ColumnOrd
                   FROM Products p
 					` + officeQuery + `
                   WHERE p.CategoryId IN (` + inQuery + `)
-				  AND p.DeleteAt = 0
-                  ORDER BY ` + order.Column + ` `
+				  AND p.DeleteAt = 0`
+		// ORDER BY ` + order.Column + ` `
 
-		query += order.Type + ` LIMIT :Limit OFFSET :Offset `
+		//query += order.Type + ` LIMIT :Limit OFFSET :Offset `
+		query += ` LIMIT :Limit OFFSET :Offset `
 
 		queryArgs["Limit"] = limit
 		queryArgs["Offset"] = offset
-		queryArgs["OfficeId"] = officeId
+		queryArgs["OfficeId"] = options.OfficeId
 
 		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error",

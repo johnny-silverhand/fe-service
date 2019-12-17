@@ -315,6 +315,7 @@ type UserStore interface {
 	VerifyPhoneNew(userId string) StoreChannel
 
 	GetByPhone(phone string) StoreChannel
+	GetByPhoneApp(phone string, appId string) StoreChannel
 	AccrualBalance(userId string, value float64) StoreChannel
 	DeductionBalance(userId string, value float64) StoreChannel
 }
@@ -512,7 +513,7 @@ type LinkMetadataStore interface {
 type ProductStore interface {
 	Save(product *model.Product) StoreChannel
 	Get(productId string) StoreChannel
-	GetAllPage(offset int, limit int, order model.ColumnOrder, categoryId string, officeId *string) StoreChannel
+	GetAllPage(offset int, limit int, options *model.ProductGetOptions) StoreChannel
 
 	GetAllPageByApp(offset int, limit int, order model.ColumnOrder, appId string) StoreChannel
 	GetAllByAppId(appId string) StoreChannel
@@ -553,10 +554,10 @@ type PromoStore interface {
 	Overwrite(promo *model.Promo) StoreChannel
 	Delete(promoId string, time int64, deleteByID string) StoreChannel
 
-	GetAllPromos(offset int, limit int, allowFromCache bool, appId *string) StoreChannel
-	GetAllPromosSince(time int64, allowFromCache bool, appId *string) StoreChannel
-	GetAllPromosBefore(promoId string, numPromos int, offset int, appId *string) StoreChannel
-	GetAllPromosAfter(promoId string, numPromos int, offset int, appId *string) StoreChannel
+	GetAllPromos(offset int, limit int, options *model.PromoGetOptions) StoreChannel
+	GetAllPromosSince(time int64, options *model.PromoGetOptions) StoreChannel
+	GetAllPromosBefore(promoId string, numPromos int, offset int, options *model.PromoGetOptions) StoreChannel
+	GetAllPromosAfter(promoId string, numPromos int, offset int, options *model.PromoGetOptions) StoreChannel
 }
 
 type OfficeStore interface {

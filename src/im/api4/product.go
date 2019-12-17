@@ -127,8 +127,11 @@ func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-	var officeId = c.Params.OfficeId
-	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId, &officeId); err != nil {
+	productGetOptions := &model.ProductGetOptions{
+		CategoryId: c.Params.CategoryId,
+		OfficeId:   c.Params.OfficeId,
+	}
+	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions); err != nil {
 		c.Err = err
 		return
 	} else {
@@ -156,10 +159,14 @@ func createProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireCategoryId()
 
-	var officeId = c.Params.OfficeId
-
 	if c.Err != nil {
 		return
+	}
+
+	productGetOptions := &model.ProductGetOptions{
+		AppId:      c.Params.AppId,
+		CategoryId: c.Params.CategoryId,
+		OfficeId:   c.Params.OfficeId,
 	}
 
 	//afterProduct := r.URL.Query().Get("after")
@@ -187,7 +194,8 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 		if ()(val.Type().Field(i).Tag.Get("json"))
 	}*/
 
-	list, err = c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.CategoryId, &officeId)
+	list, err = c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions)
+
 	/*if since > 0 {
 		list, err = c.App.GetProductsSince(c.Params.ChannelId, since)
 	} else if len(afterProduct) > 0 {

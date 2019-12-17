@@ -249,22 +249,22 @@ func updateApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app := model.ApplicationFromJson(r.Body)
+	patch := model.ApplicationPatchFromJson(r.Body)
 
-	if app == nil {
+	if patch == nil {
 		c.SetInvalidParam("app")
 		return
 	}
 
 	// The app being updated in the payload must be the same one as indicated in the URL.
-	if app.Id != c.Params.AppId {
+	/*if app.Id != c.Params.AppId {
 		c.SetInvalidParam("id")
 		return
 	}
+	*/
+	/*app.Id = c.Params.AppId*/
 
-	app.Id = c.Params.AppId
-
-	rapp, err := c.App.UpdateApplication(app, false)
+	rapp, err := c.App.UpdateApplication(c.Params.AppId, patch, false)
 	if err != nil {
 		c.Err = err
 		return

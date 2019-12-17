@@ -53,8 +53,9 @@ func (a *App) GetProductsList() (*model.ProductList, *model.AppError) {
 	return list, nil
 }
 
-func (a *App) GetProductsPage(page, perPage int, sort, categoryId string, officeId *string) (*model.ProductList, *model.AppError) {
-	return a.GetProducts(page*perPage, perPage, sort, categoryId, officeId)
+func (a *App) GetProductsPage(page int, perPage int, options *model.ProductGetOptions) (*model.ProductList, *model.AppError) {
+	//return a.GetProducts(page*perPage, perPage, sort, categoryId, officeId)
+	return a.GetProducts(page*perPage, perPage, options)
 }
 
 func (a *App) GetProductsPageByApp(page int, perPage int, sort string, appId string) (*model.ProductList, *model.AppError) {
@@ -75,9 +76,9 @@ func (a *App) GetProductsByApp(offset int, limit int, sort string, appId string)
 
 }
 
-func (a *App) GetProducts(offset, limit int, sort, categoryId string, officeId *string) (*model.ProductList, *model.AppError) {
+func (a *App) GetProducts(offset, limit int, options *model.ProductGetOptions) (*model.ProductList, *model.AppError) {
 
-	result := <-a.Srv.Store.Product().GetAllPage(offset, limit, model.GetOrder(sort), categoryId, officeId)
+	result := <-a.Srv.Store.Product().GetAllPage(offset, limit, options)
 
 	if result.Err != nil {
 		return nil, result.Err

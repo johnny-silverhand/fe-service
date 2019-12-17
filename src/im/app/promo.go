@@ -238,9 +238,9 @@ func (a *App) DeletePromo(promoId, deleteByID string) (*model.Promo, *model.AppE
 	return promo, nil
 }
 
-func (a *App) GetAllPromosBeforePromo(promoId string, page, perPage int, appId *string) (*model.PromoList, *model.AppError) {
+func (a *App) GetAllPromosBeforePromo(promoId string, page, perPage int, options *model.PromoGetOptions) (*model.PromoList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Promo().GetAllPromosBefore(promoId, perPage, page*perPage, appId); result.Err != nil {
+	if result := <-a.Srv.Store.Promo().GetAllPromosBefore(promoId, perPage, page*perPage, options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
@@ -249,9 +249,9 @@ func (a *App) GetAllPromosBeforePromo(promoId string, page, perPage int, appId *
 	}
 }
 
-func (a *App) GetAllPromosAfterPromo(promoId string, page, perPage int, appId *string) (*model.PromoList, *model.AppError) {
+func (a *App) GetAllPromosAfterPromo(promoId string, page, perPage int, options *model.PromoGetOptions) (*model.PromoList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Promo().GetAllPromosAfter(promoId, perPage, page*perPage, appId); result.Err != nil {
+	if result := <-a.Srv.Store.Promo().GetAllPromosAfter(promoId, perPage, page*perPage, options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
@@ -278,8 +278,9 @@ func (a *App) GetAllPromosAroundPromo(promoId string, offset, limit int, before 
 	}
 }
 
-func (a *App) GetAllPromosSince(time int64, appId *string) (*model.PromoList, *model.AppError) {
-	if result := <-a.Srv.Store.Promo().GetAllPromosSince(time, true, appId); result.Err != nil {
+func (a *App) GetAllPromosSince(time int64, options *model.PromoGetOptions) (*model.PromoList, *model.AppError) {
+	options.AllowFromCache = true
+	if result := <-a.Srv.Store.Promo().GetAllPromosSince(time, options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
@@ -288,8 +289,9 @@ func (a *App) GetAllPromosSince(time int64, appId *string) (*model.PromoList, *m
 	}
 }
 
-func (a *App) GetAllPromosPage(page int, perPage int, appId *string) (*model.PromoList, *model.AppError) {
-	if result := <-a.Srv.Store.Promo().GetAllPromos(page*perPage, perPage, true, appId); result.Err != nil {
+func (a *App) GetAllPromosPage(page int, perPage int, options *model.PromoGetOptions) (*model.PromoList, *model.AppError) {
+	options.AllowFromCache = true
+	if result := <-a.Srv.Store.Promo().GetAllPromos(page*perPage, perPage, options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
