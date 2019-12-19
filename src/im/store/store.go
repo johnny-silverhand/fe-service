@@ -402,7 +402,9 @@ type TokenStore interface {
 	GetByToken(token string) StoreChannel
 	Cleanup()
 	RemoveAllTokensByType(tokenType string) StoreChannel
+	RemoveUserTokensByType(tokenType string, userId string) StoreChannel
 	UpdateExtra(token, newExtra string) StoreChannel
+	GetByApplicationInviteCode(appId string, code string) StoreChannel
 }
 
 type SectionStore interface {
@@ -654,6 +656,8 @@ type LevelStore interface {
 	GetAllLevelsSince(time int64, allowFromCache bool, appId *string) StoreChannel
 	GetAllLevelsBefore(levelId string, numLevels int, offset int, appId *string) StoreChannel
 	GetAllLevelsAfter(levelId string, numLevels int, offset int, appId *string) StoreChannel
+
+	DeleteApplicationLevels(appId string) StoreChannel
 }
 
 type ExtraStore interface {

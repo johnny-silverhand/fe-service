@@ -12,6 +12,7 @@ func (api *API) InitLevel() {
 
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(getLevel)).Methods("GET")
 	api.BaseRoutes.Levels.Handle("", api.ApiHandler(createLevel)).Methods("POST")
+	//api.BaseRoutes.Levels.Handle("", api.ApiHandler(createLevels)).Methods("POST")
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(updateLevel)).Methods("PUT")
 	api.BaseRoutes.Level.Handle("", api.ApiHandler(deleteLevel)).Methods("DELETE")
 
@@ -70,6 +71,13 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
+	userId := c.App.Session.UserId
+	if len(userId) > 0 {
+		if user, _ := c.App.GetUser(userId); user != nil {
+			list.Calculate(user)
+		}
+	}
+
 	w.Write([]byte(list.ToJson()))
 }
 
@@ -96,22 +104,22 @@ func updateLevel(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	level := model.LevelFromJson(r.Body)
+	patch := model.LevelPatchFromJson(r.Body)
 
-	if level == nil {
+	if patch == nil {
 		c.SetInvalidParam("level")
 		return
 	}
 
 	// The level being updated in the payload must be the same one as indicated in the URL.
-	if level.Id != c.Params.LevelId {
+	/*if level.Id != c.Params.LevelId {
 		c.SetInvalidParam("id")
 		return
-	}
+	}*/
 
-	level.Id = c.Params.LevelId
+	//level.Id = c.Params.LevelId
 
-	rlevel, err := c.App.UpdateLevel(level, false)
+	rlevel, err := c.App.UpdateLevel(c.Params.LevelId, patch, false)
 	if err != nil {
 		c.Err = err
 		return
@@ -135,6 +143,38 @@ func createLevel(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(result.ToJson()))
+}
+
+func createLevels(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+
+	if err := c.App.DeleteApplicationLevels(c.Params.AppId); err != nil {
+		c.Err = err
+		return
+	}
+
+	levels := model.LevelsFromJson(r.Body)
+
+	if levels == nil {
+		c.SetInvalidParam("levels")
+		return
+	}
+
+	for _, level := range levels {
+		c.App.CreateLevel(level)
+	}
+
+	var list *model.LevelList
+	var err *model.AppError
+
+	list, err = c.App.GetAllLevelsPage(c.Params.Page, c.Params.PerPage, &c.Params.AppId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(list.ToJson()))
 }
 
 func deleteLevel(c *Context, w http.ResponseWriter, r *http.Request) {

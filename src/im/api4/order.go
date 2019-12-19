@@ -159,7 +159,7 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		if len(order.Phone) > 0 {
 
-			user, err := c.App.GetUserByPhoneApp(order.Phone, c.Params.AppId)
+			user, err := c.App.GetUserApplicationByPhone(order.Phone, c.Params.AppId)
 
 			if err != nil {
 

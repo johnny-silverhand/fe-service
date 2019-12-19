@@ -47,10 +47,10 @@ func (a *App) CreateLevel(level *model.Level) (*model.Level, *model.AppError) {
 	return rlevel, nil
 }
 
-func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *model.AppError) {
+func (a *App) UpdateLevel(id string, patch *model.LevelPatch, safeUpdate bool) (*model.Level, *model.AppError) {
 	//level.SanitizeProps()
 
-	result := <-a.Srv.Store.Level().Get(level.Id)
+	result := <-a.Srv.Store.Level().Get(id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -58,19 +58,20 @@ func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *m
 	oldLevel := result.Data.(*model.Level)
 
 	if oldLevel == nil {
-		err := model.NewAppError("UpdateLevel", "api.level.update_level.find.app_error", nil, "id="+level.Id, http.StatusBadRequest)
+		err := model.NewAppError("UpdateLevel", "api.level.update_level.find.app_error", nil, "id="+id, http.StatusBadRequest)
 		return nil, err
 	}
 
 	if oldLevel.DeleteAt != 0 {
-		err := model.NewAppError("UpdateLevel", "api.level.update_level.permissions_details.app_error", map[string]interface{}{"LevelId": level.Id}, "", http.StatusBadRequest)
+		err := model.NewAppError("UpdateLevel", "api.level.update_level.permissions_details.app_error", map[string]interface{}{"LevelId": id}, "", http.StatusBadRequest)
 		return nil, err
 	}
 
 	newLevel := &model.Level{}
 	*newLevel = *oldLevel
+	newLevel.Patch(patch)
 
-	if newLevel.Name != level.Name {
+	/*if newLevel.Name != level.Name {
 		newLevel.Name = level.Name
 	}
 	if newLevel.Lvl != level.Lvl {
@@ -78,7 +79,7 @@ func (a *App) UpdateLevel(level *model.Level, safeUpdate bool) (*model.Level, *m
 	}
 	if newLevel.Value != level.Value {
 		newLevel.Value = level.Value
-	}
+	}*/
 
 	result = <-a.Srv.Store.Level().Update(newLevel)
 	if result.Err != nil {
@@ -129,6 +130,13 @@ func (a *App) DeleteLevel(levelId, deleteByID string) (*model.Level, *model.AppE
 	}
 
 	return level, nil
+}
+
+func (a *App) DeleteApplicationLevels(appId string) *model.AppError {
+	if result := <-a.Srv.Store.Level().DeleteApplicationLevels(appId); result.Err != nil {
+		return result.Err
+	}
+	return nil
 }
 
 func (a *App) GetAllLevelsBeforeLevel(levelId string, page, perPage int, appId *string) (*model.LevelList, *model.AppError) {

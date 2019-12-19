@@ -71,6 +71,9 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/phone/verify", api.ApiHandler(verifyUserPhone)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/verify/send", api.ApiHandler(sendVerificationSms)).Methods("POST")
 
+	api.BaseRoutes.User.Handle("/invite/reset", api.ApiHandler(resetInviteTokenByPhone)).Methods("POST")
+	api.BaseRoutes.User.Handle("/invite/verify", api.ApiHandler(verifyUserInvite)).Methods("POST")
+
 	api.BaseRoutes.Users.Handle("/attach_device", api.ApiSessionRequired(attachDeviceId)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/attach_office", api.ApiSessionRequired(attachOfficeId)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/attach_application", api.ApiSessionRequired(attachApplicationId)).Methods("POST")
@@ -1601,7 +1604,7 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	reg, _ := regexp.Compile("[^0-9]+")
 	phone = reg.ReplaceAllString(phone, "")
 	//user, err := c.App.GetUserByPhone(phone)
-	user, err := c.App.GetUserByPhoneApp(phone, appId)
+	user, err := c.App.GetUserApplicationByPhone(phone, appId)
 
 	if err != nil {
 		c.Err = err
@@ -1612,6 +1615,83 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	token, err := c.App.CreateStageToken(user, pwd) /*pwd*/
 
 	ReturnStatusStageTokenOK(w, token.Token)
+}
+
+func resetInviteTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+	/*props := model.MapFromJson(r.Body)
+	phone := props["phone"]
+	appId := props["app_id"]*/
+
+	//reg, _ := regexp.Compile("[^0-9]+")
+	//phone = reg.ReplaceAllString(phone, "")
+	//user, err := c.App.GetUserByPhone(phone)
+	user, err := c.App.GetUser(c.Params.UserId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	code := "1234"                               //utils.HashDigit(4)
+	_, err = c.App.CreateInviteToken(user, code) /*pwd*/
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(code))
+}
+
+func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+
+	if c.Err != nil {
+		return
+	}
+
+	user, err := c.App.GetUser(c.Params.UserId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	props := model.MapFromJson(r.Body)
+
+	code := props["code"]
+	appId := props["app_id"]
+
+	ruser, err := c.App.VerifyFromInviteToken(appId, code)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	_, err = c.App.PatchUser(user.Id, &model.UserPatch{InvitedBy: &ruser.Id}, false)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	/*_token := &model.UserAccessToken{UserId: user.Id, Description: "demo access"}
+	_token, err = c.App.CreateUserAccessToken(_token)
+
+	if err != nil {
+		c.Err = err
+		return
+	}*/
+
+	//c.LogAudit("success - token_id=" + _token.Id)
+
+	//webtoken := &model.WebUserAccessToken{Id: _token.Id, Token: _token.Token, UserId: _token.UserId, Description: _token.Description, ChannelId: "", ChannelName: "", IsActive: _token.IsActive}
+
+	/*w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(webtoken.ToJson()))*/
+	ReturnStatusOK(w)
 }
 
 func verifyUserPhone(c *Context, w http.ResponseWriter, r *http.Request) {

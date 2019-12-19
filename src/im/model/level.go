@@ -16,6 +16,9 @@ type Level struct {
 	UpdateAt int64   `json:"update_at"`
 	DeleteAt int64   `json:"delete_at"`
 	AppId    string  `json:"app_id"`
+
+	Invited     int `db:"-" json:"invited,omitempty"`
+	BonusEarned int `db:"--" json:"bonus_earned,omitempty"`
 }
 
 type LevelPatch struct {
@@ -50,6 +53,18 @@ func LevelFromJson(data io.Reader) *Level {
 	var level *Level
 	json.NewDecoder(data).Decode(&level)
 	return level
+}
+
+func LevelsFromJson(data io.Reader) []*Level {
+	var levels []*Level
+	json.NewDecoder(data).Decode(&levels)
+	return levels
+}
+
+func LevelPatchFromJson(data io.Reader) *LevelPatch {
+	var patch *LevelPatch
+	json.NewDecoder(data).Decode(&patch)
+	return patch
 }
 
 func (o *Level) Clone() *Level {

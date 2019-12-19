@@ -86,8 +86,9 @@ type User struct {
 	PhoneVerified bool   `json:"phone_verified,omitempty"`
 	PhoneNew      string `json:"phone_new"`
 
-	Balance float64 `json:"balance"`
-	AppId   string  `json:"app_id"`
+	Balance   float64 `json:"balance"`
+	AppId     string  `json:"app_id"`
+	InvitedBy string  `json:"invited_by"`
 }
 
 type UserPatch struct {
@@ -102,6 +103,7 @@ type UserPatch struct {
 	NotifyProps StringMap `json:"notify_props,omitempty"`
 	Locale      *string   `json:"locale"`
 	Timezone    StringMap `json:"timezone"`
+	InvitedBy   *string   `json:"invited_by"`
 }
 
 type UserAuth struct {
@@ -405,6 +407,10 @@ func (u *User) Patch(patch *UserPatch) {
 
 	if patch.Timezone != nil {
 		u.Timezone = patch.Timezone
+	}
+
+	if patch.InvitedBy != nil {
+		u.InvitedBy = *patch.InvitedBy
 	}
 }
 

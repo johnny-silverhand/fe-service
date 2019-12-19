@@ -7,14 +7,24 @@ import (
 )
 
 type LevelList struct {
-	Order []string         `json:"order"`
+	Order  []string          `json:"order"`
 	Levels map[string]*Level `json:"levels"`
 }
 
 func NewLevelList() *LevelList {
 	return &LevelList{
-		Order: make([]string, 0),
+		Order:  make([]string, 0),
 		Levels: make(map[string]*Level),
+	}
+}
+
+func (o *LevelList) Calculate(user *User) {
+	//.var users []*User
+	for _, level := range o.Levels {
+		//levels = append(levels, o.Levels[id])
+		// TODO написать расчет кол-ва заработанных бонусов и кол-ва приглашенных людей по уровням
+		level.Invited = 0
+		level.BonusEarned = 0
 	}
 }
 
@@ -124,7 +134,6 @@ func (o *LevelList) Etag() string {
 
 	return Etag(orderId, id, t)
 }
-
 
 func LevelListFromJson(data io.Reader) *LevelList {
 	var o *LevelList

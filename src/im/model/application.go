@@ -26,7 +26,12 @@ type Application struct {
 
 	Email string `json:"email"`
 
-	Settings string `json:"settings"`
+	Settings    string `json:"settings"`
+	MaxDiscount int    `json:"max_discount"`
+
+	AqType     string `json:"aq_type"`
+	AqUsername string `json:"aq_username"`
+	AqPassword string `json:"aq_password"`
 }
 
 type ApplicationPatch struct {
@@ -38,6 +43,10 @@ type ApplicationPatch struct {
 	Active         *bool   `json:"active"`
 	Settings       *string `json:"settings"`
 	Email          *string `json:"email"`
+	MaxDiscount    *int    `json:"max_discount"`
+	AqType         *string `json:"aq_type"`
+	AqUsername     *string `json:"aq_username"`
+	AqPassword     *string `json:"aq_password"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -58,13 +67,25 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 		p.Phone = *patch.Phone
 	}
 	if patch.PaymentDetails != nil {
-		p.PaymentDetails = *patch.Phone
+		p.PaymentDetails = *patch.PaymentDetails
 	}
 	if patch.Settings != nil {
 		p.Settings = *patch.Settings
 	}
 	if patch.Email != nil {
 		p.Email = *patch.Email
+	}
+	if patch.MaxDiscount != nil {
+		p.MaxDiscount = *patch.MaxDiscount
+	}
+	if patch.AqType != nil {
+		p.AqType = *patch.AqType
+	}
+	if patch.AqUsername != nil {
+		p.AqUsername = *patch.AqUsername
+	}
+	if patch.AqPassword != nil {
+		p.AqPassword = *patch.AqPassword
 	}
 }
 

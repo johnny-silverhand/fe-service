@@ -1,12 +1,15 @@
 package model
 
-import "net/http"
+import (
+	"net/http"
+)
 
 const (
 	TOKEN_SIZE            = 64
 	MAX_TOKEN_EXIPRY_TIME = 1000 * 60 * 60 * 48 // 48 hour
 	TOKEN_TYPE_OAUTH      = "oauth"
-	TOKEN_TYPE_DEF      = "app"
+	TOKEN_TYPE_DEF        = "app"
+	TOKEN_TYPE_INVITE     = "invite"
 )
 
 type Token struct {
@@ -26,12 +29,22 @@ func NewToken(tokentype, extra string) *Token {
 	}
 }
 
+func NewInviteToken(userId string, extra string) *Token {
+	return &Token{
+		Token:    NewRandomString(TOKEN_SIZE),
+		CreateAt: GetMillis(),
+		Type:     TOKEN_TYPE_INVITE,
+		Extra:    extra,
+		UserId:   userId,
+	}
+}
+
 func NewStageToken(userId string, extra string) *Token {
 	return &Token{
 		Token:    NewRandomString(TOKEN_SIZE),
 		CreateAt: GetMillis(),
 		Type:     TOKEN_TYPE_DEF,
-		Extra:   extra,
+		Extra:    extra,
 		UserId:   userId,
 	}
 }

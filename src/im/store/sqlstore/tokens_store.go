@@ -65,6 +65,23 @@ func (s SqlTokenStore) GetByToken(tokenString string) store.StoreChannel {
 	})
 }
 
+func (s SqlTokenStore) GetByApplicationInviteCode(appId string, code string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		token := model.Token{}
+
+		if err := s.GetReplica().SelectOne(&token, "SELECT T.* FROM Tokens T JOIN Users U ON U.Id = T.UserId WHERE T.Type = :Type AND T.Extra = :Extra AND U.AppId = :AppId",
+			map[string]interface{}{"Type": model.TOKEN_TYPE_INVITE, "AppId": appId, "Extra": code}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlTokenStore.GetByToken", "store.sql_recover.get_by_code.app_error", nil, err.Error(), http.StatusBadRequest)
+			} else {
+				result.Err = model.NewAppError("SqlTokenStore.GetByToken", "store.sql_recover.get_by_code.app_error", nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		result.Data = &token
+	})
+}
+
 func (s SqlTokenStore) Cleanup() {
 	mlog.Debug("Cleaning up token store.")
 	deltime := model.GetMillis() - model.MAX_TOKEN_EXIPRY_TIME
@@ -82,11 +99,20 @@ func (s SqlTokenStore) RemoveAllTokensByType(tokenType string) store.StoreChanne
 	})
 }
 
+func (s SqlTokenStore) RemoveUserTokensByType(tokenType string, userId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := s.GetMaster().Exec("DELETE FROM Tokens WHERE Type = :TokenType AND UserId = :UserId ", map[string]interface{}{"TokenType": tokenType, "UserId": userId}); err != nil {
+			result.Err = model.NewAppError("SqlTokenStore.RemoveUserTokensByType", "store.sql_recover.remove_user_tokens_by_type.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+}
+
 func (us SqlTokenStore) UpdateExtra(token, extra string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		//updateAt := model.GetMillis()
 
-		if _, err := us.GetMaster().Exec("UPDATE Tokens SET Extra = :Extra , CreateAt = :CreateAt WHERE Token = :Token", map[string]interface{}{"Token": token, "Extra": extra, "CreateAt":model.GetMillis() }); err != nil {
+		if _, err := us.GetMaster().Exec("UPDATE Tokens SET Extra = :Extra , CreateAt = :CreateAt WHERE Token = :Token", map[string]interface{}{"Token": token, "Extra": extra, "CreateAt": model.GetMillis()}); err != nil {
 			result.Err = model.NewAppError("SqlTokenStore.UpdateExtra", "store.sql_user.update_extra.app_error", nil, "token="+token+", "+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = token

@@ -1954,6 +1954,19 @@ func (a *App) VerifyFromStageTokenPhoneNew(userSuppliedTokenString string, code 
 	return user, nil
 }
 
+func (a *App) GetInviteToken(appId string, code string) (*model.Token, *model.AppError) {
+	if result := <-a.Srv.Store.Token().GetByApplicationInviteCode(appId, code); result.Err != nil {
+		return nil, model.NewAppError("GetInviteToken", "api.user.get_invite_token.invalid_link.app_error", nil, result.Err.Error(), http.StatusBadRequest)
+	} else {
+		token := result.Data.(*model.Token)
+		/*if token.Type != TOKEN_TYPE_PASSWORD_RECOVERY {
+			return nil, model.NewAppError("GetPasswordRecoveryToken", "api.user.get_invite_token.broken_token.app_error", nil, "", http.StatusBadRequest)
+		}*/
+
+		return token, nil
+	}
+}
+
 func (a *App) GetStageToken(token string) (*model.Token, *model.AppError) {
 	if result := <-a.Srv.Store.Token().GetByToken(token); result.Err != nil {
 		return nil, model.NewAppError("GetStageToken", "api.user.get_stage_token.invalid_link.app_error", nil, result.Err.Error(), http.StatusBadRequest)
@@ -2037,7 +2050,7 @@ func (a *App) GetUserByPhone(phone string) (*model.User, *model.AppError) {
 	}
 }
 
-func (a *App) GetUserByPhoneApp(phone string, appId string) (*model.User, *model.AppError) {
+func (a *App) GetUserApplicationByPhone(phone string, appId string) (*model.User, *model.AppError) {
 
 	reg, _ := regexp.Compile("[^0-9]+")
 	phone = reg.ReplaceAllString(phone, "")
@@ -2062,6 +2075,54 @@ func (a *App) CreateStageToken(user *model.User, pwd string) (*model.Token, *mod
 	}
 
 	return token, nil
+}
+
+func (a *App) CreateInviteToken(user *model.User, code string) (*model.Token, *model.AppError) {
+
+	if result := <-a.Srv.Store.Token().RemoveUserTokensByType(model.TOKEN_TYPE_INVITE, user.Id); result.Err != nil {
+		return nil, model.NewAppError("CreateInviteToken", "app.user.create_invite_token.app_error", nil, result.Err.Error(), http.StatusBadRequest)
+	}
+
+	token := model.NewInviteToken(user.Id, code)
+
+	if result := <-a.Srv.Store.Token().Save(token); result.Err != nil {
+		return nil, result.Err
+	}
+
+	return token, nil
+}
+
+func (a *App) VerifyFromInviteToken(appId string, code string) (*model.User, *model.AppError) {
+
+	var token *model.Token
+	var err *model.AppError
+	var user *model.User
+
+	if token, err = a.GetInviteToken(appId, code); err != nil {
+		return nil, err
+	} else {
+		if model.GetMillis()-token.CreateAt >= TOKEN_RECOVER_EXPIRY_TIME {
+			return nil, model.NewAppError("VerifyFromInviteToken", "api.user.verify.invite_token.app_error", nil, "", http.StatusBadRequest)
+		}
+
+		if user, err = a.GetUser(token.UserId); err != nil {
+			return nil, err
+		}
+
+		/*if err := a.UpdatePassword(user, token.Extra); err != nil {
+			return nil, err
+		}*/
+
+		/*if err := a.VerifyUserPhone(token.UserId); err != nil {
+			return nil, err
+		}*/
+
+		/*if err := a.DeleteToken(token); err != nil {
+			l4g.Error(err.Error())
+		}*/
+	}
+
+	return user, nil
 }
 
 func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) (*model.User, *model.AppError) {

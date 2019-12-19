@@ -176,6 +176,26 @@ func (s *SqlLevelStore) Delete(levelId string, time int64, deleteByID string) st
 	})
 }
 
+func (s *SqlLevelStore) DeleteApplicationLevels(appId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		appErr := func(errMsg string) *model.AppError {
+			return model.NewAppError("SqlLevelStore.Delete", "store.sql_level.delete.app_error", nil, "id="+appId+", err="+errMsg, http.StatusInternalServerError)
+		}
+
+		/*var level model.Level
+		err := s.GetReplica().SelectOne(&level, "SELECT * FROM Levels WHERE Id = :Id AND DeleteAt = 0", map[string]interface{}{"Id": levelId})
+		if err != nil {
+			result.Err = appErr(err.Error())
+		}*/
+		time := model.GetMillis()
+		_, err := s.GetMaster().Exec("UPDATE Levels SET DeleteAt = :DeleteAt, UpdateAt = :UpdateAt WHERE AppId = :AppId", map[string]interface{}{"DeleteAt": time, "UpdateAt": time, "AppId": appId})
+		if err != nil {
+			result.Err = appErr(err.Error())
+		}
+	})
+}
+
 func (s SqlLevelStore) GetAllLevels(offset int, limit int, allowFromCache bool, appId *string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
