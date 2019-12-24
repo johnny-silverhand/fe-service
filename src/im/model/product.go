@@ -11,6 +11,7 @@ const (
 	PRODUCT_STATUS_DRAFT      = "draft"
 	PRODUCT_STATUS_MODERATION = "moderation"
 	PRODUCT_STATUS_ACCEPTED   = "accepted"
+	PRODUCT_STATUS_REJECTED   = "rejected"
 )
 
 type Product struct {

@@ -305,6 +305,7 @@ func (a *App) UpdatePromoStatus(promoId string, status *model.PromoStatus) (*mod
 	case model.PROMO_STATUS_DRAFT:
 	case model.PROMO_STATUS_MODERATION:
 	case model.PROMO_STATUS_ACCEPTED:
+	case model.PROMO_STATUS_REJECTED:
 	default:
 		return nil, model.NewAppError("UpdatePromoStatus", "api.promo.update_promo_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
 	}

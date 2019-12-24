@@ -10,6 +10,7 @@ const (
 	PROMO_STATUS_DRAFT      = "draft"
 	PROMO_STATUS_MODERATION = "moderation"
 	PROMO_STATUS_ACCEPTED   = "accepted"
+	PROMO_STATUS_REJECTED   = "rejected"
 )
 
 type Promo struct {
@@ -42,7 +43,7 @@ type PromoPatch struct {
 }
 
 type PromoStatus struct {
-	PromoId  string `json:"product_id"`
+	PromoId  string `json:"promo_id"`
 	Status   string `json:"status"`
 	Activate bool   `json:"activate"`
 }

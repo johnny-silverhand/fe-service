@@ -1684,7 +1684,7 @@ func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {
 	props := model.MapFromJson(r.Body)
 
 	code := props["code"]
-	appId := props["app_id"]
+	appId := user.AppId
 
 	ruser, err := c.App.VerifyFromInviteToken(appId, code)
 

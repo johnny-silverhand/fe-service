@@ -430,6 +430,7 @@ func (a *App) UpdateProductStatus(productId string, status *model.ProductStatus)
 	case model.PRODUCT_STATUS_DRAFT:
 	case model.PRODUCT_STATUS_MODERATION:
 	case model.PRODUCT_STATUS_ACCEPTED:
+	case model.PRODUCT_STATUS_REJECTED:
 	default:
 		return nil, model.NewAppError("UpdateProductStatus", "api.product.update_product_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
 	}
