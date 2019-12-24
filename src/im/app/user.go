@@ -443,6 +443,14 @@ func (a *App) IsUsernameTaken(name string) bool {
 	return true
 }
 
+func (a *App) GetInvitedUsers(userId string) ([]*model.User, *model.AppError) {
+	result := <-a.Srv.Store.User().GetInvitedUsers(userId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.User), nil
+}
+
 func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
 	return a.Srv.Store.User().Get(userId)
 }
@@ -2075,6 +2083,22 @@ func (a *App) CreateStageToken(user *model.User, pwd string) (*model.Token, *mod
 	}
 
 	return token, nil
+}
+
+func (a *App) GetUserInviteToken(user *model.User) (*model.Token, *model.AppError) {
+	var token *model.Token
+	if result := <-a.Srv.Store.Token().GetByUserInviteToken(user.Id); result.Err != nil {
+		return nil, result.Err
+	} else {
+		token = result.Data.(*model.Token)
+		if model.GetMillis()-token.CreateAt >= TOKEN_RECOVER_EXPIRY_TIME {
+			return nil, model.NewAppError("GetUserInviteToken", "api.user.verify.invite_token.expired", nil, "", http.StatusBadRequest)
+		}
+
+		return token, nil
+
+	}
+
 }
 
 func (a *App) CreateInviteToken(user *model.User, code string) (*model.Token, *model.AppError) {

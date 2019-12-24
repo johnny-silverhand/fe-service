@@ -292,3 +292,10 @@ func ReturnStatusStageTokenOK(w http.ResponseWriter, token string) {
 	m[model.STAGE_TOKEN] = token
 	w.Write([]byte(model.MapToJson(m)))
 }
+
+func ReturnStatusInviteTokenOK(w http.ResponseWriter, token string) {
+	m := make(map[string]string)
+	m[model.STATUS] = model.STATUS_OK
+	m[model.INVITE_TOKEN] = token
+	w.Write([]byte(model.MapToJson(m)))
+}

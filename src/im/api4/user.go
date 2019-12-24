@@ -5,6 +5,7 @@ import (
 	"im/app"
 	"im/mlog"
 	"im/model"
+	"im/utils"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -71,7 +72,8 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/phone/verify", api.ApiHandler(verifyUserPhone)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/verify/send", api.ApiHandler(sendVerificationSms)).Methods("POST")
 
-	api.BaseRoutes.User.Handle("/invite/reset", api.ApiHandler(resetInviteTokenByPhone)).Methods("POST")
+	api.BaseRoutes.User.Handle("/invite", api.ApiHandler(getUserInviteToken)).Methods("GET")
+	api.BaseRoutes.User.Handle("/invite/reset", api.ApiHandler(resetInviteTokenByUser)).Methods("POST")
 	api.BaseRoutes.User.Handle("/invite/verify", api.ApiHandler(verifyUserInvite)).Methods("POST")
 
 	api.BaseRoutes.Users.Handle("/attach_device", api.ApiSessionRequired(attachDeviceId)).Methods("POST")
@@ -1617,7 +1619,27 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	ReturnStatusStageTokenOK(w, token.Token)
 }
 
-func resetInviteTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) {
+func getUserInviteToken(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+	var token *model.Token
+	user, err := c.App.GetUser(c.Params.UserId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	token, err = c.App.GetUserInviteToken(user)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(token.Extra))
+}
+
+func resetInviteTokenByUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireUserId()
 	/*props := model.MapFromJson(r.Body)
 	phone := props["phone"]
@@ -1633,15 +1655,16 @@ func resetInviteTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	code := "1234"                               //utils.HashDigit(4)
-	_, err = c.App.CreateInviteToken(user, code) /*pwd*/
+	code := utils.HashDigit(6)
+	token, err := c.App.CreateInviteToken(user, code)
 
 	if err != nil {
 		c.Err = err
 		return
 	}
 
-	w.Write([]byte(code))
+	//w.Write([]byte(code))
+	ReturnStatusInviteTokenOK(w, token.Token)
 }
 
 func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {

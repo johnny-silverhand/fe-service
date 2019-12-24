@@ -65,6 +65,22 @@ func (s SqlTokenStore) GetByToken(tokenString string) store.StoreChannel {
 	})
 }
 
+func (s SqlTokenStore) GetByUserInviteToken(userId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		token := model.Token{}
+
+		if err := s.GetReplica().SelectOne(&token, "SELECT * FROM Tokens WHERE UserId = :UserId AND Type = :Type ORDER BY CreateAt DESC", map[string]interface{}{"UserId": userId, "Type": model.TOKEN_TYPE_INVITE}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlTokenStore.GetByUserInviteToken", "store.sql_token.get_user_invite_token.not_found", nil, err.Error(), http.StatusBadRequest)
+			} else {
+				result.Err = model.NewAppError("SqlTokenStore.GetByUserInviteToken", "store.sql_token.get_user_invite_token.app_error", nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
+		result.Data = &token
+	})
+}
+
 func (s SqlTokenStore) GetByApplicationInviteCode(appId string, code string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		token := model.Token{}

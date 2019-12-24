@@ -1667,3 +1667,15 @@ func (us SqlUserStore) DeductionBalance(userId string, value float64) store.Stor
 		result.Data = userId
 	})
 }
+
+func (us SqlUserStore) GetInvitedUsers(userId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var users []*model.User
+
+		if _, err := us.GetReplica().Select(&users, "SELECT * FROM Users WHERE InvitedBy = :UserId", map[string]interface{}{"UserId": userId}); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetInvitedUsers", store.MISSING_ACCOUNT_ERROR, nil, err.Error(), http.StatusInternalServerError)
+		}
+
+		result.Data = &users
+	})
+}

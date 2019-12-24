@@ -19,12 +19,15 @@ func NewLevelList() *LevelList {
 }
 
 func (o *LevelList) Calculate(user *User) {
-	//.var users []*User
 	for _, level := range o.Levels {
 		//levels = append(levels, o.Levels[id])
+
+
+
 		// TODO написать расчет кол-ва заработанных бонусов и кол-ва приглашенных людей по уровням
-		level.Invited = 0
-		level.BonusEarned = 0
+
+		level.Invited = 11
+		level.BonusEarned = 11
 	}
 }
 

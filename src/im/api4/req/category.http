@@ -4,6 +4,66 @@
 # * 'gtrp' and 'gtr' create a GET request with or without query parameters;
 # * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
 # * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
-http://localhost:8065/api/v4/categories
+###
+GET http://localhost:8065/api/v4/categories
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
+
+###
+POST http://localhost:8065/api/v4/categories
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
+
+{
+  "name": "TEST CATEGORY API"
+}
+
+###
+GET http://localhost:8065/api/v4/categories/sj6z13zgqpf3fe1e9frdmjfokw
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
+
+###
+PUT http://localhost:8065/api/v4/categories/sj6z13zgqpf3fe1e9frdmjfokw/move
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
+
+{
+  "id": "sj6z13zgqpf3fe1e9frdmjfokw",
+  "parent_id": ""
+}
+
+###
+PUT http://localhost:8065/api/v4/categories/sj6z13zgqpf3fe1e9frdmjfokw/order
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
+
+{
+  "id": "sj6z13zgqpf3fe1e9frdmjfokw",
+  "parent_id": ""
+}
+
+###
+DELETE http://localhost:8065/api/v4/categories/sj6z13zgqpf3fe1e9frdmjfokw
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+X-CSRF-Token: kutb5y5fapbftj1d9thdc3uriy
+X-Requested-With: XMLHttpRequest
 
 ###

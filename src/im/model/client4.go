@@ -37,6 +37,7 @@ const (
 	STATUS_REMOVE             = "REMOVE"
 
 	STAGE_TOKEN               = "stage_token"
+	INVITE_TOKEN               = "invite_token"
 
 	CLIENT_DIR = "client"
 

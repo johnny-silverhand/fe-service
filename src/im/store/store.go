@@ -318,6 +318,7 @@ type UserStore interface {
 	GetByPhoneApp(phone string, appId string) StoreChannel
 	AccrualBalance(userId string, value float64) StoreChannel
 	DeductionBalance(userId string, value float64) StoreChannel
+	GetInvitedUsers(userId string) StoreChannel
 }
 
 type SessionStore interface {
@@ -400,6 +401,7 @@ type TokenStore interface {
 	Save(recovery *model.Token) StoreChannel
 	Delete(token string) StoreChannel
 	GetByToken(token string) StoreChannel
+	GetByUserInviteToken(userId string) StoreChannel
 	Cleanup()
 	RemoveAllTokensByType(tokenType string) StoreChannel
 	RemoveUserTokensByType(tokenType string, userId string) StoreChannel

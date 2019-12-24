@@ -18,7 +18,7 @@ type Level struct {
 	AppId    string  `json:"app_id"`
 
 	Invited     int `db:"-" json:"invited,omitempty"`
-	BonusEarned int `db:"--" json:"bonus_earned,omitempty"`
+	BonusEarned int `db:"-" json:"bonus_earned,omitempty"`
 }
 
 type LevelPatch struct {
