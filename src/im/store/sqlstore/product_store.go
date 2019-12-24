@@ -196,58 +196,68 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			return
 		}
 
-		var rootCategory *model.Category
-		if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": options.CategoryId}); err != nil {
-			result.Err = model.NewAppError("SqlProductStore.GetAllPage",
-				"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var categories []*model.Category
-		if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and AppId = :AppId`,
-			map[string]interface{}{
-				"Lft":   rootCategory.Lft,
-				"Rgt":   rootCategory.Rgt,
-				"AppId": rootCategory.AppId,
-			}); err != nil {
-			if err == sql.ErrNoRows {
-				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
-					"store.sql_products.get_categories.app_error", nil, err.Error(), http.StatusNotFound)
-			} else {
-				result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_categories.app_error",
-					nil, err.Error(), http.StatusInternalServerError)
-			}
-		}
-
-		var inQueryList []string
-		queryArgs := make(map[string]interface{})
-		for i, category := range categories {
-			inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
-			queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
-		}
-		inQuery := strings.Join(inQueryList, ", ")
-
+		var applicationQuery string
 		var officeQuery string
+		var whereClause string
+		queryArgs := make(map[string]interface{})
+
 		if options.OfficeId != "" {
-			officeQuery = " INNER JOIN Offices ON Offices.Id = :OfficeId "
+			officeQuery = " INNER JOIN Offices o ON o.Id = :OfficeId "
 		} else {
 			officeQuery = ""
 		}
 
-		var products []*model.Product
-		query := `SELECT p.*
-                  FROM Products p
-					` + officeQuery + `
-                  WHERE p.CategoryId IN (` + inQuery + `)
-				  AND p.DeleteAt = 0`
-		// ORDER BY ` + order.Column + ` `
+		if options.AppId != "" {
+			applicationQuery = " INNER JOIN Applications a ON a.Id = :AppId "
+		} else {
+			applicationQuery = ""
+		}
 
-		//query += order.Type + ` LIMIT :Limit OFFSET :Offset `
-		query += ` LIMIT :Limit OFFSET :Offset `
+		if options.CategoryId != "" {
+			var rootCategory *model.Category
+			if err := s.GetMaster().SelectOne(&rootCategory, `SELECT * FROM Categories WHERE Id = :Id`, map[string]interface{}{"Id": options.CategoryId}); err != nil {
+				result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+					"store.sql_products.get_category.app_error", nil, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			var categories []*model.Category
+			if _, err := s.GetMaster().Select(&categories, `SELECT * FROM Categories WHERE Lft >= :Lft and Rgt <= :Rgt and AppId = :AppId`,
+				map[string]interface{}{
+					"Lft":   rootCategory.Lft,
+					"Rgt":   rootCategory.Rgt,
+					"AppId": rootCategory.AppId,
+				}); err != nil {
+				if err == sql.ErrNoRows {
+					result.Err = model.NewAppError("SqlProductStore.GetAllPage",
+						"store.sql_products.get_categories.app_error", nil, err.Error(), http.StatusNotFound)
+				} else {
+					result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_categories.app_error",
+						nil, err.Error(), http.StatusInternalServerError)
+				}
+			}
+
+			var inQueryList []string
+			for i, category := range categories {
+				inQueryList = append(inQueryList, fmt.Sprintf(":CategoryId%v", i))
+				queryArgs[fmt.Sprintf("CategoryId%v", i)] = category.Id
+			}
+			inQuery := strings.Join(inQueryList, ", ")
+			whereClause = whereClause + " p.CategoryId IN (" + inQuery + ") AND "
+		}
+
+		query := "SELECT p.* " +
+			"FROM Products p " + officeQuery + applicationQuery +
+			"WHERE " + whereClause +
+			" p.DeleteAt = 0 " +
+			"LIMIT :Limit OFFSET :Offset"
 
 		queryArgs["Limit"] = limit
 		queryArgs["Offset"] = offset
 		queryArgs["OfficeId"] = options.OfficeId
+		queryArgs["AppId"] = options.AppId
+
+		var products []*model.Product
 
 		if _, err := s.GetReplica().Select(&products, query, queryArgs); err != nil {
 			result.Err = model.NewAppError("SqlProductStore.GetAllPage", "store.sql_products.get_all_page.app_error",

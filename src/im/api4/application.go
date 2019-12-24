@@ -80,18 +80,28 @@ func getApplicationPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if products, err := c.App.GetPromosPageByApp(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.AppId); err != nil {
+	/*if products, err := c.App.GetPromosPageByApp(c.Params.Page, c.Params.PerPage, c.Params.Sort, c.Params.AppId); err != nil {
 		c.Err = err
 		return
 	} else {
 		w.Write([]byte(products.ToJson()))
+	}*/
+
+	promoGetOptions := &model.PromoGetOptions{
+		AppId: c.Params.AppId,
+	}
+	if promos, err := c.App.GetAllPromosPage(c.Params.Page, c.Params.PerPage, promoGetOptions); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(promos.ToJson()))
 	}
 }
 
 func getApplicationProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireAppId()
 
-	if c.Err != nil {
+	/*if c.Err != nil {
 		return
 	}
 
@@ -100,7 +110,18 @@ func getApplicationProducts(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	} else {
 		w.Write([]byte(products.ToJson()))
+	}*/
+
+	productGetOptions := &model.ProductGetOptions{
+		AppId: c.Params.AppId,
 	}
+	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(products.ToJson()))
+	}
+
 }
 
 func getApplicationOffices(c *Context, w http.ResponseWriter, r *http.Request) {
