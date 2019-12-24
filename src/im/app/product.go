@@ -435,9 +435,12 @@ func (a *App) UpdateProductStatus(productId string, status *model.ProductStatus)
 		return nil, model.NewAppError("UpdateProductStatus", "api.product.update_product_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
 	}
 	product, err := a.GetProduct(productId)
-	if err == nil && product.Status == status.Status {
-		return product, nil
+	if err != nil {
+		return nil, err
 	}
+	/*if err == nil && product.Status == status.Status {
+		return product, nil
+	}*/
 
 	product.Status = status.Status
 	product.Active = status.Active

@@ -310,9 +310,12 @@ func (a *App) UpdatePromoStatus(promoId string, status *model.PromoStatus) (*mod
 		return nil, model.NewAppError("UpdatePromoStatus", "api.promo.update_promo_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
 	}
 	promo, err := a.GetPromo(promoId)
-	if err == nil && promo.Status == status.Status {
-		return promo, nil
+	if err != nil {
+		return nil, err
 	}
+	/*if err == nil && promo.Status == status.Status {
+		return promo, nil
+	}*/
 
 	promo.Status = status.Status
 	promo.Active = status.Active
