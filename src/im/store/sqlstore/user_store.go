@@ -1676,6 +1676,6 @@ func (us SqlUserStore) GetInvitedUsers(userId string) store.StoreChannel {
 			result.Err = model.NewAppError("SqlUserStore.GetInvitedUsers", store.MISSING_ACCOUNT_ERROR, nil, err.Error(), http.StatusInternalServerError)
 		}
 
-		result.Data = &users
+		result.Data = users
 	})
 }

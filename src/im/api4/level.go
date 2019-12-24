@@ -1,7 +1,6 @@
 package api4
 
 import (
-	"fmt"
 	"im/model"
 	"net/http"
 	"strconv"
@@ -73,55 +72,28 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	userId := c.App.Session.UserId
-	//var invitedUsers []*model.User
 
 	if len(userId) > 0 {
 
-		var invitedUsers []string
-		invitedUsers = append(invitedUsers, userId)
-
-		for {
-
-			for _, uid := range invitedUsers {
-				if users, err := c.App.GetInvitedUsers(uid); err != nil {
-					c.Err = err
-					return
-				} else {
-					for _, user := range users {
-						invitedUsers = append(invitedUsers, user.Id)
-					}
+		var ulist []string
+		ulist = append(ulist, userId)
+		for _, level := range list.Levels {
+			var u []*model.User
+			for _, uid := range ulist {
+				us, _ := c.App.GetInvitedUsers(uid)
+				for _, i := range us {
+					u = append(u, i)
 				}
 			}
+			ulist = []string{}
+			for _, user := range u {
+				ulist = append(ulist, user.Id)
+			}
 
-			fmt.Println(invitedUsers)
+			level.Invited = len(u)
+			level.BonusEarned = 999
 		}
 
-
-
-
-
-
-
-
-
-
-		/*for {
-			if users, err := c.App.GetInvitedUsers(userId); err != nil {
-				c.Err = err
-				return
-			} else {
-
-			}
-		}*/
-
-
-
-
-		/*if user, _ := c.App.GetUser(userId); user != nil {
-			users, _ := c.App.GetInvitedUsers(userId)
-			list.Calculate(user)
-			invitedUsers = append(invitedUsers, user)
-		}*/
 	}
 
 	w.Write([]byte(list.ToJson()))

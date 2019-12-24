@@ -17,8 +17,8 @@ type Level struct {
 	DeleteAt int64   `json:"delete_at"`
 	AppId    string  `json:"app_id"`
 
-	Invited     int `db:"-" json:"invited,omitempty"`
-	BonusEarned int `db:"-" json:"bonus_earned,omitempty"`
+	Invited     int `db:"-" json:"invited"`
+	BonusEarned int `db:"-" json:"bonus_earned"`
 }
 
 type LevelPatch struct {
