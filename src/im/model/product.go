@@ -50,7 +50,7 @@ type ProductPatch struct {
 type ProductStatus struct {
 	ProductId string `json:"product_id"`
 	Status    string `json:"status"`
-	Activate  bool   `json:"activate"`
+	Active    bool   `json:"active"`
 }
 
 func ProductStatusFromJson(data io.Reader) *ProductStatus {

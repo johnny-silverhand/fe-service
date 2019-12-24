@@ -315,6 +315,7 @@ func (a *App) UpdatePromoStatus(promoId string, status *model.PromoStatus) (*mod
 	}
 
 	promo.Status = status.Status
+	promo.Active = status.Active
 	result := <-a.Srv.Store.Promo().Update(promo)
 
 	if result.Err != nil {

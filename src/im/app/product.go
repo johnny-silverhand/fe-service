@@ -440,7 +440,7 @@ func (a *App) UpdateProductStatus(productId string, status *model.ProductStatus)
 	}
 
 	product.Status = status.Status
-	product.Active = status.Activate
+	product.Active = status.Active
 	result := <-a.Srv.Store.Product().Update(product)
 
 	if result.Err != nil {

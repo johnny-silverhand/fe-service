@@ -43,9 +43,9 @@ type PromoPatch struct {
 }
 
 type PromoStatus struct {
-	PromoId  string `json:"promo_id"`
-	Status   string `json:"status"`
-	Activate bool   `json:"activate"`
+	PromoId string `json:"promo_id"`
+	Status  string `json:"status"`
+	Active  bool   `json:"active"`
 }
 
 func PromoStatusFromJson(data io.Reader) *PromoStatus {
