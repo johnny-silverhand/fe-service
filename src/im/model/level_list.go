@@ -18,19 +18,6 @@ func NewLevelList() *LevelList {
 	}
 }
 
-func (o *LevelList) Calculate(user *User) {
-	for _, level := range o.Levels {
-		//levels = append(levels, o.Levels[id])
-
-
-
-		// TODO написать расчет кол-ва заработанных бонусов и кол-ва приглашенных людей по уровням
-
-		level.Invited = 11
-		level.BonusEarned = 11
-	}
-}
-
 func (o *LevelList) ToSlice() []*Level {
 	var levels []*Level
 	for _, id := range o.Order {
@@ -112,6 +99,12 @@ func (o *LevelList) Extend(other *LevelList) {
 func (o *LevelList) SortByCreateAt() {
 	sort.Slice(o.Order, func(i, j int) bool {
 		return o.Levels[o.Order[i]].CreateAt > o.Levels[o.Order[j]].CreateAt
+	})
+}
+
+func (o *LevelList) SortByLvl() {
+	sort.Slice(o.Order, func(i, j int) bool {
+		return o.Levels[o.Order[i]].Lvl < o.Levels[o.Order[j]].Lvl
 	})
 }
 

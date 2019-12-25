@@ -32,6 +32,8 @@ type Application struct {
 	AqType     string `json:"aq_type"`
 	AqUsername string `json:"aq_username"`
 	AqPassword string `json:"aq_password"`
+
+	Cash bool `json:"cash"`
 }
 
 type ApplicationPatch struct {
@@ -47,6 +49,7 @@ type ApplicationPatch struct {
 	AqType         *string `json:"aq_type"`
 	AqUsername     *string `json:"aq_username"`
 	AqPassword     *string `json:"aq_password"`
+	Cash           *bool   `json:"cash"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -86,6 +89,9 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.AqPassword != nil {
 		p.AqPassword = *patch.AqPassword
+	}
+	if patch.Cash != nil {
+		p.Cash = *patch.Cash
 	}
 }
 

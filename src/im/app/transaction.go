@@ -208,3 +208,14 @@ func (a *App) GetUserTransactions(userId string, page int, perPage int, sort str
 		return a.PrepareTransactionListForClient(transactionList), nil
 	}
 }
+
+func (a *App) GetBonusTransactionsForUser(orderUserId string, userId string) (*model.TransactionList, *model.AppError) {
+
+	if result := <-a.Srv.Store.Transaction().GetBonusTransactionsForUser(orderUserId, userId); result.Err != nil {
+		return nil, result.Err
+	} else {
+		transactionList := result.Data.(*model.TransactionList)
+		return a.PrepareTransactionListForClient(transactionList), nil
+	}
+
+}

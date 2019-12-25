@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+const (
+	TRANSACTION_TYPE_BONUS = "bonus"
+)
+
 type Transaction struct {
 	Id          string  `json:"id"`
 	AppId       string  `json:"app_id"`
@@ -17,6 +21,8 @@ type Transaction struct {
 	CreateAt    int64   `json:"create_at"`
 	UpdateAt    int64   `json:"update_at"`
 	DeleteAt    int64   `json:"delete_at"`
+
+	Type string `json:"type"`
 }
 
 type TransactionPatch struct {

@@ -32,14 +32,19 @@ type Promo struct {
 
 	FileIds StringArray `json:"file_ids,omitempty"`
 	Media   []*FileInfo `db:"-" json:"media,omitempty"`
+
+	BeginAt  int64 `json:"begin_at"`
+	ExpireAt int64 `json:"expire_at"`
 }
 
 type PromoPatch struct {
 	Name        *string `json:"name"`
 	Preview     *string `json:"preview"`
 	Description *string `json:"description"`
-	ProductId   *string `json:"promo_id"`
+	ProductId   *string `json:"product_id"`
 	ImageId     string  `json:"image_id,omitempty"`
+	BeginAt     *int64  `json:"begin_at"`
+	ExpireAt    *int64  `json:"expire_at"`
 }
 
 type PromoStatus struct {

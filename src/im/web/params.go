@@ -64,6 +64,7 @@ type Params struct {
 	LogsPerPage      int
 	Permanent        bool
 	RemoteId         string
+	Status           string
 
 	Sort         string
 	BotUserId    string
@@ -165,6 +166,12 @@ func ParamsFromRequest(r *http.Request) *Params {
 		params.AppId = val
 	} else {
 		params.AppId = query.Get("app_id")
+	}
+
+	if val, ok := props["status"]; ok {
+		params.Status = val
+	} else {
+		params.Status = query.Get("status")
 	}
 
 	if val, ok := props["email"]; ok {

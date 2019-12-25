@@ -306,3 +306,32 @@ WHERE UserId = :UserId `
 		}
 	})
 }
+
+func (s SqlTransactionStore) GetBonusTransactionsForUser(orderUserId string, userId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var transactions []*model.Transaction
+		query := "SELECT t.* " +
+			"FROM Transactions t " +
+			"JOIN Orders o ON t.OrderId = o.Id " +
+			"WHERE o.UserId = :OrderUserId AND t.Type = :Type AND t.UserId = :UserId"
+		if _, err := s.GetReplica().Select(&transactions, query,
+			map[string]interface{}{"OrderUserId": orderUserId, "UserId": userId, "Type": model.TRANSACTION_TYPE_BONUS}); err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetBonusTransactionsForUser", "store.sql_transaction.get_bonus_transaction_for_user.app_error",
+				nil, err.Error(),
+				http.StatusInternalServerError)
+		} else {
+
+			list := model.NewTransactionList()
+
+			for _, p := range transactions {
+				list.AddTransaction(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+
+	})
+}

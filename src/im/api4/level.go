@@ -72,26 +72,34 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	userId := c.App.Session.UserId
+	list.SortByLvl()
 
 	if len(userId) > 0 {
 
 		var ulist []string
 		ulist = append(ulist, userId)
-		for _, level := range list.Levels {
-			var u []*model.User
+		for _, id := range list.Order {
+			var users []*model.User
 			for _, uid := range ulist {
-				us, _ := c.App.GetInvitedUsers(uid)
-				for _, i := range us {
-					u = append(u, i)
+				list, _ := c.App.GetInvitedUsers(uid)
+				for _, invited := range list {
+					users = append(users, invited)
 				}
 			}
 			ulist = []string{}
-			for _, user := range u {
+
+			var earned float64 = 0
+			for _, user := range users {
 				ulist = append(ulist, user.Id)
+				if tlist, err := c.App.GetBonusTransactionsForUser(user.Id, userId); err == nil {
+					for _, transaction := range tlist.Transactions {
+						earned += transaction.Value
+					}
+				}
 			}
 
-			level.Invited = len(u)
-			level.BonusEarned = 999
+			list.Levels[id].Invited = len(users)
+			list.Levels[id].BonusEarned = earned
 		}
 
 	}

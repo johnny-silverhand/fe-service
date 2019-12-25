@@ -123,13 +123,18 @@ func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
-	c.RequireCategoryId()
+	//c.RequireCategoryId()
 	if c.Err != nil {
 		return
 	}
 	productGetOptions := &model.ProductGetOptions{
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
+		AppId:      c.App.Session.AppId,
+		Status:     c.Params.Status,
+	}
+	if len(productGetOptions.AppId) == 0 {
+		productGetOptions.AppId = c.Params.AppId
 	}
 	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions); err != nil {
 		c.Err = err
