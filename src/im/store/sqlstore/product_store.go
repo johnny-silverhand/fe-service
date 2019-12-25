@@ -196,7 +196,6 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			return
 		}
 
-		var applicationQuery string
 		var officeQuery string
 		var whereClause string
 		queryArgs := make(map[string]interface{})
@@ -208,9 +207,8 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 		}
 
 		if options.AppId != "" {
-			applicationQuery = " INNER JOIN Applications a ON a.Id = :AppId "
-		} else {
-			applicationQuery = ""
+			//applicationQuery = " INNER JOIN Applications a ON a.Id = :AppId "
+			whereClause = whereClause + " p.AppId = :AppId AND "
 		}
 
 		if options.CategoryId != "" {
@@ -251,7 +249,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 		}
 
 		query := "SELECT p.* " +
-			"FROM Products p " + officeQuery + applicationQuery +
+			"FROM Products p " + officeQuery +
 			"WHERE " + whereClause +
 			" p.DeleteAt = 0 " +
 			"LIMIT :Limit OFFSET :Offset"
