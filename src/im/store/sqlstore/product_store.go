@@ -246,6 +246,10 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			whereClause = whereClause + " p.CategoryId IN (" + inQuery + ") AND "
 		}
 
+		if options.Status != "" {
+			whereClause = whereClause + " p.Status = :Status AND "
+		}
+
 		query := "SELECT p.* " +
 			"FROM Products p " + officeQuery + applicationQuery +
 			"WHERE " + whereClause +
@@ -256,6 +260,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 		queryArgs["Offset"] = offset
 		queryArgs["OfficeId"] = options.OfficeId
 		queryArgs["AppId"] = options.AppId
+		queryArgs["Status"] = options.Status
 
 		var products []*model.Product
 

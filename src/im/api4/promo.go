@@ -57,13 +57,14 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	promoGetOptions := &model.PromoGetOptions{
-		AppId:      c.App.Session.AppId,
+		AppId:      c.Params.AppId,
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
+		Status:     c.Params.Status,
 	}
 
 	if len(promoGetOptions.AppId) == 0 {
-		promoGetOptions.AppId = c.Params.AppId
+		promoGetOptions.AppId = c.App.Session.AppId
 	}
 
 	afterPromo := r.URL.Query().Get("after")

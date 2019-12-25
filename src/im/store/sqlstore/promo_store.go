@@ -227,10 +227,17 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoG
 			appQuery = " AND AppId = :AppId "
 		}
 
+		statusQuery := ""
+
+		if options.Status != "" {
+			statusQuery = " AND Status = :Status "
+		}
+
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos, "SELECT * FROM Promos WHERE "+
-			" DeleteAt = 0 "+appQuery+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": options.AppId})
+			" DeleteAt = 0 "+appQuery+statusQuery+
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset",
+			map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": options.AppId, "Status": options.Status})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)
