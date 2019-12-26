@@ -270,6 +270,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.Preview = product.Preview
 	newProduct.Description = product.Description
 	newProduct.Measure = product.Measure
+	newProduct.AppId = product.AppId
 
 	//if !safeUpdate {
 	newProduct.Media = product.Media

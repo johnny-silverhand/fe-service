@@ -76,6 +76,7 @@ func getAllLevels(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	if len(userId) > 0 {
 
+		// Расчёт количества приглашенных пользователей и количества заработанных бонусов
 		var ulist []string
 		ulist = append(ulist, userId)
 		for _, id := range list.Order {

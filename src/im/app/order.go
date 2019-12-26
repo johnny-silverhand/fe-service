@@ -118,7 +118,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		a.DeductionTransaction(transaction)
 	}
 
-	accural := math.Floor(newOrder.Price * 0.1)
+	/*accural := math.Floor(newOrder.Price * 0.1)
 
 	transaction := &model.Transaction{
 		UserId:      newOrder.UserId,
@@ -127,7 +127,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		Value:       accural,
 	}
 
-	a.AccrualTransaction(transaction)
+	a.AccrualTransaction(transaction)*/
 	a.CreatePostWithOrder(post, newOrder, false)
 
 	return newOrder, nil

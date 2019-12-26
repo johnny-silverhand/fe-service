@@ -2,8 +2,10 @@ package api4
 
 import (
 	"encoding/json"
+	"fmt"
 	"im/model"
 	"im/services/aquiring"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -147,7 +149,8 @@ func updateOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
-
+	var user *model.User
+	var err *model.AppError
 	order := model.OrderFromJson(r.Body)
 
 	if order == nil {
@@ -159,7 +162,7 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		if len(order.Phone) > 0 {
 
-			user, err := c.App.GetUserApplicationByPhone(order.Phone, c.Params.AppId)
+			user, err = c.App.GetUserApplicationByPhone(order.Phone, c.Params.AppId)
 
 			if err != nil {
 
@@ -170,7 +173,7 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 					EmailVerified: true,
 				}
 
-				c.App.AutoCreateUser(newUser)
+				user, _ = c.App.AutoCreateUser(newUser)
 
 			} else {
 				order.UserId = user.Id
@@ -182,6 +185,7 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		order.UserId = c.App.Session.UserId
+		user, _ = c.App.GetUser(order.UserId)
 	}
 
 	/*	if (order.Positions == nil) {
@@ -194,6 +198,33 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.Err = err
 		return
+	}
+
+	if list, err := c.App.GetAllLevelsPage(0, 60, &user.AppId); err == nil {
+		list.SortByLvl()
+
+		if u, e := c.App.GetUser(user.InvitedBy); e == nil {
+			for _, id := range list.Order {
+				accural := math.Floor(result.Price * (list.Levels[id].Value / 100))
+
+				transaction := &model.Transaction{
+					UserId:      u.Id,
+					OrderId:     result.Id,
+					Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
+					Value:       accural,
+					Type:        model.TRANSACTION_TYPE_BONUS,
+				}
+
+				if transaction.Value > 0 {
+					c.App.AccrualTransaction(transaction)
+				}
+
+				if u, e = c.App.GetUser(u.InvitedBy); e != nil {
+					break
+				}
+			}
+		}
+
 	}
 
 	w.Write([]byte(result.ToJson()))

@@ -2091,8 +2091,16 @@ func (a *App) GetUserInviteToken(user *model.User) (*model.Token, *model.AppErro
 		return nil, result.Err
 	} else {
 		token = result.Data.(*model.Token)
+
 		if model.GetMillis()-token.CreateAt >= TOKEN_RECOVER_EXPIRY_TIME {
-			return nil, model.NewAppError("GetUserInviteToken", "api.user.verify.invite_token.expired", nil, "", http.StatusBadRequest)
+
+			code := utils.HashDigit(6)
+			if token, err := a.CreateInviteToken(user, code); err != nil {
+				return nil, model.NewAppError("GetUserInviteToken", "api.user.verify.invite_token.expired", nil, "", http.StatusBadRequest)
+			} else {
+				return token, nil
+			}
+
 		}
 
 		return token, nil
