@@ -236,7 +236,7 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoG
 			whereClause = whereClause + " p.Active = :Active AND "
 		}
 
-		query := "SELECT * FROM Promos" +
+		query := "SELECT * FROM Promos p " +
 			" WHERE " + whereClause +
 			" DeleteAt = 0 " +
 			" ORDER BY CreateAt DESC " +
