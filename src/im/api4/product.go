@@ -14,6 +14,7 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(deleteProduct)).Methods("DELETE")
 	api.BaseRoutes.Product.Handle("/status", api.ApiHandler(updateProductStatus)).Methods("PUT")
+	//api.BaseRoutes.Products.Handle("/status", api.ApiHandler(updateProductsStatuses)).Methods("PUT")
 }
 
 func updateProductStatus(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -172,6 +173,13 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 		AppId:      c.Params.AppId,
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
+		Status:     c.Params.Status,
+		Active:     &c.Params.Active,
+	}
+
+	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
+		productGetOptions.Status = model.PRODUCT_STATUS_ACCEPTED
+		productGetOptions.Active = model.NewBool(true)
 	}
 
 	//afterProduct := r.URL.Query().Get("after")

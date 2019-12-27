@@ -65,6 +65,7 @@ type Params struct {
 	Permanent        bool
 	RemoteId         string
 	Status           string
+	Active           bool
 
 	Sort         string
 	BotUserId    string
@@ -261,6 +262,10 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, err := strconv.ParseBool(query.Get("permanent")); err == nil {
 		params.Permanent = val
+	}
+
+	if val, err := strconv.ParseBool(query.Get("active")); err == nil {
+		params.Active = val
 	}
 
 	if val, err := strconv.Atoi(query.Get("per_page")); err != nil || val < 0 {

@@ -61,10 +61,16 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
+		Active:     &c.Params.Active,
 	}
 
 	if len(promoGetOptions.AppId) == 0 {
 		promoGetOptions.AppId = c.App.Session.AppId
+	}
+
+	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
+		promoGetOptions.Status = model.PROMO_STATUS_ACCEPTED
+		promoGetOptions.Active = model.NewBool(true)
 	}
 
 	afterPromo := r.URL.Query().Get("after")

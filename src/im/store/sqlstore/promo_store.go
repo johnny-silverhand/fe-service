@@ -221,23 +221,35 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoG
 			return
 		}
 
-		appQuery := ""
+		var whereClause string
+		queryArgs := make(map[string]interface{})
 
 		if options.AppId != "" {
-			appQuery = " AND AppId = :AppId "
+			whereClause = whereClause + " p.AppId = :AppId AND "
 		}
-
-		statusQuery := ""
 
 		if options.Status != "" {
-			statusQuery = " AND Status = :Status "
+			whereClause = whereClause + " p.Status = :Status AND "
 		}
 
+		if options.Active != nil {
+			whereClause = whereClause + " p.Active = :Active AND "
+		}
+
+		query := "SELECT * FROM Promos" +
+			" WHERE " + whereClause +
+			" DeleteAt = 0 " +
+			" ORDER BY CreateAt DESC " +
+			"LIMIT :Limit OFFSET :Offset"
+
+		queryArgs["Limit"] = limit
+		queryArgs["Offset"] = offset
+		queryArgs["AppId"] = options.AppId
+		queryArgs["Status"] = options.Status
+		queryArgs["Active"] = options.Active
+
 		var promos []*model.Promo
-		_, err := s.GetReplica().Select(&promos, "SELECT * FROM Promos WHERE "+
-			" DeleteAt = 0 "+appQuery+statusQuery+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset",
-			map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": options.AppId, "Status": options.Status})
+		_, err := s.GetReplica().Select(&promos, query, queryArgs)
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)

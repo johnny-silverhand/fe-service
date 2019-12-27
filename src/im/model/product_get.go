@@ -15,4 +15,6 @@ type ProductGetOptions struct {
 	OfficeId string
 	// Filter the products by status
 	Status string
+	// Filter the products by active
+	Active *bool
 }

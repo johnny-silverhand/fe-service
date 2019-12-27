@@ -8,12 +8,14 @@ type PromoGetOptions struct {
 	Page int
 	// Page size
 	PerPage int
-	// Filter the products by application id
+	// Filter the promos by application id
 	AppId string
-	// Filter the products by category id
+	// Filter the promos by category id
 	CategoryId string
-	// Filter the products by office id
+	// Filter the promos by office id
 	OfficeId string
-	// Filter the products by status
+	// Filter the promos by status
 	Status string
+	// Filter the promo by active
+	Active *bool
 }
