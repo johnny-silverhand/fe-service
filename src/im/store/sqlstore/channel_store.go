@@ -2602,14 +2602,6 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 			return
 		}
 
-		/*teamId := "qbo8zjqmb38jfgcagigc7ucwt2"
-
-		if user.AppId == "469kzyabijfqxgxpg8fosg8rwa" {
-			teamId = "jr8ndka6zpbuff1xxx7bg3buj1"
-		} else if user.AppId == "469kzyabijfqxgxpg8fosg8rwb" {
-			teamId = "jr8ndka6zpbuff1xxx7bg3buj2"
-		}*/
-
 		channel.Name = name
 		channel.DisplayName = name
 		channel.Header = name

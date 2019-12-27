@@ -280,7 +280,7 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	product.Id = c.Params.ProductId
-
+	product.Status = model.PRODUCT_STATUS_DRAFT
 	rproduct, err := c.App.UpdateProduct(product, false)
 	if err != nil {
 		c.Err = err

@@ -54,8 +54,7 @@ func (s SqlCategoryStore) Update(category *model.Category) store.StoreChannel {
 
 func (s SqlCategoryStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var query = `select c.* from categories c 
-					 where Id = :Id`
+		var query = `SELECT c.* FROM Categories c WHERE Id = :Id`
 
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
@@ -83,17 +82,17 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int, appId *string) store
 			appQuery = " where c.AppId = :AppId "
 		}
 
-		var query = `select c.*, childs.cnt as CntChild 
-					from categories c 
-					left join (
-						select ParentId, count(Id) cnt
-						from categories
-						where ParentId is not null
-						group by ParentId ) childs on c.Id = childs.ParentId
+		var query = `SELECT C.*, Childs.Cnt as CntChild 
+					FROM Categories C 
+					LEFT JOIN (
+						SELECT ParentId, Count(Id) Cnt
+						FROM Categories
+						WHERE ParentId IS NOT NULL
+						GROUP BY ParentId ) Childs ON C.Id = Childs.ParentId
 					` + appQuery + `
-					 order by UpdateAt Desc, Id Desc
-					 limit :Limit
-					 offset :Offset`
+					 ORDER BY UpdateAt DESC, Id DESC
+					 LIMIT :Limit
+					 OFFSET :Offset`
 
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
@@ -107,15 +106,15 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int, appId *string) store
 
 func (s SqlCategoryStore) GetAllByApp(appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var query = `select c.*, childs.cnt as CntChild
-					 from categories c 
-					 left join (
-						select ParentId, count(Id) cnt
-						from categories
-						where ParentId is not null
-						group by ParentId ) childs on c.Id = childs.ParentId
-					 where AppId = :AppId
-					 order by UpdateAt Desc, Id Desc`
+		var query = `SELECT C.*, Childs.Cnt AS CntChild
+					 FROM Categories C 
+					 LEFT JOIN (
+						SELECT ParentId, Count(Id) Cnt
+						FROM Categories
+						WHERE ParentId IS NOT NULL
+						GROUP BY ParentId ) Childs ON C.Id = Childs.ParentId
+					 WHERE AppId = :AppId
+					 ORDER BY UpdateAt DESC, Id DESC`
 		var category *model.Category
 		if err := s.GetReplica().SelectOne(&category,
 			query, map[string]interface{}{"AppId": appId}); err != nil {
@@ -128,17 +127,17 @@ func (s SqlCategoryStore) GetAllByApp(appId string) store.StoreChannel {
 
 func (s SqlCategoryStore) GetAllByAppPage(appId string, offset int, limit int) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var query = `select c.*, childs.cnt as CntChild
-					 from categories c 
-					 left join (
-						select ParentId, count(Id) cnt
-						from categories
-						where ParentId is not null
-						group by ParentId ) childs on c.Id = childs.ParentId
-					 where AppId = :AppId
-					 order by UpdateAt Desc, Id Desc
-					 limit :Limit
-					 offset :Offset`
+		var query = `SELECT C.*, Childs.Cnt AS CntChild
+					 FROM Categories C 
+					 LEFT JOIN (
+						SELECT ParentId, Count(Id) Cnt
+						FROM Categories
+						WHERE ParentId IS NOT NULL
+						GROUP BY ParentId ) Childs ON C.Id = Childs.ParentId
+					 WHERE AppId = :AppId
+					 ORDER by UpdateAt DESC, Id DESC
+					 LIMIT :Limit
+					 OFFSET :Offset`
 		var categories []*model.Category
 		if _, err := s.GetReplica().Select(&categories,
 			query, map[string]interface{}{"AppId": appId, "Limit": limit, "Offset": offset}); err != nil {
@@ -154,7 +153,7 @@ func (s SqlCategoryStore) GetDescendants(category *model.Category) store.StoreCh
 		var descendants []*model.Category
 		if _, err := s.GetReplica().Select(&descendants,
 			`SELECT *
-					FROM categories
+					FROM Categories
 					WHERE ParentId = :ParentId
 					ORDER BY UpdateAt DESC, Id DESC`, map[string]interface{}{"ParentId": category.Id}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetDescendants", "store.sql_category.get_descendants.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -170,7 +169,7 @@ func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel 
 			root       *model.Category
 			categories []*model.Category
 		)
-		rootQuery := `select * from categories where id = :Id`
+		rootQuery := `SELECT * FROM Categories WHERE id = :Id`
 		if err := s.GetMaster().SelectOne(&root, rootQuery, map[string]interface{}{"Id": categoryId}); err != nil {
 			result.Err = model.NewAppError("SqlCategoryStore.GetCategoryPath",
 				"store.sql_category.get_category_path.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -178,10 +177,10 @@ func (s SqlCategoryStore) GetCategoryPath(categoryId string) store.StoreChannel 
 		}
 
 		if _, err := s.GetMaster().Select(&categories, `
-			select * 
-			from categories 
-			where lft >= :Lft and rgt <= :Rgt and appId = :AppId 
-			order by lft desc`,
+			SELECT * 
+			FROM Categories 
+			WHERE Lft >= :Lft and Rgt <= :Rgt and AppId = :AppId 
+			ORDER BY Lft DESC`,
 			map[string]interface{}{
 				"Lft":   root.Lft,
 				"Rgt":   root.Rgt,
@@ -215,10 +214,10 @@ func (s SqlCategoryStore) GetCategoriesByIds(categoryIds []string) store.StoreCh
 		}
 
 		if _, err := s.GetMaster().Select(&categories, `
-			SELECT distinct p.* 
-			FROM categories AS n, categories AS p 
-			WHERE n.lft BETWEEN p.lft AND p.rgt AND n.Id IN (`+idQuery+`) 
-			ORDER BY p.lft`,
+			SELECT DISTINCT p.* 
+			FROM Categories AS N, Categories AS P 
+			WHERE N.Lft BETWEEN P.Lft AND P.Rgt AND N.Id IN (`+idQuery+`) 
+			ORDER BY P.Lft`,
 			props); err != nil {
 
 			if err == sql.ErrNoRows {

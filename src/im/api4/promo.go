@@ -158,7 +158,7 @@ func updatePromo(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	promo.Id = c.Params.PromoId
-
+	promo.Status = model.PROMO_STATUS_DRAFT
 	rpromo, err := c.App.UpdatePromo(promo, false)
 	if err != nil {
 		c.Err = err

@@ -33,7 +33,11 @@ func (s SqlApplicationStore) CreateIndexesIfNotExists() {
 func (s SqlApplicationStore) Activate(appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
-		_, err := s.GetMaster().Exec("UPDATE Applications SET Active = :Active, UpdateAt =:UpdateAt WHERE Id = :Id ", map[string]interface{}{"Active": true, "UpdateAt": model.GetMillis(), "Id": appId})
+		_, err := s.GetMaster().Exec("UPDATE Applications SET Active = :Active, UpdateAt =:UpdateAt WHERE Id = :Id ",
+			map[string]interface{}{
+				"Active":   true,
+				"UpdateAt": model.GetMillis(),
+				"Id":       appId})
 		if err != nil {
 			result.Err = model.NewAppError("SqlApplicationStore.Publish", "store.sql_applications.publish.app_error", nil, err.Error(), http.StatusInternalServerError)
 
@@ -44,7 +48,11 @@ func (s SqlApplicationStore) Activate(appId string) store.StoreChannel {
 func (s SqlApplicationStore) Deactivate(appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
-		_, err := s.GetMaster().Exec("UPDATE Applications SET Active = :Active, UpdateAt =:UpdateAt WHERE Id = :Id ", map[string]interface{}{"Active": false, "UpdateAt": model.GetMillis(), "Id": appId})
+		_, err := s.GetMaster().Exec("UPDATE Applications SET Active = :Active, UpdateAt =:UpdateAt WHERE Id = :Id ",
+			map[string]interface{}{
+				"Active":   false,
+				"UpdateAt": model.GetMillis(),
+				"Id":       appId})
 		if err != nil {
 			result.Err = model.NewAppError("SqlApplicationStore.Disable", "store.sql_applications.publish.app_error", nil, err.Error(), http.StatusInternalServerError)
 
@@ -59,12 +67,6 @@ func (s *SqlApplicationStore) Save(application *model.Application) store.StoreCh
 		if len(application.Id) > 0 {
 			result.Err = model.NewAppError("SqlApplicationStore.Save", "store.sql_application.save.existing.app_error", nil, "id="+application.Id, http.StatusBadRequest)
 			return
-		}
-
-		if application.Name == "Фудэкспресс1" {
-			application.Id = "469kzyabijfqxgxpg8fosg8rwa"
-		} else if application.Name == "Фудэкспресс2" {
-			application.Id = "469kzyabijfqxgxpg8fosg8rwb"
 		}
 
 		application.PreSave()

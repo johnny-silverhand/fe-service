@@ -16,6 +16,8 @@ func (api *API) InitOrder() {
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(getAllOrders)).Methods("GET")
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
+	api.BaseRoutes.Orders.Handle("/invoice", api.ApiHandler(createInvoice)).Methods("POST")
+
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/cancel", api.ApiHandler(cancelOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/prepayment", api.ApiHandler(getPaymentOrderUrl)).Methods("GET")
@@ -23,6 +25,10 @@ func (api *API) InitOrder() {
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(updateOrder)).Methods("PUT")
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(deleteOrder)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/orders", api.ApiSessionRequired(getUserOrders)).Methods("GET")
+
+}
+
+func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -113,6 +119,9 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	} else {
+
+		c.App.SetOrderPayed(c.Params.OrderId)
+
 		w.Write([]byte(response.ToJson()))
 	}
 
