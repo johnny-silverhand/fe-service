@@ -272,6 +272,8 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.Measure = product.Measure
 	newProduct.AppId = product.AppId
 
+	newProduct.Status = model.PRODUCT_STATUS_DRAFT
+
 	//if !safeUpdate {
 	newProduct.Media = product.Media
 	newProduct.Offices = product.Offices

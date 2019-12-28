@@ -117,6 +117,8 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 	newPromo.Media = promo.Media
 	//}
 
+	newPromo.Status = model.PROMO_STATUS_DRAFT
+
 	a.deleteMediaFromPromo(oldPromo, newPromo)
 
 	if len(newPromo.Media) > 0 {

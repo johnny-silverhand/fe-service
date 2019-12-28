@@ -174,7 +174,7 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
-		Active:     &c.Params.Active,
+		//Active:     &c.Params.Active,
 	}
 
 	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
@@ -280,7 +280,7 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	product.Id = c.Params.ProductId
-	product.Status = model.PRODUCT_STATUS_DRAFT
+
 	rproduct, err := c.App.UpdateProduct(product, false)
 	if err != nil {
 		c.Err = err
