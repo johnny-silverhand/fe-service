@@ -7,16 +7,49 @@ import (
 )
 
 func (api *API) InitPromo() {
+	api.BaseRoutes.Promos.Handle("/status", api.ApiHandler(updatePromosStatuses)).Methods("PUT")
+	api.BaseRoutes.Promos.Handle("/{promo_id:[A-Za-z0-9]+}", api.ApiHandler(updatePromo)).Methods("PUT")
 
 	api.BaseRoutes.Promos.Handle("", api.ApiHandler(getAllPromos)).Methods("GET")
 	api.BaseRoutes.Promos.Handle("", api.ApiHandler(createPromo)).Methods("POST")
 
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(getPromo)).Methods("GET")
-	api.BaseRoutes.Promo.Handle("", api.ApiHandler(updatePromo)).Methods("PUT")
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(deletePromo)).Methods("DELETE")
 
 	api.BaseRoutes.Promo.Handle("/status", api.ApiHandler(updatePromoStatus)).Methods("PUT")
 
+}
+
+func updatePromosStatuses(c *Context, w http.ResponseWriter, r *http.Request) {
+
+	if c.Err != nil {
+		return
+	}
+
+	status := model.PromoStatusFromJson(r.Body)
+	if status == nil {
+		c.SetInvalidParam("status")
+		return
+	}
+
+	// The user being updated in the payload must be the same one as indicated in the URL.
+	if len(status.PromoIds) == 0 {
+		c.SetInvalidParam("promo_ids")
+		return
+	}
+
+	//product, err := c.App.GetProduct(c.Params.ProductId)
+	/*if err == nil && product.Status == model.STATUS_OUT_OF_OFFICE && status.Status != model.STATUS_OUT_OF_OFFICE {
+		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
+	}*/
+
+	c.App.Srv.Go(func() {
+		for _, promoId := range status.PromoIds {
+			c.App.UpdatePromoStatus(promoId, status)
+		}
+	})
+
+	ReturnStatusOK(w)
 }
 
 func updatePromoStatus(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -61,7 +94,10 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
-		//Active:     &c.Params.Active,
+	}
+
+	if active := r.URL.Query().Get("active"); active != "" {
+		promoGetOptions.Active = &c.Params.Active
 	}
 
 	if len(promoGetOptions.AppId) == 0 {

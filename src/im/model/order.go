@@ -115,6 +115,14 @@ func (o *Order) IsValid() *AppError {
 		return NewAppError("Order.IsValid", "model.order.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
 
+	if len(o.UserId) != 26 {
+		return NewAppError("Order.IsValid", "model.order.is_valid.user_id.app_error", nil, "id="+o.Id, http.StatusBadRequest)
+	}
+
+	if len(o.Phone) == 0 {
+		return NewAppError("Order.IsValid", "model.order.is_valid.phone.app_error", nil, "id="+o.Id, http.StatusBadRequest)
+	}
+
 	return nil
 }
 

@@ -14,9 +14,8 @@ import (
 func (api *API) InitOrder() {
 
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(getAllOrders)).Methods("GET")
-	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
-
 	api.BaseRoutes.Orders.Handle("/invoice", api.ApiHandler(createInvoice)).Methods("POST")
+	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/cancel", api.ApiHandler(cancelOrder)).Methods("GET")
@@ -29,7 +28,50 @@ func (api *API) InitOrder() {
 }
 
 func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
+	//var user *model.User
+	var err *model.AppError
+	order := model.OrderFromJson(r.Body)
 
+	if order == nil {
+		c.SetInvalidParam("order")
+		return
+	}
+
+	result, err := c.App.CreateOrderInvoice(order)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	/*if list, err := c.App.GetAllLevelsPage(0, 60, &user.AppId); err == nil {
+		list.SortByLvl()
+
+		if u, e := c.App.GetUser(user.InvitedBy); e == nil {
+			for _, id := range list.Order {
+				accural := math.Floor(result.Price * (list.Levels[id].Value / 100))
+
+				transaction := &model.Transaction{
+					UserId:      u.Id,
+					OrderId:     result.Id,
+					Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
+					Value:       accural,
+					Type:        model.TRANSACTION_TYPE_BONUS,
+				}
+
+				if transaction.Value > 0 {
+					c.App.AccrualTransaction(transaction)
+				}
+
+				if u, e = c.App.GetUser(u.InvitedBy); e != nil {
+					break
+				}
+			}
+		}
+
+	}*/
+
+	w.Write([]byte(result.ToJson()))
 }
 
 func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -120,7 +162,9 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 
-		c.App.SetOrderPayed(c.Params.OrderId)
+		/*c.App.Srv.Go(func() {
+			c.App.SetOrderPayed(c.Params.OrderId)
+		})*/
 
 		w.Write([]byte(response.ToJson()))
 	}
@@ -299,12 +343,12 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 	} else {*/
 	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
 	//}
-
+	price := order.Price * 100
 	var requestRegistration = aquiring.RequestRegistration{
 		OrderNumber: strconv.FormatInt(time.Now().UnixNano(), 10),
 		Description: "",
-		Amount:      "100000", // потому что нужно значение в копейках
-		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/order/" + order.Id + "/status",
+		Amount:      strconv.FormatInt(int64(price), 10), // потому что нужно значение в копейках
+		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/orders/" + order.Id + "/status",
 	}
 
 	if r, err := client.PostRequest("/register.do", requestRegistration); err != nil {
@@ -321,7 +365,9 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
 
-	c.App.SetOrderPayed(c.Params.OrderId)
+	c.App.Srv.Go(func() {
+		c.App.SetOrderPayed(c.Params.OrderId)
+	})
 
 	if c.Err != nil {
 		return

@@ -48,9 +48,10 @@ type ProductPatch struct {
 }
 
 type ProductStatus struct {
-	ProductId string `json:"product_id"`
-	Status    string `json:"status"`
-	Active    bool   `json:"active"`
+	ProductIds []string `json:"product_ids"`
+	ProductId  string   `json:"product_id"`
+	Status     string   `json:"status"`
+	Active     bool     `json:"active"`
 }
 
 func ProductStatusFromJson(data io.Reader) *ProductStatus {

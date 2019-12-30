@@ -76,6 +76,28 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 	return order, nil
 }
 
+func (a *App) CreateOrderInvoice(order *model.Order) (*model.Order, *model.AppError) {
+	result := <-a.Srv.Store.Order().Save(order)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	newOrder := result.Data.(*model.Order)
+	var msg string
+	msg += fmt.Sprintf("Счет на оплату № %s \n", newOrder.FormatOrderNumber())
+
+	post := &model.Post{
+		UserId:   newOrder.UserId,
+		Message:  msg,
+		CreateAt: model.GetMillis() + 1,
+		Type:     model.POST_WITH_INVOICE,
+	}
+
+	a.CreatePostWithOrder(post, newOrder, false)
+
+	return newOrder, nil
+}
+
 func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 	// проверка DiscountValue на превышение допустимого лимита оплаты бонусами в заказе
 	var productIds = make([]string, 0)
@@ -279,11 +301,11 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 		return result.Err
 	} else {
 
-		a.AccrualTransaction(&model.Transaction{
+		/*a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
 			UserId:  order.UserId,
 			Value:   math.Floor(order.Price * 0.05),
-		})
+		})*/
 
 		post := &model.Post{
 			UserId:   order.UserId,
@@ -312,12 +334,12 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 		return result.Err
 	} else {
 
-		a.DeductionTransaction(&model.Transaction{
+		/*a.DeductionTransaction(&model.Transaction{
 			OrderId:     order.Id,
 			UserId:      order.UserId,
 			Value:       -math.Floor(order.Price * 0.05),
 			Description: "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
-		})
+		})*/
 
 		post := &model.Post{
 			UserId:   order.UserId,

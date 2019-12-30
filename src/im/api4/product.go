@@ -6,15 +6,53 @@ import (
 )
 
 func (api *API) InitProduct() {
-	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET")
+	api.BaseRoutes.Products.Handle("/status", api.ApiHandler(updateProductsStatuses)).Methods("PUT")
+	api.BaseRoutes.Products.Handle("/{product_id:[A-Za-z0-9]+}", api.ApiHandler(updateProduct)).Methods("PUT")
+
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(getProducts)).Methods("GET")
-	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
-	api.BaseRoutes.Product.Handle("", api.ApiHandler(updateProduct)).Methods("PUT")
-	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
+
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
+	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
+
+	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET")
+
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(deleteProduct)).Methods("DELETE")
+
 	api.BaseRoutes.Product.Handle("/status", api.ApiHandler(updateProductStatus)).Methods("PUT")
-	//api.BaseRoutes.Products.Handle("/status", api.ApiHandler(updateProductsStatuses)).Methods("PUT")
+
+	api.BaseRoutes.ProductsForCategory.Handle("", api.ApiHandler(getProductsForCategory)).Methods("GET")
+}
+
+func updateProductsStatuses(c *Context, w http.ResponseWriter, r *http.Request) {
+
+	if c.Err != nil {
+		return
+	}
+
+	status := model.ProductStatusFromJson(r.Body)
+	if status == nil {
+		c.SetInvalidParam("status")
+		return
+	}
+
+	// The user being updated in the payload must be the same one as indicated in the URL.
+	if len(status.ProductIds) == 0 {
+		c.SetInvalidParam("product_ids")
+		return
+	}
+
+	//product, err := c.App.GetProduct(c.Params.ProductId)
+	/*if err == nil && product.Status == model.STATUS_OUT_OF_OFFICE && status.Status != model.STATUS_OUT_OF_OFFICE {
+		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
+	}*/
+
+	c.App.Srv.Go(func() {
+		for _, productId := range status.ProductIds {
+			c.App.UpdateProductStatus(productId, status)
+		}
+	})
+
+	ReturnStatusOK(w)
 }
 
 func updateProductStatus(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -174,7 +212,10 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
-		//Active:     &c.Params.Active,
+	}
+
+	if active := r.URL.Query().Get("active"); active != "" {
+		productGetOptions.Active = &c.Params.Active
 	}
 
 	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
