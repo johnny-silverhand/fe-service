@@ -948,6 +948,8 @@ func (us SqlUserStore) GetForLogin(loginId string, allowSignInWithUsername, allo
 	return store.Do(func(result *store.StoreResult) {
 		query := us.usersQuery
 
+		query = query.Where("roles != ?", model.CHANNEL_USER_ROLE_ID)
+
 		if allowSignInWithUsername && allowSignInWithEmail {
 			query = query.Where("Username = ? OR Email = ?", loginId, loginId)
 		} else if allowSignInWithUsername {

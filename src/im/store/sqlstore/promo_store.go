@@ -381,3 +381,57 @@ func (s SqlPromoStore) getAllPromosAround(promoId string, numPromos int, offset 
 		}
 	})
 }
+
+func (s SqlPromoStore) GetForModeration(options *model.PromoGetOptions) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if options == nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetForModeration", "store.sql_promo.promo_get_options.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
+
+		var whereClause string
+		queryArgs := make(map[string]interface{})
+
+		if options.AppId != "" {
+			whereClause = whereClause + " p.AppId = :AppId AND "
+		}
+
+		if options.Status != "" {
+			whereClause = whereClause + " p.Status = :Status AND "
+		}
+
+		if options.Active != nil {
+			whereClause = whereClause + " p.Active = :Active AND "
+		}
+
+		query := "SELECT * FROM Promos p " +
+			" WHERE " + whereClause +
+			" DeleteAt = 0 " +
+			" ORDER BY CreateAt DESC "
+
+		queryArgs["AppId"] = options.AppId
+		queryArgs["Status"] = model.PROMO_STATUS_MODERATION
+		queryArgs["Active"] = options.Active
+
+		var promos []*model.Promo
+		_, err := s.GetReplica().Select(&promos, query, queryArgs)
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetForModeration", "store.sql_promo.get_for_moderation.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+
+		if err == nil {
+
+			list := model.NewPromoList()
+
+			for _, p := range promos {
+				list.AddPromo(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}

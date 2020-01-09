@@ -161,6 +161,10 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	} else {
+		c.App.Srv.Go(func() {
+			order.PaySystemCode = *response.OrderId
+			c.App.UpdateOrder(order, false)
+		})
 
 		/*c.App.Srv.Go(func() {
 			c.App.SetOrderPayed(c.Params.OrderId)
@@ -364,6 +368,16 @@ func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.A
 
 func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
+
+	/*var client *aquiring.Client
+	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
+
+	var requestOrderStatus = aquiring.RequestOrderStatus{
+		OrderId: ,
+	}
+
+	r, err := client.PostRequest("getOrderStatus.do", requestOrderStatus)
+	*/
 
 	c.App.Srv.Go(func() {
 		c.App.SetOrderPayed(c.Params.OrderId)

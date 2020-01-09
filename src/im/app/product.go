@@ -76,6 +76,19 @@ func (a *App) GetProductsByApp(offset int, limit int, sort string, appId string)
 
 }
 
+func (a *App) GetProductsForModeration(options *model.ProductGetOptions) (*model.ProductList, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().GetForModeration(options)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	list := a.PrepareProductListForClient(result.Data.(*model.ProductList))
+
+	return list, nil
+}
+
 func (a *App) GetProducts(offset, limit int, options *model.ProductGetOptions) (*model.ProductList, *model.AppError) {
 
 	result := <-a.Srv.Store.Product().GetAllPage(offset, limit, options)

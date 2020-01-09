@@ -46,11 +46,11 @@ func updateProductsStatuses(c *Context, w http.ResponseWriter, r *http.Request) 
 		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
 	}*/
 
-	c.App.Srv.Go(func() {
-		for _, productId := range status.ProductIds {
-			c.App.UpdateProductStatus(productId, status)
-		}
-	})
+	//c.App.Srv.Go(func() {
+	for _, productId := range status.ProductIds {
+		c.App.UpdateProductStatus(productId, status)
+	}
+	//})
 
 	ReturnStatusOK(w)
 }

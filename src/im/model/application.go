@@ -34,6 +34,8 @@ type Application struct {
 	AqPassword string `json:"aq_password"`
 
 	Cash bool `json:"cash"`
+
+	ModerationCount int `db:"-" json:"moderation_count,omitempty"`
 }
 
 type ApplicationPatch struct {

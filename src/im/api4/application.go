@@ -221,7 +221,8 @@ func getAllApplications(c *Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
-	w.Write([]byte(list.ToJson()))
+	//w.Write([]byte(list.ToJson()))
+	w.Write([]byte(c.App.PrepareApplicationListForClient(list).ToJson()))
 }
 
 func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {

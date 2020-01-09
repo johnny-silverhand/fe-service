@@ -616,3 +616,57 @@ func generateProductSearchQuery(query sq.SelectBuilder, terms []string, fields [
 
 	return query
 }
+
+func (s SqlProductStore) GetForModeration(options *model.ProductGetOptions) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if options == nil {
+			result.Err = model.NewAppError("SqlProductStore.GetForModeration", "store.sql_product.products_get_options.app_error", nil, "", http.StatusBadRequest)
+			return
+		}
+
+		var whereClause string
+		queryArgs := make(map[string]interface{})
+
+		if options.AppId != "" {
+			whereClause = whereClause + " p.AppId = :AppId AND "
+		}
+
+		if options.Status != "" {
+			whereClause = whereClause + " p.Status = :Status AND "
+		}
+
+		if options.Active != nil {
+			whereClause = whereClause + " p.Active = :Active AND "
+		}
+
+		query := "SELECT * FROM Products p " +
+			" WHERE " + whereClause +
+			" DeleteAt = 0 " +
+			" ORDER BY CreateAt DESC "
+
+		queryArgs["AppId"] = options.AppId
+		queryArgs["Status"] = model.PRODUCT_STATUS_MODERATION
+		queryArgs["Active"] = options.Active
+
+		var products []*model.Product
+		_, err := s.GetReplica().Select(&products, query, queryArgs)
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlProductStore.GetForModeration", "store.sql_product.get_for_moderation.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}
+
+		if err == nil {
+
+			list := model.NewProductList()
+
+			for _, p := range products {
+				list.AddProduct(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}

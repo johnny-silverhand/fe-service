@@ -40,6 +40,19 @@ func (a *App) GetPromosByApp(offset int, limit int, sort string, appId string) (
 	return list, nil
 }
 
+func (a *App) GetPromosForModeration(options *model.PromoGetOptions) (*model.PromoList, *model.AppError) {
+
+	result := <-a.Srv.Store.Promo().GetForModeration(options)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	list := a.PreparePromoListForClient(result.Data.(*model.PromoList))
+
+	return list, nil
+}
+
 func (a *App) GetPromos(offset int, limit int, sort string) (*model.PromoList, *model.AppError) {
 
 	result := <-a.Srv.Store.Promo().GetAllPage(offset, limit, model.GetOrder(sort))

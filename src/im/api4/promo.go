@@ -13,7 +13,7 @@ func (api *API) InitPromo() {
 	api.BaseRoutes.Promos.Handle("", api.ApiHandler(getAllPromos)).Methods("GET")
 	api.BaseRoutes.Promos.Handle("", api.ApiHandler(createPromo)).Methods("POST")
 
-	api.BaseRoutes.Promo.Handle("", api.ApiHandler(getPromo)).Methods("GET")
+	api.BaseRoutes.Promos.Handle("/{promo_id:[A-Za-z0-9]+}", api.ApiHandler(getPromo)).Methods("GET")
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(deletePromo)).Methods("DELETE")
 
 	api.BaseRoutes.Promo.Handle("/status", api.ApiHandler(updatePromoStatus)).Methods("PUT")
@@ -43,11 +43,11 @@ func updatePromosStatuses(c *Context, w http.ResponseWriter, r *http.Request) {
 		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
 	}*/
 
-	c.App.Srv.Go(func() {
-		for _, promoId := range status.PromoIds {
-			c.App.UpdatePromoStatus(promoId, status)
-		}
-	})
+	//c.App.Srv.Go(func() {
+	for _, promoId := range status.PromoIds {
+		c.App.UpdatePromoStatus(promoId, status)
+	}
+	//})
 
 	ReturnStatusOK(w)
 }

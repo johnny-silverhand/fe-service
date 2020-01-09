@@ -533,6 +533,7 @@ type ProductStore interface {
 	/*	Publish(product *model.Product) StoreChannel
 		GetExtras(product *model.Product) StoreChannel*/
 	Search(categoryId, terms string, page, perPage int) StoreChannel
+	GetForModeration(options *model.ProductGetOptions) StoreChannel
 }
 
 type CategoryStore interface {
@@ -562,6 +563,8 @@ type PromoStore interface {
 	GetAllPromosSince(time int64, options *model.PromoGetOptions) StoreChannel
 	GetAllPromosBefore(promoId string, numPromos int, offset int, options *model.PromoGetOptions) StoreChannel
 	GetAllPromosAfter(promoId string, numPromos int, offset int, options *model.PromoGetOptions) StoreChannel
+
+	GetForModeration(options *model.PromoGetOptions) StoreChannel
 }
 
 type OfficeStore interface {

@@ -41,6 +41,7 @@ const (
 	TEAM_INVITATION_EXPIRY_TIME   = 1000 * 60 * 60 * 48 // 48 hours
 	TOKEN_RECOVER_EXPIRY_TIME     = 1000 * 60 * 10      // 1 hour
 	IMAGE_PROFILE_PIXEL_DIMENSION = 128
+	TOKEN_INVITE_EXPIRY_TIME      = 1000 * 60 * 60 * 24 // 24 hours
 )
 
 func (a *App) PreCreateUser(user *model.User) (*model.User, *model.AppError) {
@@ -2092,7 +2093,7 @@ func (a *App) GetUserInviteToken(user *model.User) (*model.Token, *model.AppErro
 	} else {
 		token = result.Data.(*model.Token)
 
-		if model.GetMillis()-token.CreateAt >= TOKEN_RECOVER_EXPIRY_TIME {
+		if model.GetMillis()-token.CreateAt >= TOKEN_INVITE_EXPIRY_TIME {
 
 			code := utils.HashDigit(6)
 			if token, err := a.CreateInviteToken(user, code); err != nil {

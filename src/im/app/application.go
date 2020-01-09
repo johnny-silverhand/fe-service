@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"im/mlog"
 	"im/model"
 	"im/store"
 	"net/http"
@@ -157,6 +158,20 @@ func (a *App) UpdateApplication(id string, patch *model.ApplicationPatch, safeUp
 
 func (a *App) PrepareApplicationForClient(originalApplication *model.Application, isNewApplication bool) *model.Application {
 	application := originalApplication.Clone()
+	application.ModerationCount = 0
+	if productsForModeration, err := a.GetProductsForModeration(&model.ProductGetOptions{AppId: application.Id}); err != nil {
+		mlog.Warn("Failed to get products for a moderation", mlog.String("application_id", application.Id), mlog.Any("err", err))
+	} else {
+		application.ModerationCount += len(productsForModeration.Products)
+	}
+
+	if promosForModeration, err := a.GetPromosForModeration(&model.PromoGetOptions{AppId: application.Id}); err != nil {
+		mlog.Warn("Failed to get promos for a moderation", mlog.String("application_id", application.Id), mlog.Any("err", err))
+	} else {
+		application.ModerationCount += len(promosForModeration.Promos)
+	}
+
+	//application.ModerationCount = 999
 
 	//application.Metadata.Images = a.getCategoryForApplication(application)
 
