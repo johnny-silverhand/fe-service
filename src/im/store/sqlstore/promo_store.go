@@ -396,13 +396,13 @@ func (s SqlPromoStore) GetForModeration(options *model.PromoGetOptions) store.St
 			whereClause = whereClause + " p.AppId = :AppId AND "
 		}
 
-		if options.Status != "" {
-			whereClause = whereClause + " p.Status = :Status AND "
-		}
+		//if options.Status != "" {
+		whereClause = whereClause + " p.Status = :Status AND "
+		//}
 
-		if options.Active != nil {
+		/*if options.Active != nil {
 			whereClause = whereClause + " p.Active = :Active AND "
-		}
+		}*/
 
 		query := "SELECT * FROM Promos p " +
 			" WHERE " + whereClause +
@@ -411,7 +411,7 @@ func (s SqlPromoStore) GetForModeration(options *model.PromoGetOptions) store.St
 
 		queryArgs["AppId"] = options.AppId
 		queryArgs["Status"] = model.PROMO_STATUS_MODERATION
-		queryArgs["Active"] = options.Active
+		//queryArgs["Active"] = options.Active
 
 		var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos, query, queryArgs)

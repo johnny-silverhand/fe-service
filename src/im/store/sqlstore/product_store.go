@@ -631,13 +631,13 @@ func (s SqlProductStore) GetForModeration(options *model.ProductGetOptions) stor
 			whereClause = whereClause + " p.AppId = :AppId AND "
 		}
 
-		if options.Status != "" {
-			whereClause = whereClause + " p.Status = :Status AND "
-		}
+		//if options.Status != "" {
+		whereClause = whereClause + " p.Status = :Status AND "
+		//}
 
-		if options.Active != nil {
+		/*if options.Active != nil {
 			whereClause = whereClause + " p.Active = :Active AND "
-		}
+		}*/
 
 		query := "SELECT * FROM Products p " +
 			" WHERE " + whereClause +
@@ -646,7 +646,7 @@ func (s SqlProductStore) GetForModeration(options *model.ProductGetOptions) stor
 
 		queryArgs["AppId"] = options.AppId
 		queryArgs["Status"] = model.PRODUCT_STATUS_MODERATION
-		queryArgs["Active"] = options.Active
+		//queryArgs["Active"] = options.Active
 
 		var products []*model.Product
 		_, err := s.GetReplica().Select(&products, query, queryArgs)
