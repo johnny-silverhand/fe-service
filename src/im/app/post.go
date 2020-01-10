@@ -1211,7 +1211,7 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	var channel *model.Channel
 	var err *model.AppError
 
-	if channel, err = a.FindOpennedChannel(post.UserId); err == nil {
+	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 	} else {
 
@@ -1227,7 +1227,17 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 
 	post.AddProp("order_id", order.Id)
 
-	return a.CreatePost(post, channel, triggerWebhooks)
+	if rpost, err := a.CreatePost(post, channel, triggerWebhooks); err != nil {
+		return nil, err
+	} else {
+		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", "", nil)
+		message.Add("channel_id", channel.Id)
+		message.Add("team_id", "")
+		a.Publish(message)
+
+		return rpost, nil
+	}
+
 }
 
 func (a *App) CreatePostWithTransaction(post *model.Post, triggerWebhooks bool) (*model.Post, *model.AppError) {
