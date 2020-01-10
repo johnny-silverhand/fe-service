@@ -98,7 +98,8 @@ func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	var err *model.AppError
 	/*if len(tokenId) > 0 {
 		ruser, err = c.App.CreateUserWithToken(user, tokenId)
-	} else*/if len(inviteId) > 0 {
+	} else*/
+	if len(inviteId) > 0 {
 		ruser, err = c.App.CreateUserWithInviteId(user, inviteId)
 	} else if c.IsSystemAdmin() {
 		ruser, err = c.App.CreateUserAsAdmin(user)

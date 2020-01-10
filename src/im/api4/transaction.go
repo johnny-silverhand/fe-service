@@ -7,6 +7,8 @@ import (
 )
 
 func (api *API) InitTransaction() {
+	api.BaseRoutes.Transactions.Handle("/discard", api.ApiHandler(discardTransactionUser)).Methods("POST")
+	api.BaseRoutes.Transactions.Handle("/charge", api.ApiHandler(chargeTransactionUser)).Methods("POST")
 
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(getAllTransactions)).Methods("GET")
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(createTransaction)).Methods("POST")
@@ -15,6 +17,46 @@ func (api *API) InitTransaction() {
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(updateTransaction)).Methods("PUT")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(deleteTransaction)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/transactions", api.ApiSessionRequired(getUserTransactions)).Methods("GET")
+}
+
+func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	transaction := model.TransactionFromJson(r.Body)
+
+	if transaction == nil {
+		c.SetInvalidParam("transaction")
+		return
+	}
+
+	if len(transaction.UserId) != 26 {
+		c.SetInvalidParam("user_id")
+	}
+
+	result, err := c.App.DeductionTransaction(transaction)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	w.Write([]byte(result.ToJson()))
+}
+
+func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	transaction := model.TransactionFromJson(r.Body)
+
+	if transaction == nil {
+		c.SetInvalidParam("transaction")
+		return
+	}
+
+	if len(transaction.UserId) != 26 {
+		c.SetInvalidParam("user_id")
+	}
+
+	result, err := c.App.AccrualTransaction(transaction)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	w.Write([]byte(result.ToJson()))
 }
 
 func getAllTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -125,6 +167,10 @@ func createTransaction(c *Context, w http.ResponseWriter, r *http.Request) {
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
 		return
+	}
+
+	if len(transaction.UserId) != 26 {
+		c.SetInvalidParam("user_id")
 	}
 
 	result, err := c.App.CreateTransaction(transaction)

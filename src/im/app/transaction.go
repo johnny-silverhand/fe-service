@@ -3,6 +3,7 @@ package app
 import (
 	"im/model"
 	"im/store"
+	"math"
 	"net/http"
 )
 
@@ -174,7 +175,7 @@ func (a *App) GetAllTransactionsPage(page int, perPage int) (*model.TransactionL
 }
 
 func (a *App) AccrualTransaction(transaction *model.Transaction) (*model.Transaction, *model.AppError) {
-
+	transaction.Value = math.Abs(transaction.Value)
 	result := <-a.Srv.Store.Transaction().Save(transaction)
 	if result.Err != nil {
 		return nil, result.Err
@@ -188,6 +189,7 @@ func (a *App) AccrualTransaction(transaction *model.Transaction) (*model.Transac
 }
 
 func (a *App) DeductionTransaction(transaction *model.Transaction) (*model.Transaction, *model.AppError) {
+	transaction.Value = 0 - math.Abs(transaction.Value)
 	result := <-a.Srv.Store.Transaction().Save(transaction)
 	if result.Err != nil {
 		return nil, result.Err
