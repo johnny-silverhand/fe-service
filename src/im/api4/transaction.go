@@ -7,8 +7,8 @@ import (
 )
 
 func (api *API) InitTransaction() {
-	api.BaseRoutes.Transactions.Handle("/discard", api.ApiHandler(discardTransactionUser)).Methods("POST")
-	api.BaseRoutes.Transactions.Handle("/charge", api.ApiHandler(chargeTransactionUser)).Methods("POST")
+	api.BaseRoutes.Transactions.Handle("/discard", api.ApiSessionRequired(discardTransactionUser)).Methods("POST")
+	api.BaseRoutes.Transactions.Handle("/charge", api.ApiSessionRequired(chargeTransactionUser)).Methods("POST")
 
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(getAllTransactions)).Methods("GET")
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(createTransaction)).Methods("POST")
@@ -22,6 +22,12 @@ func (api *API) InitTransaction() {
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
 
+	user, err := c.App.GetUser(c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
 		return
@@ -29,19 +35,29 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 
 	if len(transaction.UserId) != 26 {
 		c.SetInvalidParam("user_id")
+		return
 	}
 
-	result, err := c.App.DeductionTransaction(transaction)
+	transaction.Description = "Списание " + user.FirstName + " " + user.LastName
+
+	_, err = c.App.DeductionTransaction(transaction)
 	if err != nil {
 		c.Err = err
 		return
 	}
-	w.Write([]byte(result.ToJson()))
+	//w.Write([]byte(result.ToJson()))
+	ReturnStatusOK(w)
 }
 
 func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
 
+	user, err := c.App.GetUser(c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
 		return
@@ -49,7 +65,10 @@ func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	if len(transaction.UserId) != 26 {
 		c.SetInvalidParam("user_id")
+		return
 	}
+
+	transaction.Description = "Начисление " + user.FirstName + " " + user.LastName
 
 	result, err := c.App.AccrualTransaction(transaction)
 	if err != nil {
