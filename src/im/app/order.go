@@ -76,7 +76,7 @@ func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppErro
 	return order, nil
 }
 
-func (a *App) CreateOrderInvoice(order *model.Order) (*model.Order, *model.AppError) {
+func (a *App) CreateOrderInvoice(order *model.Order, user *model.User) (*model.Order, *model.AppError) {
 	result := <-a.Srv.Store.Order().Save(order)
 	if result.Err != nil {
 		return nil, result.Err
@@ -87,7 +87,7 @@ func (a *App) CreateOrderInvoice(order *model.Order) (*model.Order, *model.AppEr
 	msg += fmt.Sprintf("Счет на оплату № %s \n", newOrder.FormatOrderNumber())
 
 	post := &model.Post{
-		UserId:   newOrder.UserId,
+		UserId:   user.Id,
 		Message:  msg,
 		CreateAt: model.GetMillis() + 1,
 		Type:     model.POST_WITH_INVOICE,

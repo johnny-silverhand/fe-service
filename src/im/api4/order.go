@@ -14,7 +14,7 @@ import (
 func (api *API) InitOrder() {
 
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(getAllOrders)).Methods("GET")
-	api.BaseRoutes.Orders.Handle("/invoice", api.ApiHandler(createInvoice)).Methods("POST")
+	api.BaseRoutes.Orders.Handle("/invoice", api.ApiSessionRequired(createInvoice)).Methods("POST")
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
 	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
@@ -32,12 +32,26 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 	var err *model.AppError
 	order := model.OrderFromJson(r.Body)
 
+	user, err := c.App.GetUser(c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
 	if order == nil {
 		c.SetInvalidParam("order")
 		return
 	}
 
-	result, err := c.App.CreateOrderInvoice(order)
+	orderUser, err := c.App.GetUser(order.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	order.Phone = orderUser.Phone
+
+	result, err := c.App.CreateOrderInvoice(order, user)
 
 	if err != nil {
 		c.Err = err
