@@ -1,4 +1,3 @@
-
 package api4
 
 import (
@@ -517,7 +516,7 @@ func getAllChannels(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	channels, err := c.App.GetAllChannels(c.Params.Page, c.Params.PerPage, false)
+	channels, err := c.App.GetAllChannels(c.Params.Page, c.Params.PerPage, true)
 	if err != nil {
 		c.Err = err
 		return
@@ -618,11 +617,11 @@ func getPublicChannelsByIdsForTeam(c *Context, w http.ResponseWriter, r *http.Re
 }
 func getAllChannelsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 
-/*	if !c.App.SessionHasPermissionToUser(c.App.Session, c.Params.UserId) {
-		c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
-		return
-	}
-*/
+	/*	if !c.App.SessionHasPermissionToUser(c.App.Session, c.Params.UserId) {
+			c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
+			return
+		}
+	*/
 
 	c.RequireUserId()
 	if c.Err != nil {
