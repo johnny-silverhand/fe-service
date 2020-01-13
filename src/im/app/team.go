@@ -27,9 +27,9 @@ func (a *App) CreateTeam(team *model.Team) (*model.Team, *model.AppError) {
 	}
 	rteam := result.Data.(*model.Team)
 
-	if _, err := a.CreateDefaultChannels(rteam.Id); err != nil {
+	/*if _, err := a.CreateDefaultChannels(rteam.Id); err != nil {
 		return nil, err
-	}
+	}*/
 
 	return rteam, nil
 }
@@ -509,12 +509,12 @@ func (a *App) JoinUserToTeam(team *model.Team, user *model.User, userRequestorId
 		return uua.Err
 	}
 
-	shouldBeAdmin := team.Email == user.Email
+	//shouldBeAdmin := team.Email == user.Email
 
 	// Soft error if there is an issue joining the default channels
-	if err := a.JoinDefaultChannels(team.Id, user, shouldBeAdmin, userRequestorId); err != nil {
+	/*if err := a.JoinDefaultChannels(team.Id, user, shouldBeAdmin, userRequestorId); err != nil {
 		mlog.Error(fmt.Sprintf("Encountered an issue joining default channels err=%v", err), mlog.String("user_id", user.Id), mlog.String("team_id", team.Id))
-	}
+	}*/
 
 	a.ClearSessionCacheForUser(user.Id)
 	a.InvalidateCacheForUser(user.Id)
