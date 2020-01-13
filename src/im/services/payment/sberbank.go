@@ -2,10 +2,10 @@ package payment
 
 import (
 	"context"
-	"fmt"
 	"im/model"
 	"im/services/payment/sberbank"
 	"im/services/payment/sberbank/currency"
+	"im/services/payment/sberbank/schema"
 	"net/http"
 	"strconv"
 )
@@ -49,7 +49,7 @@ func (b *SberBankBackend) TestConnection() *model.AppError {
 	return nil
 }
 
-func (b *SberBankBackend) RegisterOrder() (url string, err *model.AppError) {
+func (b *SberBankBackend) RegisterOrder(order *model.Order) (response *schema.OrderResponse, err *model.AppError) {
 
 	/*sbClnt, err := b.sbNew()
 	if err != nil {
@@ -59,33 +59,23 @@ func (b *SberBankBackend) RegisterOrder() (url string, err *model.AppError) {
 	var client *sberbank.Client
 
 	if c, err := b.sbNew(); err != nil {
-		return "", model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
 	} else {
 		client = c
 	}
 
-	order := sberbank.Order{
+	amount := order.Price * 100
+	sbOrder := sberbank.Order{
 		OrderNumber: strconv.FormatInt(model.GetMillis(), 10),
-		Amount:      100,
-		Description: "My Order for Client",
-		ReturnURL:   "https://yandex.ru",
+		Amount:      int(amount),
+		Description: "",
+		ReturnURL:   "http://foodexpress2.russianit.ru/api/v4/orders/" + order.Id + "/status",
 	}
 
-	/*if result, _, err := client.RegisterOrderPreAuth(context.Background(), order); err != nil {
-		return "", model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
+	if result, _, err := client.RegisterOrder(context.Background(), sbOrder); err != nil {
+		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
 	} else {
-		fmt.Println(result)
-	}*/
-
-	if result, _, err := client.RegisterOrder(context.Background(), order); err != nil {
-		return "", model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
-	} else {
-		fmt.Println(result)
+		return result, nil
 	}
-	/*fmt.Println(result.ErrorCode)
-	fmt.Println(result.ErrorMessage)
-	fmt.Println(result.FormUrl)
-	fmt.Println(result.OrderId)*/
 
-	return "", nil
 }

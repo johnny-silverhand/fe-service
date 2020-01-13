@@ -1,5 +1,7 @@
 package schema
 
+import "encoding/json"
+
 // Response is mapped response received from Sberbank API
 type Response struct {
 	ErrorCode    int    `json:"errorCode,omitempty"`
@@ -64,4 +66,13 @@ type OrderStatusResponse struct {
 		PaymentState    string `json:"paymentState"`
 		FeeAmount       int    `json:"feeAmount"`
 	} `json:"paymentAmountInfo,omitempty"`
+}
+
+func (o *OrderResponse) ToJson() string {
+	b, err := json.Marshal(&o)
+	if err != nil {
+		return ""
+	} else {
+		return string(b)
+	}
 }
