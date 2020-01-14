@@ -47,7 +47,7 @@ type Order struct {
 	UserId               string    `json:"user_id"`
 	PaySystemId          string    `json:"pay_system_id"`
 	DeliveryId           string    `json:"delivery_id"`
-	PaySystemStatus      string    `json:"pay_systems_tatus"`
+	PaySystemStatus      string    `json:"pay_systems_status"`
 	PaySystemCode        string    `json:"pay_system_code"`
 	PaySystemDescription string    `json:"pay_system_description"`
 	PaySystemMessage     string    `json:"pay_system_message"`
