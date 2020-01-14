@@ -250,6 +250,8 @@ type PostStore interface {
 	GetAllMessagesBefore(userId string, postId string, numMessages int, offset int, limitMin int64) StoreChannel
 	GetAllMessagesAfter(userId string, postId string, numMessages int, offset int, limitMin int64) StoreChannel
 	GetAllMessagesSince(userId string, time int64, allowFromCache bool, limitMin int64) StoreChannel
+
+	FindPostWithOrder(orderId string) StoreChannel
 }
 
 type UserStore interface {

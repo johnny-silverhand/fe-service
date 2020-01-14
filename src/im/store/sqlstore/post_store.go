@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -1533,5 +1534,21 @@ func (s SqlPostStore) getAllMessagesAround(userId string, postId string, numMess
 
 			result.Data = list
 		}
+	})
+}
+
+func (s SqlPostStore) FindPostWithOrder(orderId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		post := model.Post{}
+		if err := s.GetReplica().SelectOne(&post, "SELECT * FROM Posts WHERE Props LIKE %:OrderId% AND Type = :Type", map[string]interface{}{"OrderId": orderId, "Type": model.POST_WITH_METADATA}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlPostStore.FindPostWithOrder", "store.sql_post.find_post_with_order.app_error", nil, "order_id="+orderId+", "+err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlPostStore.FindPostWithOrder", "store.sql_post.find_post_with_order.existing.app_error", nil, "order_id="+orderId+", "+err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = &post
+		}
+
 	})
 }

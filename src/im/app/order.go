@@ -190,6 +190,8 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	rorder := result.Data.(*model.Order)
 	rorder = a.PrepareOrderForClient(rorder, false)
 
+	a.UpdatePostWithOrder(order, false)
+
 	//a.InvalidateCacheForChannelOrders(rorder.ChannelId)
 
 	return rorder, nil

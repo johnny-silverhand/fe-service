@@ -1206,6 +1206,30 @@ func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppErr
 
 }
 
+func (a *App) FindPostWithOrder(orderId string) (*model.Post, *model.AppError) {
+	if result := <-a.Srv.Store.Post().FindPostWithOrder(orderId); result.Err != nil {
+		return nil, result.Err
+	} else {
+		return result.Data.(*model.Post), nil
+	}
+}
+
+func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
+	var post *model.Post
+	var err *model.AppError
+
+	if post, err = a.FindPostWithOrder(order.Id); err == nil {
+		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", "", "", nil)
+		message.Add("channel_id", post.ChannelId)
+		message.Add("team_id", "")
+		a.Publish(message)
+	} else {
+		return nil, err
+	}
+
+	return post, nil
+}
+
 func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
 
 	var channel *model.Channel
