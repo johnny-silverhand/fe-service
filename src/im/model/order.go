@@ -123,6 +123,10 @@ func (o *Order) IsValid() *AppError {
 		return NewAppError("Order.IsValid", "model.order.is_valid.phone.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
 
+	if o.Price <= 0 {
+		return NewAppError("Order.IsValid", "model.order.is_valid.price.app_error", nil, "id="+o.Id, http.StatusBadRequest)
+	}
+
 	return nil
 }
 

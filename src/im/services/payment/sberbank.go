@@ -29,19 +29,6 @@ func (b *SberBankBackend) sbNew() (*sberbank.Client, error) {
 	}
 
 	return client, nil
-	/*order := acquiring.Order{
-		OrderNumber: "test",
-		Amount:      100,
-		Description: "My Order for Client",
-	}
-	result, _, err := client.RegisterOrder(context.Background(), order)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(result.ErrorCode)
-	fmt.Println(result.ErrorMessage)
-	fmt.Println(result.FormUrl)
-	fmt.Println(result.OrderId)*/
 }
 
 func (b *SberBankBackend) TestConnection() *model.AppError {
@@ -49,7 +36,7 @@ func (b *SberBankBackend) TestConnection() *model.AppError {
 	return nil
 }
 
-func (b *SberBankBackend) RegisterOrder(order *model.Order) (response *schema.OrderResponse, err *model.AppError) {
+func (b *SberBankBackend) RegisterOrder(application *model.Application, order *model.Order) (response *schema.OrderResponse, err *model.AppError) {
 
 	/*sbClnt, err := b.sbNew()
 	if err != nil {

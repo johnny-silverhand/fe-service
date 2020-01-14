@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"im/model"
 	"im/services/aquiring"
+	"im/services/payment"
 	"math"
 	"net/http"
 	"strconv"
@@ -171,7 +172,37 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	if response, err := registerOrder(order); err != nil {
+
+	var appId string
+	if user, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+		c.Err = err
+		return
+	} else {
+		appId = user.AppId
+	}
+
+	var application *model.Application
+	if app, err := c.App.GetApplication(appId); err != nil {
+		c.Err = err
+		return
+	} else {
+		application = app
+	}
+
+	var sber payment.SberBankBackend
+	if response, err := sber.RegisterOrder(application, order); err != nil {
+		c.Err = err
+		return
+	} else {
+		c.App.Srv.Go(func() {
+			order.PaySystemCode = response.OrderId
+			c.App.UpdateOrder(order, false)
+		})
+
+		w.Write([]byte(response.ToJson()))
+	}
+
+	/*if response, err := registerOrder(order); err != nil {
 		c.Err = err
 		return
 	} else {
@@ -182,10 +213,10 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		/*c.App.Srv.Go(func() {
 			c.App.SetOrderPayed(c.Params.OrderId)
-		})*/
+		})
 
 		w.Write([]byte(response.ToJson()))
-	}
+	}*/
 
 }
 

@@ -48,8 +48,8 @@ const (
 	WEBSOCKET_EVENT_LICENSE_CHANGED         = "license_changed"
 	WEBSOCKET_EVENT_CONFIG_CHANGED          = "config_changed"
 	WEBSOCKET_EVENT_OPEN_DIALOG             = "open_dialog"
-	WEBSOCKET_EVENT_PROMO_MODERATION        = "promo_moderation"
-	WEBSOCKET_EVENT_PRODUCT_MODERATION      = "product_moderation"
+	WEBSOCKET_EVENT_PROMO_MODERATION        = "promo_status_updated"
+	WEBSOCKET_EVENT_PRODUCT_MODERATION      = "product_status_updated"
 )
 
 type WebSocketMessage interface {
