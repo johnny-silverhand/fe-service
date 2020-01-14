@@ -28,6 +28,10 @@ const (
 
 	CHANNEL_SORT_BY_USERNAME = "username"
 	CHANNEL_SORT_BY_STATUS   = "status"
+
+	CHANNEL_STATUS_ACTIVE   = "Active"
+	CHANNEL_STATUS_INACTIVE = "Inactive"
+	CHANNEL_STATUS_PENDING  = "Pending"
 )
 
 type Channel struct {
@@ -42,13 +46,14 @@ type Channel struct {
 	Header           string                 `json:"header"`
 	Purpose          string                 `json:"purpose"`
 	LastPostAt       int64                  `json:"last_post_at"`
-	LastPostMessage  string                  `json:"last_post_message"`
+	LastPostMessage  string                 `json:"last_post_message"`
 	TotalMsgCount    int64                  `json:"total_msg_count"`
 	ExtraUpdateAt    int64                  `json:"extra_update_at"`
 	CreatorId        string                 `json:"creator_id"`
 	SchemeId         *string                `json:"scheme_id"`
 	Props            map[string]interface{} `json:"props" db:"-"`
 	GroupConstrained *bool                  `json:"group_constrained"`
+	Status           string                 `json:"status"`
 }
 
 type ChannelWithTeamData struct {
@@ -64,6 +69,7 @@ type ChannelPatch struct {
 	Header           *string `json:"header"`
 	Purpose          *string `json:"purpose"`
 	GroupConstrained *bool   `json:"group_constrained"`
+	Status           *string `json:"status"`
 }
 
 type ChannelForExport struct {
@@ -188,6 +194,10 @@ func (o *Channel) Patch(patch *ChannelPatch) {
 
 	if patch.GroupConstrained != nil {
 		o.GroupConstrained = patch.GroupConstrained
+	}
+
+	if patch.Status != nil {
+		o.Status = *patch.Status
 	}
 }
 

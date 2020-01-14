@@ -2576,7 +2576,7 @@ func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		channel := model.Channel{}
 		//todo искате среди нераспредленных
-		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId}); err != nil {
+		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 AND Status != :Status ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId, "Status": model.CHANNEL_STATUS_INACTIVE}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlChannelStore.FindOpennedChannel", store.MISSING_CHANNEL_ERROR, nil, "сreator_id="+userId+", "+err.Error(), http.StatusNotFound)
 			} else {
@@ -2610,6 +2610,7 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 
 		channel.CreatorId = user.Id
 		channel.Type = model.CHANNEL_OPEN
+		channel.Status = model.CHANNEL_STATUS_ACTIVE
 
 		cm1 := &model.ChannelMember{
 			UserId:      user.Id,
