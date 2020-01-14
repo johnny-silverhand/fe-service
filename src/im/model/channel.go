@@ -31,7 +31,7 @@ const (
 
 	CHANNEL_STATUS_ACTIVE   = "Active"
 	CHANNEL_STATUS_INACTIVE = "Inactive"
-	CHANNEL_STATUS_PENDING  = "Pending"
+	CHANNEL_STATUS_DEFERRED = "Deferred"
 )
 
 type Channel struct {

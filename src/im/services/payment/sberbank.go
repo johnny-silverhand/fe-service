@@ -66,3 +66,30 @@ func (b *SberBankBackend) RegisterOrder(application *model.Application, order *m
 	}
 
 }
+
+func (b *SberBankBackend) GetOrderStatus(application *model.Application, order *model.Order) (response *schema.OrderStatusResponse, err *model.AppError) {
+
+	/*sbClnt, err := b.sbNew()
+	if err != nil {
+		return model.NewAppError("TestFileConnection", "api.file.test_connection.s3.connection.app_error", nil, err.Error(), http.StatusInternalServerError)
+	}*/
+
+	var client *sberbank.Client
+
+	if c, err := b.sbNew(); err != nil {
+		return nil, model.NewAppError("services.payment.sberbank", "get_order_status", nil, err.Error(), http.StatusInternalServerError)
+	} else {
+		client = c
+	}
+
+	sbOrder := sberbank.Order{
+		OrderNumber: order.PaySystemCode,
+	}
+
+	if result, _, err := client.GetOrderStatus(context.Background(), sbOrder); err != nil {
+		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
+	} else {
+		return result, nil
+	}
+
+}

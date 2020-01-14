@@ -1,15 +1,12 @@
 package api4
 
 import (
-	"encoding/json"
 	"fmt"
 	"im/model"
-	"im/services/aquiring"
 	"im/services/payment"
 	"math"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func (api *API) InitOrder() {
@@ -174,7 +171,7 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	var appId string
-	if user, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+	if user, err := c.App.GetUser(order.UserId); err != nil {
 		c.Err = err
 		return
 	} else {
@@ -384,49 +381,52 @@ func getUserOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(list.ToJson()))
 }
 
-func registerOrder(order *model.Order) (*aquiring.ResponseRegistration, *model.AppError) {
-	var client *aquiring.Client
-
-	/*if order.PaySystemId == "sberbank" {
-		client = aquiring.NewSberClient("foodexp-api", "foodexp")
-	} else {*/
-	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
-	//}
-	price := order.Price * 100
-	var requestRegistration = aquiring.RequestRegistration{
-		OrderNumber: strconv.FormatInt(time.Now().UnixNano(), 10),
-		Description: "",
-		Amount:      strconv.FormatInt(int64(price), 10), // потому что нужно значение в копейках
-		ReturnUrl:   "http://foodexpress2.russianit.ru/api/v4/orders/" + order.Id + "/status",
-	}
-
-	if r, err := client.PostRequest("/register.do", requestRegistration); err != nil {
-
-		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
-	} else {
-		var responseReg *aquiring.ResponseRegistration
-		json.NewDecoder(r.Body).Decode(&responseReg)
-
-		return responseReg, nil
-	}
-}
-
 func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
-
-	/*var client *aquiring.Client
-	client = aquiring.NewAlfaClient("yktours-api", "yktours*?1")
-
-	var requestOrderStatus = aquiring.RequestOrderStatus{
-		OrderId: ,
+	if c.Err != nil {
+		return
 	}
 
-	r, err := client.PostRequest("getOrderStatus.do", requestOrderStatus)
-	*/
+	order, err := c.App.GetOrder(c.Params.OrderId)
 
-	c.App.Srv.Go(func() {
-		c.App.SetOrderPayed(c.Params.OrderId)
-	})
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	var appId string
+	if user, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+		c.Err = err
+		return
+	} else {
+		appId = user.AppId
+	}
+
+	var application *model.Application
+	if app, err := c.App.GetApplication(appId); err != nil {
+		c.Err = err
+		return
+	} else {
+		application = app
+	}
+
+	var sber payment.SberBankBackend
+	if response, err := sber.GetOrderStatus(application, order); err != nil {
+		c.Err = err
+		return
+	} else {
+
+		/*c.App.Srv.Go(func() {
+			order.Status = response.OrderStatus
+			c.App.UpdateOrder(order, false)
+		})
+
+		w.Write([]byte(response.ToJson()))*/
+
+		c.App.Srv.Go(func() {
+			c.App.SetOrderPayed(c.Params.OrderId, response)
+		})
+	}
 
 	if c.Err != nil {
 		return

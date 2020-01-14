@@ -233,7 +233,7 @@ func (c *Client) GetOrderStatus(ctx context.Context, order Order) (*schema.Order
 	body["orderId"] = order.OrderNumber
 
 	var orderResponse schema.OrderStatusResponse
-	req, err := c.NewRestRequest(ctx, "GET", path, body, order.JSONParams)
+	req, err := c.NewRestRequest(ctx, "POST", path, body, order.JSONParams)
 
 	if err != nil {
 		return nil, nil, err
@@ -253,9 +253,9 @@ func validateOrderNumber(order Order) error {
 	}
 
 	if order.OrderNumber != "" {
-		if len(order.OrderNumber) > 30 {
+		/*if len(order.OrderNumber) > 30 {
 			return fmt.Errorf("orderNumber is too long (>30)")
-		}
+		}*/
 	}
 
 	return nil

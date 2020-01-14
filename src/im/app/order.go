@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"im/model"
+	"im/services/payment/sberbank/schema"
 	"im/store"
 	"math"
 	"net/http"
@@ -291,7 +292,11 @@ func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (
 	}
 }
 
-func (a *App) SetOrderPayed(orderId string) *model.AppError {
+func (a *App) SetOrderPayed(orderId string, response *schema.OrderStatusResponse) *model.AppError {
+
+	if response == nil {
+		return model.NewAppError("", "", nil, "", http.StatusBadRequest)
+	}
 
 	result := <-a.Srv.Store.Order().Get(orderId)
 	if result.Err != nil {
@@ -312,7 +317,7 @@ func (a *App) SetOrderPayed(orderId string) *model.AppError {
 
 		post := &model.Post{
 			UserId:   order.UserId,
-			Message:  "Оплата банковской картой № транзакции " + strconv.FormatInt(order.CreateAt, 10),
+			Message:  "Оплата банковской картой " + response.CardAuthInfo.MaskedPan + " по транзакции № " + strconv.FormatInt(order.CreateAt, 10) + ". Заказ № " + order.FormatOrderNumber(),
 			CreateAt: model.GetMillis() + 1,
 			Type:     model.POST_WITH_TRANSACTION,
 		}
@@ -346,7 +351,7 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 
 		post := &model.Post{
 			UserId:   order.UserId,
-			Message:  "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
+			Message:  "Отмена оплаты по транзакции № " + strconv.FormatInt(order.CreateAt, 10) + ". Заказ № " + order.FormatOrderNumber(),
 			CreateAt: model.GetMillis() + 1,
 			Type:     model.POST_WITH_TRANSACTION,
 		}

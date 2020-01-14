@@ -461,7 +461,7 @@ func (s SqlOrderStore) SetOrderPayed(orderId string) store.StoreChannel {
 
 		ts := model.GetMillis()
 
-		_, err := s.GetMaster().Exec("UPDATE Orders SET Payed = :Payed, UpdateAt =:UpdateAt, PayedAt = :PayedAt WHERE Id = :Id ", map[string]interface{}{"Payed": true, "UpdateAt": ts, "Id": orderId, "PayedAt": ts})
+		_, err := s.GetMaster().Exec("UPDATE Orders SET Payed = :Payed, UpdateAt =:UpdateAt, PayedAt = :PayedAt, Status = :Status WHERE Id = :Id ", map[string]interface{}{"Payed": true, "UpdateAt": ts, "Id": orderId, "PayedAt": ts, "Status": model.ORDER_STATUS_AWAITING_FULFILLMENT})
 		if err != nil {
 			result.Err = model.NewAppError("SqlOfficeStore.Publish", "store.sql_offices.publish.app_error", nil, err.Error(), http.StatusInternalServerError)
 
@@ -475,7 +475,7 @@ func (s SqlOrderStore) SetOrderCancel(orderId string) store.StoreChannel {
 
 		ts := model.GetMillis()
 
-		_, err := s.GetMaster().Exec("UPDATE Orders SET Canceled = :Canceled, UpdateAt =:UpdateAt, CanceledAt = :CanceledAt WHERE Id = :Id ", map[string]interface{}{"Canceled": true, "UpdateAt": ts, "Id": orderId, "CanceledAt": ts})
+		_, err := s.GetMaster().Exec("UPDATE Orders SET Canceled = :Canceled, UpdateAt =:UpdateAt, CanceledAt = :CanceledAt, Status = :Status WHERE Id = :Id ", map[string]interface{}{"Canceled": true, "UpdateAt": ts, "Id": orderId, "CanceledAt": ts, "Status": model.ORDER_STATUS_DECLINED})
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.CancelOrder", "store.sql_order.cancel_order.app_error", nil, err.Error(), http.StatusInternalServerError)
 
