@@ -40,7 +40,7 @@ type Order struct {
 	Status               string    `json:"status"`
 	StatusAt             int64     `json:"status_at"`
 	PriceDelivery        float64   `json:"price_delivery"`
-	DeliveryAt           int64     `json:"date_allow_delivery"`
+	DeliveryAt           int64     `json:"delivery_at"`
 	Price                float64   `json:"price"`
 	Currency             string    `json:"currency"`
 	DiscountValue        float64   `json:"discount_value"`
