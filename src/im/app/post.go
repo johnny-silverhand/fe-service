@@ -1224,6 +1224,7 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 		message.Add("team_id", "")
 		a.Publish(message)
 	} else {
+		fmt.Println(err)
 		return nil, err
 	}
 
