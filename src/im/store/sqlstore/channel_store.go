@@ -2602,7 +2602,7 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 			return
 		}
 
-		channel.Name = name
+		channel.Name = model.NewId()
 		channel.DisplayName = name
 		channel.Header = name
 

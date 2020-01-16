@@ -1219,9 +1219,10 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 	var err *model.AppError
 
 	if post, err = a.FindPostWithOrder(order.Id); err == nil {
-		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", "", "", nil)
-		message.Add("channel_id", post.ChannelId)
-		message.Add("team_id", "")
+		post = a.PreparePostForClient(post, false)
+
+		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, "", nil)
+		message.Add("post", post.ToJson())
 		a.Publish(message)
 	} else {
 		fmt.Println(err)
@@ -1229,6 +1230,10 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 	}
 
 	return post, nil
+}
+
+func (a *App) DefferPostWithOrder(post *model.Post) (*model.Post, *model.AppError) {
+	return nil, nil
 }
 
 func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {

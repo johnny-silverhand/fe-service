@@ -1582,7 +1582,7 @@ func (us SqlUserStore) SaveWithCheckExist(user *model.User) store.StoreChannel {
 			return
 		}
 
-		if err := us.GetReplica().SelectOne(&user, "SELECT * FROM Users WHERE Phone = :Phone", map[string]interface{}{"Phone": user.Phone}); err != nil {
+		if err := us.GetReplica().SelectOne(&user, "SELECT * FROM Users WHERE Phone = :Phone AND AppId = :AppId", map[string]interface{}{"Phone": user.Phone, "AppId": user.AppId}); err != nil {
 			if err := us.GetMaster().Insert(user); err != nil {
 				result.Err = model.NewAppError("SqlUserStore.Save", "store.sql_user.save.app_error", nil, "user_id="+user.Id+", "+err.Error(), http.StatusInternalServerError)
 			}
