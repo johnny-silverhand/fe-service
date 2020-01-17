@@ -311,6 +311,10 @@ func (a *App) SetOrderPayed(orderId string, response *schema.OrderStatusResponse
 		return result.Err
 	} else {
 
+		if _, err := a.UpdatePostWithOrder(order, false); err != nil {
+			fmt.Println(err)
+		}
+
 		/*a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
 			UserId:  order.UserId,

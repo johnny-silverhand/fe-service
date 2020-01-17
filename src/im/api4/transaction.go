@@ -22,11 +22,11 @@ func (api *API) InitTransaction() {
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
 
-	user, err := c.App.GetUser(c.App.Session.UserId)
+	/*user, err := c.App.GetUser(c.App.Session.UserId)
 	if err != nil {
 		c.Err = err
 		return
-	}
+	}*/
 
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
@@ -38,9 +38,9 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	transaction.Description = "Списание " + user.FirstName + " " + user.LastName
+	transaction.Description = "Списание вручную"
 
-	_, err = c.App.DeductionTransaction(transaction)
+	_, err := c.App.DeductionTransaction(transaction)
 	if err != nil {
 		c.Err = err
 		return
@@ -52,11 +52,11 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
 
-	user, err := c.App.GetUser(c.App.Session.UserId)
+	/*user, err := c.App.GetUser(c.App.Session.UserId)
 	if err != nil {
 		c.Err = err
 		return
-	}
+	}*/
 
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
@@ -68,7 +68,7 @@ func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transaction.Description = "Начисление " + user.FirstName + " " + user.LastName
+	transaction.Description = "Начисление вручную"
 
 	result, err := c.App.AccrualTransaction(transaction)
 	if err != nil {

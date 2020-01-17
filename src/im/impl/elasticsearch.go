@@ -208,6 +208,7 @@ func (m *ElasticsearcInterfaceImpl) Stop() *model.AppError {
 }
 func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *model.AppError {
 
+	post = m.App.PreparePostForClient(post, true)
 	st := post.ToJson()
 
 	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/"+post.Id, strings.NewReader(st))
@@ -356,7 +357,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:     term,
-									Fields:    []string{"message"},
+									Fields:    []string{"message", "metadata.order.positions.name"},
 									Type:      "best_fields",
 									Operator:  "or",
 									Fuzziness: 1,
@@ -365,7 +366,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:    term,
-									Fields:   []string{"message"},
+									Fields:   []string{"message", "metadata.order.positions.name"},
 									Type:     "phrase_prefix",
 									Operator: "or",
 								},

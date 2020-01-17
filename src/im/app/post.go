@@ -1221,6 +1221,19 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 	if post, err = a.FindPostWithOrder(order.Id); err == nil {
 		post = a.PreparePostForClient(post, false)
 
+		//result := <-a.Srv.Store.Post().Update()
+
+		if order.Status == model.CHANNEL_STATUS_DEFERRED {
+			result := <-a.Srv.Store.Channel().Get(post.ChannelId, false)
+			rchannel := result.Data.(*model.Channel)
+			a.PatchChannel(rchannel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_DEFERRED)}, post.UserId)
+
+		}
+
+		/*if post.Metadata != nil && post.Metadata.Order != nil {
+			post.Metadata.Order
+		}*/
+
 		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, "", nil)
 		message.Add("post", post.ToJson())
 		a.Publish(message)
@@ -1260,6 +1273,18 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	if rpost, err := a.CreatePost(post, channel, triggerWebhooks); err != nil {
 		return nil, err
 	} else {
+
+		now := time.Now()
+		date1 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		tm := time.Unix(order.DeliveryAt, 0)
+		date2 := time.Date(tm.Year(), tm.Month(), tm.Day(), 0, 0, 0, 0, tm.Location())
+
+		if date2.Unix() >= date1.Unix() {
+			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_DEFERRED)}, channel.CreatorId)
+			order.Status = model.CHANNEL_STATUS_DEFERRED
+			a.UpdateOrder(order, true)
+		}
+
 		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", "", nil)
 		message.Add("channel_id", channel.Id)
 		message.Add("team_id", "")
