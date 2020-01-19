@@ -33,25 +33,27 @@ type Application struct {
 	AqUsername string `json:"aq_username"`
 	AqPassword string `json:"aq_password"`
 
-	Cash bool `json:"cash"`
+	Cash     bool    `json:"cash"`
+	Cashback float64 `json:"cashback"`
 
 	ModerationCount int `db:"-" json:"moderation_count,omitempty"`
 }
 
 type ApplicationPatch struct {
-	Name           *string `json:"name"`
-	Preview        *string `json:"preview"`
-	Description    *string `json:"description"`
-	PaymentDetails *string `json:"payment_details"`
-	Phone          *string `json:"phone"`
-	Active         *bool   `json:"active"`
-	Settings       *string `json:"settings"`
-	Email          *string `json:"email"`
-	MaxDiscount    *int    `json:"max_discount"`
-	AqType         *string `json:"aq_type"`
-	AqUsername     *string `json:"aq_username"`
-	AqPassword     *string `json:"aq_password"`
-	Cash           *bool   `json:"cash"`
+	Name           *string  `json:"name"`
+	Preview        *string  `json:"preview"`
+	Description    *string  `json:"description"`
+	PaymentDetails *string  `json:"payment_details"`
+	Phone          *string  `json:"phone"`
+	Active         *bool    `json:"active"`
+	Settings       *string  `json:"settings"`
+	Email          *string  `json:"email"`
+	MaxDiscount    *int     `json:"max_discount"`
+	AqType         *string  `json:"aq_type"`
+	AqUsername     *string  `json:"aq_username"`
+	AqPassword     *string  `json:"aq_password"`
+	Cash           *bool    `json:"cash"`
+	Cashback       *float64 `json:"cashback"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -94,6 +96,9 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.Cash != nil {
 		p.Cash = *patch.Cash
+	}
+	if patch.Cash != nil {
+		p.Cashback = *patch.Cashback
 	}
 }
 

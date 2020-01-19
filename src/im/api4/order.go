@@ -299,6 +299,24 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if application, err := c.App.GetApplication(user.AppId); err != nil {
+		c.Err = err
+		return
+	} else {
+		accural := math.Floor(result.Price * application.Cashback)
+
+		transaction := &model.Transaction{
+			UserId:      user.Id,
+			OrderId:     result.Id,
+			Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
+			Value:       accural,
+		}
+
+		if transaction.Value > 0 {
+			c.App.AccrualTransaction(transaction)
+		}
+	}
+
 	if list, err := c.App.GetAllLevelsPage(0, 60, &user.AppId); err == nil {
 		list.SortByLvl()
 
