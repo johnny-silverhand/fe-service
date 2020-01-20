@@ -3,7 +3,6 @@
 
 package sqlstore
 
-import "C"
 import (
 	"database/sql"
 	"fmt"
