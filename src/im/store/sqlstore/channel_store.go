@@ -3,6 +3,7 @@
 
 package sqlstore
 
+import "C"
 import (
 	"database/sql"
 	"fmt"
@@ -917,14 +918,66 @@ func (s SqlChannelStore) GetChannels(teamId string, userId string, includeDelete
 		result.Data = data
 	})
 }
-func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool) store.StoreChannel {
+func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, status string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0  ORDER BY DisplayName"
+		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
+
+		query := `SELECT C.*
+		FROM Channels C
+		JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+		LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
+		LEFT JOIN Orders O ON O.Id = CWO.OrderId
+		WHERE CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND C.Id = CWO.ChannelId AND (O.DeliveryAt < :DeliveryAt OR O.Id IS NULL)
+		ORDER BY C.LastPostAt ASC`
+
 		if includeDeleted {
-			query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId  ORDER BY DisplayName"
+			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
+			query = `SELECT C.*
+			FROM Channels C
+			JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+			LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
+			LEFT JOIN Orders O ON O.Id = CWO.OrderId
+			WHERE CM.UserId = :UserId AND C.Status = :Status AND C.Id = CWO.ChannelId AND (O.DeliveryAt < :DeliveryAt OR O.Id IS NULL)
+			ORDER BY C.LastPostAt ASC`
+		}
+
+		data := &model.ChannelList{}
+		// TODO: CHANGE DELIVERY_AT
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status, "DeliveryAt": model.GetMillis()})
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if len(*data) == 0 {
+			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.not_found.app_error", nil, "userId="+userId, http.StatusBadRequest)
+			return
+		}
+
+		result.Data = data
+	})
+}
+
+func (s SqlChannelStore) GetChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		query := `SELECT C.*
+		FROM Channels C , ChannelMembers CM, (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO
+		JOIN Orders O ON O.Id = CWO.OrderId
+		WHERE C.Id = CM.ChannelId AND CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND C.Id = CWO.ChannelId AND UNIX_TIMESTAMP() * 1000 < O.DeliveryAt
+		ORDER BY O.DeliveryAt ASC`
+
+		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
+		if includeDeleted {
+			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
+			query = `SELECT C.*
+			FROM Channels C , ChannelMembers CM, (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO
+			JOIN Orders O ON O.Id = CWO.OrderId
+			WHERE C.Id = CM.ChannelId AND CM.UserId = :UserId AND C.Status = :Status AND C.Id = CWO.ChannelId AND UNIX_TIMESTAMP() * 1000 < O.DeliveryAt
+			ORDER BY O.DeliveryAt ASC`
 		}
 		data := &model.ChannelList{}
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
@@ -1248,6 +1301,23 @@ func (s SqlChannelStore) GetDeleted(teamId string, offset int, limit int) store.
 				return
 			}
 			result.Err = model.NewAppError("SqlChannelStore.GetDeleted", "store.sql_channel.get_deleted.existing.app_error", nil, "teamId="+teamId+", "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		result.Data = channels
+	})
+}
+
+func (s SqlChannelStore) GetDeletedForUser(userId string, offset int, limit int) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		channels := &model.ChannelList{}
+
+		if _, err := s.GetReplica().Select(channels, "SELECT * FROM Channels WHERE (userId = :userId OR userId = '') AND DeleteAt != 0 ORDER BY DisplayName LIMIT :Limit OFFSET :Offset", map[string]interface{}{"userId": userId, "Limit": limit, "Offset": offset}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlChannelStore.GetDeletedForUser", "store.sql_channel.get_deleted_for_user.missing.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusNotFound)
+				return
+			}
+			result.Err = model.NewAppError("SqlChannelStore.GetDeletedForUser", "store.sql_channel.get_deleted_for_user.existing.app_error", nil, "userId="+userId+", "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -2576,7 +2646,7 @@ func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		channel := model.Channel{}
 		//todo искате среди нераспредленных
-		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 AND Status != :Status ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId, "Status": model.CHANNEL_STATUS_INACTIVE}); err != nil {
+		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlChannelStore.FindOpennedChannel", store.MISSING_CHANNEL_ERROR, nil, "сreator_id="+userId+", "+err.Error(), http.StatusNotFound)
 			} else {
@@ -2610,7 +2680,7 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 
 		channel.CreatorId = user.Id
 		channel.Type = model.CHANNEL_OPEN
-		channel.Status = model.CHANNEL_STATUS_ACTIVE
+		channel.Status = model.CHANNEL_STATUS_OPEN
 
 		cm1 := &model.ChannelMember{
 			UserId:      user.Id,

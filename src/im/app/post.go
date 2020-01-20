@@ -233,7 +233,20 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 
 	// Normally, we would let the API layer call PreparePostForClient, but we do it here since it also needs
 	// to be done when we send the post over the websocket in handlePostEvents
-	rpost = a.PreparePostForClient(rpost, true)
+	//rpost = a.PreparePostForClient(rpost, true)
+
+	/*message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_VIEWED, "", rpost.ChannelId, "", nil)
+	message.Add("channel_id", rpost.ChannelId)
+	a.Publish(message)*/
+
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POSTED, "", rpost.ChannelId, "", nil)
+	message.Add("post", rpost.ToJson())
+	message.Add("metadata", rpost)
+	message.Add("channel_type", channel.Type)
+	message.Add("channel_name", channel.Name)
+	message.Add("team_id", channel.TeamId)
+
+	a.Publish(message)
 
 	if err := a.handlePostEvents(rpost, user, channel, triggerWebhooks, parentPostList); err != nil {
 		mlog.Error("Failed to handle post events", mlog.Err(err))
@@ -566,6 +579,30 @@ func (a *App) GetFlaggedPostsForChannel(userId, channelId string, offset int, li
 	return result.Data.(*model.PostList), nil
 }
 
+func (a *App) GetDeferredPosts(userId string, offset int, limit int) (*model.PostList, *model.AppError) {
+	result := <-a.Srv.Store.Post().GetDeferredPosts(userId, offset, limit)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.PostList), nil
+}
+
+func (a *App) GetDeferredPostsForTeam(userId, teamId string, offset int, limit int) (*model.PostList, *model.AppError) {
+	result := <-a.Srv.Store.Post().GetDeferredPostsForTeam(userId, teamId, offset, limit)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.PostList), nil
+}
+
+func (a *App) GetDeferredPostsForChannel(userId, channelId string, offset int, limit int) (*model.PostList, *model.AppError) {
+	result := <-a.Srv.Store.Post().GetDeferredPostsForChannel(userId, channelId, offset, limit)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.PostList), nil
+}
+
 func (a *App) GetPermalinkPost(postId string, userId string) (*model.PostList, *model.AppError) {
 	result := <-a.Srv.Store.Post().Get(postId)
 	if result.Err != nil {
@@ -653,6 +690,9 @@ func (a *App) DeletePost(postId, deleteByID string) (*model.Post, *model.AppErro
 	a.Srv.Go(func() {
 		a.DeleteFlaggedPosts(post.Id)
 	})
+	a.Srv.Go(func() {
+		a.DeleteDeferredPosts(post.Id)
+	})
 
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
@@ -671,6 +711,13 @@ func (a *App) DeletePost(postId, deleteByID string) (*model.Post, *model.AppErro
 func (a *App) DeleteFlaggedPosts(postId string) {
 	if result := <-a.Srv.Store.Preference().DeleteCategoryAndName(model.PREFERENCE_CATEGORY_FLAGGED_POST, postId); result.Err != nil {
 		mlog.Warn(fmt.Sprintf("Unable to delete flagged post preference when deleting post, err=%v", result.Err))
+		return
+	}
+}
+
+func (a *App) DeleteDeferredPosts(postId string) {
+	if result := <-a.Srv.Store.Preference().DeleteCategoryAndName(model.PREFERENCE_CATEGORY_DEFERRED_POST, postId); result.Err != nil {
+		mlog.Warn(fmt.Sprintf("Unable to delete deferred post preference when deleting post, err=%v", result.Err))
 		return
 	}
 }
@@ -1192,6 +1239,8 @@ func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppErr
 				mlog.Error(result.Err.Error())
 			}
 
+			//rpost := a.PreparePostForClient(post, true)
+
 			a.Srv.Go(func() {
 				message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_VIEWED, "", post.ChannelId, "", nil)
 				message.Add("channel_id", post.ChannelId)
@@ -1223,13 +1272,6 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 
 		//result := <-a.Srv.Store.Post().Update()
 
-		if order.Status == model.CHANNEL_STATUS_DEFERRED {
-			result := <-a.Srv.Store.Channel().Get(post.ChannelId, false)
-			rchannel := result.Data.(*model.Channel)
-			a.PatchChannel(rchannel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_DEFERRED)}, post.UserId)
-
-		}
-
 		/*if post.Metadata != nil && post.Metadata.Order != nil {
 			post.Metadata.Order
 		}*/
@@ -1256,6 +1298,8 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 
 	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
+
+		a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 	} else {
 
 		if channel, err = a.CreateUnresolvedChannel(post.UserId); err != nil {
@@ -1273,23 +1317,6 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	if rpost, err := a.CreatePost(post, channel, triggerWebhooks); err != nil {
 		return nil, err
 	} else {
-
-		now := time.Now()
-		date1 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		tm := time.Unix(order.DeliveryAt, 0)
-		date2 := time.Date(tm.Year(), tm.Month(), tm.Day(), 0, 0, 0, 0, tm.Location())
-
-		if date2.Unix() >= date1.Unix() {
-			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_DEFERRED)}, channel.CreatorId)
-			order.Status = model.CHANNEL_STATUS_DEFERRED
-			a.UpdateOrder(order, true)
-		}
-
-		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", "", nil)
-		message.Add("channel_id", channel.Id)
-		message.Add("team_id", "")
-		a.Publish(message)
-
 		return rpost, nil
 	}
 
@@ -1302,6 +1329,8 @@ func (a *App) CreatePostWithTransaction(post *model.Post, triggerWebhooks bool) 
 
 	if channel, err = a.FindOpennedChannel(post.UserId); err == nil {
 		post.ChannelId = channel.Id
+
+		a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 	} else {
 
 		if channel, err = a.CreateUnresolvedChannel(post.UserId); err != nil {
@@ -1316,3 +1345,5 @@ func (a *App) CreatePostWithTransaction(post *model.Post, triggerWebhooks bool) 
 
 	return a.CreatePost(post, channel, triggerWebhooks)
 }
+
+// gold , silver , bronze

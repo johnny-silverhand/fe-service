@@ -105,6 +105,17 @@ func updatePreferences(c *Context, w http.ResponseWriter, r *http.Request) {
 				c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
 				return
 			}
+		} else if pref.Category == model.PREFERENCE_CATEGORY_DEFERRED_POST {
+			post, err := c.App.GetSinglePost(pref.Name)
+			if err != nil {
+				c.SetInvalidParam("preference.name")
+				return
+			}
+
+			if !c.App.SessionHasPermissionToChannel(c.App.Session, post.ChannelId, model.PERMISSION_READ_CHANNEL) {
+				c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
+				return
+			}
 		}
 
 		sanitizedPreferences = append(sanitizedPreferences, pref)

@@ -97,7 +97,7 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	if patch.Cash != nil {
 		p.Cash = *patch.Cash
 	}
-	if patch.Cash != nil {
+	if patch.Cashback != nil {
 		p.Cashback = *patch.Cashback
 	}
 }

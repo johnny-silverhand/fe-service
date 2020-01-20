@@ -285,6 +285,98 @@ func (s *SqlPostStore) GetFlaggedPostsForChannel(userId, channelId string, offse
 	})
 }
 
+func (s *SqlPostStore) GetDeferredPosts(userId string, offset int, limit int) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		pl := model.NewPostList()
+
+		var posts []*model.Post
+		if _, err := s.GetReplica().Select(&posts, "SELECT * FROM Posts WHERE Id IN (SELECT Name FROM Preferences WHERE UserId = :UserId AND Category = :Category) AND DeleteAt = 0 ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"UserId": userId, "Category": model.PREFERENCE_CATEGORY_DEFERRED_POST, "Offset": offset, "Limit": limit}); err != nil {
+			result.Err = model.NewAppError("SqlPostStore.GetDeferredPosts", "store.sql_post.get_deferred_posts.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+			for _, post := range posts {
+				pl.AddPost(post)
+				pl.AddOrder(post.Id)
+			}
+		}
+
+		result.Data = pl
+	})
+}
+
+func (s *SqlPostStore) GetDeferredPostsForTeam(userId, teamId string, offset int, limit int) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		pl := model.NewPostList()
+
+		var posts []*model.Post
+
+		query := `
+            SELECT
+                A.*
+            FROM
+                (SELECT
+                    *
+                FROM
+                    Posts
+                WHERE
+                    Id
+                IN
+                    (SELECT
+                        Name
+                    FROM
+                        Preferences
+                    WHERE
+                        UserId = :UserId
+                        AND Category = :Category)
+                        AND DeleteAt = 0
+                ) as A
+            INNER JOIN Channels as B
+                ON B.Id = A.ChannelId
+            WHERE B.TeamId = :TeamId OR B.TeamId = ''
+            ORDER BY CreateAt DESC
+            LIMIT :Limit OFFSET :Offset`
+
+		if _, err := s.GetReplica().Select(&posts, query, map[string]interface{}{"UserId": userId, "Category": model.PREFERENCE_CATEGORY_DEFERRED_POST, "Offset": offset, "Limit": limit, "TeamId": teamId}); err != nil {
+			result.Err = model.NewAppError("SqlPostStore.GetDeferredPostsForTeam", "store.sql_post.get_deferred_posts.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+			for _, post := range posts {
+				pl.AddPost(post)
+				pl.AddOrder(post.Id)
+			}
+		}
+
+		result.Data = pl
+	})
+}
+
+func (s *SqlPostStore) GetDeferredPostsForChannel(userId, channelId string, offset int, limit int) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		pl := model.NewPostList()
+
+		var posts []*model.Post
+		query := `
+			SELECT
+				*
+			FROM Posts
+			WHERE
+				Id IN (SELECT Name FROM Preferences WHERE UserId = :UserId AND Category = :Category)
+				AND ChannelId = :ChannelId
+				AND DeleteAt = 0
+			ORDER BY CreateAt DESC
+			LIMIT :Limit OFFSET :Offset`
+
+		if _, err := s.GetReplica().Select(&posts, query, map[string]interface{}{"UserId": userId, "Category": model.PREFERENCE_CATEGORY_DEFERRED_POST, "ChannelId": channelId, "Offset": offset, "Limit": limit}); err != nil {
+			result.Err = model.NewAppError("SqlPostStore.GetDeferredPostsForChannel", "store.sql_post.get_deferred_posts.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+			for _, post := range posts {
+				pl.AddPost(post)
+				pl.AddOrder(post.Id)
+			}
+		}
+
+		result.Data = pl
+	})
+}
+
 func (s *SqlPostStore) Get(id string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		pl := model.NewPostList()

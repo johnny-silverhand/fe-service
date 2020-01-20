@@ -44,6 +44,8 @@ func createMessage(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	if channel, err := c.App.FindOpennedChannel(post.UserId); err == nil {
 		post.ChannelId = channel.Id
+
+		c.App.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 	} else {
 
 		if channel, err = c.App.CreateUnresolvedChannel(post.UserId); err != nil {

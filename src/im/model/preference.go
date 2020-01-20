@@ -17,6 +17,7 @@ const (
 	PREFERENCE_CATEGORY_TUTORIAL_STEPS      = "tutorial_step"
 	PREFERENCE_CATEGORY_ADVANCED_SETTINGS   = "advanced_settings"
 	PREFERENCE_CATEGORY_FLAGGED_POST        = "flagged_post"
+	PREFERENCE_CATEGORY_DEFERRED_POST       = "deferred_post"
 	PREFERENCE_CATEGORY_FAVORITE_CHANNEL    = "favorite_channel"
 	PREFERENCE_CATEGORY_SIDEBAR_SETTINGS    = "sidebar_settings"
 

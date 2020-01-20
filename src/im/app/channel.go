@@ -163,6 +163,7 @@ func (a *App) CreateChannelWithUser(channel *model.Channel, userId string) (*mod
 	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", userId, nil)
 	message.Add("channel_id", channel.Id)
 	message.Add("team_id", channel.TeamId)
+	message.Add("channel", channel.ToJson())
 	a.Publish(message)
 
 	esInterface := a.Elasticsearch
@@ -1116,8 +1117,15 @@ func (a *App) GetChannelByNameForTeamName(channelName, teamName string, includeD
 
 	return result.Data.(*model.Channel), nil
 }
-func (a *App) GetAllChannelsForUser(userId string, includeDeleted bool) (*model.ChannelList, *model.AppError) {
-	result := <-a.Srv.Store.Channel().GetChannelsForUser(userId, includeDeleted)
+func (a *App) GetAllChannelsForUser(userId string, includeDeleted bool, status string) (*model.ChannelList, *model.AppError) {
+	result := <-a.Srv.Store.Channel().GetChannelsForUser(userId, includeDeleted, status)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.ChannelList), nil
+}
+func (a *App) GetAllChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) (*model.ChannelList, *model.AppError) {
+	result := <-a.Srv.Store.Channel().GetChannelsForUserWithDeferredPosts(userId, includeDeleted, status)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -1138,6 +1146,14 @@ func (a *App) GetAllChannels(page, perPage int, includeDeleted bool) (*model.Cha
 		return nil, result.Err
 	}
 	return result.Data.(*model.ChannelListWithTeamData), nil
+}
+
+func (a *App) GetDeletedChannelsForUser(userId string, offset int, limit int) (*model.ChannelList, *model.AppError) {
+	result := <-a.Srv.Store.Channel().GetDeletedForUser(userId, offset, limit)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.ChannelList), nil
 }
 
 func (a *App) GetDeletedChannels(teamId string, offset int, limit int) (*model.ChannelList, *model.AppError) {
@@ -1991,11 +2007,13 @@ func (a *App) CreateUnresolvedChannel(userId string) (*model.Channel, *model.App
 	} else {
 
 		var rchannel = result.Data.(*model.Channel)
+
 		//a.postJoinChannelMessage(user, rchannel)
 
 		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_CREATED, "", "", "", nil)
 		message.Add("channel_id", rchannel.Id)
 		message.Add("team_id", "")
+		message.Add("channel", rchannel.ToJson())
 		a.Publish(message)
 
 		return rchannel, nil

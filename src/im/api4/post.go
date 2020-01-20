@@ -16,6 +16,7 @@ func (api *API) InitPost() {
 	api.BaseRoutes.Post.Handle("/files/info", api.ApiSessionRequired(getFileInfosForPost)).Methods("GET")
 	api.BaseRoutes.PostsForChannel.Handle("", api.ApiSessionRequired(getPostsForChannel)).Methods("GET")
 	api.BaseRoutes.PostsForUser.Handle("/flagged", api.ApiSessionRequired(getFlaggedPostsForUser)).Methods("GET")
+	api.BaseRoutes.PostsForUser.Handle("/deferred", api.ApiSessionRequired(getDeferredPostsForUser)).Methods("GET")
 
 	api.BaseRoutes.Posts.Handle("/search", api.ApiHandler(searchPosts)).Methods("POST")
 	api.BaseRoutes.Post.Handle("", api.ApiSessionRequired(updatePost)).Methods("PUT")
@@ -165,6 +166,65 @@ func getPostsForChannel(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(c.App.PreparePostListForClient(list).ToJson()))
+}
+
+func getDeferredPostsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireUserId()
+	if c.Err != nil {
+		return
+	}
+
+	/*if !c.App.SessionHasPermissionToUser(c.App.Session, c.Params.UserId) {
+		c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
+		return
+	}*/
+
+	channelId := r.URL.Query().Get("channel_id")
+	teamId := r.URL.Query().Get("team_id")
+
+	var posts *model.PostList
+	var err *model.AppError
+
+	if len(channelId) > 0 {
+		posts, err = c.App.GetDeferredPostsForChannel(c.Params.UserId, channelId, c.Params.Page, c.Params.PerPage)
+	} else if len(teamId) > 0 {
+		posts, err = c.App.GetDeferredPostsForTeam(c.Params.UserId, teamId, c.Params.Page, c.Params.PerPage)
+	} else {
+		posts, err = c.App.GetDeferredPosts(c.Params.UserId, c.Params.Page, c.Params.PerPage)
+	}
+
+	pl := model.NewPostList()
+	channelReadPermission := make(map[string]bool)
+
+	for _, post := range posts.Posts {
+		allowed, ok := channelReadPermission[post.ChannelId]
+
+		if !ok {
+			allowed = false
+
+			if c.App.SessionHasPermissionToChannel(c.App.Session, post.ChannelId, model.PERMISSION_READ_CHANNEL) {
+				allowed = true
+			}
+
+			channelReadPermission[post.ChannelId] = allowed
+		}
+
+		if !allowed {
+			continue
+		}
+
+		pl.AddPost(post)
+		pl.AddOrder(post.Id)
+	}
+
+	pl.SortByCreateAt()
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(c.App.PreparePostListForClient(pl).ToJson()))
 }
 
 func getFlaggedPostsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -351,7 +411,7 @@ func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-/*	if !c.App.SessionHasPermissionToTeam(c.App.Session, c.Params.TeamId, model.PERMISSION_VIEW_TEAM) {
+	/*	if !c.App.SessionHasPermissionToTeam(c.App.Session, c.Params.TeamId, model.PERMISSION_VIEW_TEAM) {
 		c.SetPermissionError(model.PERMISSION_VIEW_TEAM)
 		return
 	}*/
@@ -389,9 +449,7 @@ func searchPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 		includeDeletedChannels = *params.IncludeDeletedChannels
 	}
 
-
 	results, err := c.App.SearchPostsForUser(terms, c.App.Session.UserId, isOrSearch, includeDeletedChannels, int(timeZoneOffset), page, perPage)
-
 
 	if err != nil {
 		c.Err = err
