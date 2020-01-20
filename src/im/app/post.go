@@ -239,14 +239,14 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 	message.Add("channel_id", rpost.ChannelId)
 	a.Publish(message)*/
 
-	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POSTED, "", rpost.ChannelId, "", nil)
+	/*message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POSTED, "", rpost.ChannelId, "", nil)
 	message.Add("post", rpost.ToJson())
 	message.Add("metadata", rpost)
 	message.Add("channel_type", channel.Type)
 	message.Add("channel_name", channel.Name)
 	message.Add("team_id", channel.TeamId)
 
-	a.Publish(message)
+	a.Publish(message)*/
 
 	if err := a.handlePostEvents(rpost, user, channel, triggerWebhooks, parentPostList); err != nil {
 		mlog.Error("Failed to handle post events", mlog.Err(err))
@@ -1241,12 +1241,12 @@ func (a *App) CreatePostAsExternal(post *model.Post) (*model.Post, *model.AppErr
 
 			//rpost := a.PreparePostForClient(post, true)
 
-			a.Srv.Go(func() {
+			/*a.Srv.Go(func() {
 				message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_VIEWED, "", post.ChannelId, "", nil)
 				message.Add("channel_id", post.ChannelId)
 				a.Publish(message)
 
-			})
+			})*/
 
 		}
 

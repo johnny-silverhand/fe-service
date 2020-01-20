@@ -926,7 +926,7 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, 
 		JOIN ChannelMembers CM ON C.Id = CM.ChannelId
 		LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
 		LEFT JOIN Orders O ON O.Id = CWO.OrderId
-		WHERE CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND C.Id = CWO.ChannelId AND (O.DeliveryAt < :DeliveryAt OR O.Id IS NULL)
+		WHERE CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND ((C.Id = CWO.ChannelId AND O.DeliveryAt < :DeliveryAt) OR O.Id IS NULL)
 		ORDER BY C.LastPostAt ASC`
 
 		if includeDeleted {
@@ -936,7 +936,7 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, 
 			JOIN ChannelMembers CM ON C.Id = CM.ChannelId
 			LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
 			LEFT JOIN Orders O ON O.Id = CWO.OrderId
-			WHERE CM.UserId = :UserId AND C.Status = :Status AND C.Id = CWO.ChannelId AND (O.DeliveryAt < :DeliveryAt OR O.Id IS NULL)
+			WHERE CM.UserId = :UserId AND C.Status = :Status AND ((C.Id = CWO.ChannelId AND O.DeliveryAt < :DeliveryAt) OR O.Id IS NULL)
 			ORDER BY C.LastPostAt ASC`
 		}
 
