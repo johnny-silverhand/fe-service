@@ -2258,7 +2258,9 @@ func (a *App) AccrualBalance(userId string, value float64) *model.AppError {
 	if result.Err != nil {
 		return result.Err
 	}
-	a.sendUpdatedBalanceEvent(userId, value)
+	if user, _ := a.Srv.Store.User().Get(userId); user != nil {
+		a.sendUpdatedBalanceEvent(userId, user.Balance)
+	}
 	return nil
 }
 
@@ -2267,7 +2269,9 @@ func (a *App) DeductionBalance(userId string, value float64) *model.AppError {
 	if result.Err != nil {
 		return result.Err
 	}
-	a.sendUpdatedBalanceEvent(userId, value)
+	if user, _ := a.Srv.Store.User().Get(userId); user != nil {
+		a.sendUpdatedBalanceEvent(userId, user.Balance)
+	}
 	return nil
 }
 
