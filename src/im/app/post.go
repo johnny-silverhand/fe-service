@@ -1299,7 +1299,9 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 
-		a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
+		if channel.Status == model.CHANNEL_STATUS_CLOSED {
+			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
+		}
 	} else {
 
 		if channel, err = a.CreateUnresolvedChannel(post.UserId); err != nil {
@@ -1331,7 +1333,9 @@ func (a *App) CreatePostWithTransaction(post *model.Post, triggerWebhooks bool) 
 	if channel, err = a.FindOpennedChannel(post.UserId); err == nil {
 		post.ChannelId = channel.Id
 
-		a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
+		if channel.Status == model.CHANNEL_STATUS_CLOSED {
+			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
+		}
 	} else {
 
 		if channel, err = a.CreateUnresolvedChannel(post.UserId); err != nil {
