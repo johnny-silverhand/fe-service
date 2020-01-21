@@ -181,6 +181,7 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 
 	newOrder.PaySystemCode = order.PaySystemCode
 	newOrder.Status = order.Status
+	newOrder.DeliveryAt = order.DeliveryAt
 
 	result = <-a.Srv.Store.Order().Update(newOrder)
 	if result.Err != nil {

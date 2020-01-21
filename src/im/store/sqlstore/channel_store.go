@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
@@ -919,40 +920,61 @@ func (s SqlChannelStore) GetChannels(teamId string, userId string, includeDelete
 }
 func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, status string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		now := time.Now()
+		now.AddDate(0, 0, 1)
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+
 		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
 
 		query := `SELECT C.*
-		FROM Channels C
-		JOIN ChannelMembers CM ON C.Id = CM.ChannelId
-		LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
-		LEFT JOIN Orders O ON O.Id = CWO.OrderId
-		WHERE CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND ((C.Id = CWO.ChannelId AND O.DeliveryAt < :DeliveryAt) OR O.Id IS NULL OR C.Status = :Status)
-		ORDER BY C.LastPostAt ASC`
+			FROM Channels C
+				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+				LEFT JOIN (
+					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+						   P.ChannelId,
+						   P.Message,
+						   O.*
+					FROM Posts P
+							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+					WHERE P.Props LIKE '{"order_id":"%"}'
+					  AND O.DeliveryAt <= :DeliveryAt
+					GROUP BY P.ChannelId
+				) CWO ON C.Id = CWO.ChannelId
+			WHERE CM.UserId = :UserId AND C.DeleteAt = 0 AND (C.Status = :Status OR CWO.DeliveryAt IS NOT NULL)
+			ORDER BY C.LastPostAt ASC`
 
 		if includeDeleted {
 			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
 			query = `SELECT C.*
 			FROM Channels C
-			JOIN ChannelMembers CM ON C.Id = CM.ChannelId
-			LEFT JOIN (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO ON C.Id = CWO.ChannelId
-			LEFT JOIN Orders O ON O.Id = CWO.OrderId
-			WHERE CM.UserId = :UserId AND C.Status = :Status AND ((C.Id = CWO.ChannelId AND O.DeliveryAt < :DeliveryAt) OR O.Id IS NULL OR C.Status = :Status)
+				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+				LEFT JOIN (
+					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+						   P.ChannelId,
+						   P.Message,
+						   O.*
+					FROM Posts P
+							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+					WHERE P.Props LIKE '{"order_id":"%"}'
+					  AND O.DeliveryAt <= :DeliveryAt
+					GROUP BY P.ChannelId
+				) CWO ON C.Id = CWO.ChannelId
+			WHERE CM.UserId = :UserId AND (C.Status = :Status OR CWO.DeliveryAt IS NOT NULL)
 			ORDER BY C.LastPostAt ASC`
 		}
 
 		data := &model.ChannelList{}
-		// TODO: CHANGE DELIVERY_AT
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status, "DeliveryAt": model.GetMillis()})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status, "DeliveryAt": tomorrow})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if len(*data) == 0 {
+		/*if len(*data) == 0 {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.not_found.app_error", nil, "userId="+userId, http.StatusBadRequest)
 			return
-		}
+		}*/
 
 		result.Data = data
 	})
@@ -960,33 +982,59 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, 
 
 func (s SqlChannelStore) GetChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		now := time.Now()
+		now.AddDate(0, 0, 1)
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+
 		query := `SELECT C.*
-		FROM Channels C , ChannelMembers CM, (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO
-		JOIN Orders O ON O.Id = CWO.OrderId
-		WHERE C.Id = CM.ChannelId AND CM.UserId = :UserId AND C.Status = :Status AND C.DeleteAt = 0 AND C.Id = CWO.ChannelId AND UNIX_TIMESTAMP() * 1000 < O.DeliveryAt
-		ORDER BY O.DeliveryAt ASC`
+			FROM Channels C
+				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+				INNER JOIN (
+					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+						   P.ChannelId,
+						   P.Message,
+						   O.*
+					FROM Posts P
+							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+					WHERE P.Props LIKE '{"order_id":"%"}'
+					  AND O.DeliveryAt > :DeliveryAt
+					GROUP BY P.ChannelId
+				) CWO ON C.Id = CWO.ChannelId
+			WHERE CM.UserId = :UserId AND C.DeleteAt = 0
+			ORDER BY CWO.DeliveryAt ASC`
 
 		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
 		if includeDeleted {
 			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
 			query = `SELECT C.*
-			FROM Channels C , ChannelMembers CM, (SELECT SUBSTRING(P.Props, 14, 26) AS OrderId, P.ChannelId FROM Posts P WHERE P.Props LIKE '{"order_id":"%"}' GROUP BY P.ChannelId) CWO
-			JOIN Orders O ON O.Id = CWO.OrderId
-			WHERE C.Id = CM.ChannelId AND CM.UserId = :UserId AND C.Status = :Status AND C.Id = CWO.ChannelId AND UNIX_TIMESTAMP() * 1000 < O.DeliveryAt
-			ORDER BY O.DeliveryAt ASC`
+			FROM Channels C
+				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+				INNER JOIN (
+					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+						   P.ChannelId,
+						   P.Message,
+						   O.*
+					FROM Posts P
+							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+					WHERE P.Props LIKE '{"order_id":"%"}'
+					  AND O.DeliveryAt > :DeliveryAt
+					GROUP BY P.ChannelId
+				) CWO ON C.Id = CWO.ChannelId
+			WHERE CM.UserId = :UserId
+			ORDER BY CWO.DeliveryAt ASC`
 		}
 		data := &model.ChannelList{}
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "DeliveryAt": tomorrow})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		if len(*data) == 0 {
+		/*if len(*data) == 0 {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.not_found.app_error", nil, "userId="+userId, http.StatusBadRequest)
 			return
-		}
+		}*/
 
 		result.Data = data
 	})
