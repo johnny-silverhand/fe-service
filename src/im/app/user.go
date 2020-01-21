@@ -2254,9 +2254,28 @@ func (a *App) AutoCreateUser(user *model.User) (*model.User, *model.AppError) {
 }
 
 func (a *App) AccrualBalance(userId string, value float64) *model.AppError {
-	return (<-a.Srv.Store.User().AccrualBalance(userId, value)).Err
+	result := <-a.Srv.Store.User().AccrualBalance(userId, value)
+	if result.Err != nil {
+		return result.Err
+	}
+	a.sendUpdatedBalanceEvent(userId, value)
+	return nil
 }
 
 func (a *App) DeductionBalance(userId string, value float64) *model.AppError {
-	return (<-a.Srv.Store.User().DeductionBalance(userId, value)).Err
+	result := <-a.Srv.Store.User().DeductionBalance(userId, value)
+	if result.Err != nil {
+		return result.Err
+	}
+	a.sendUpdatedBalanceEvent(userId, value)
+	return nil
+}
+
+func (a *App) sendUpdatedBalanceEvent(userId string, value float64) {
+	message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_BALANCE_UPDATED, "", "", userId, nil)
+	message.Add("balance", value)
+
+	a.Srv.Go(func() {
+		a.Publish(message)
+	})
 }

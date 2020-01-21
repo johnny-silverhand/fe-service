@@ -50,6 +50,7 @@ const (
 	WEBSOCKET_EVENT_OPEN_DIALOG             = "open_dialog"
 	WEBSOCKET_EVENT_PROMO_MODERATION        = "promo_status_updated"
 	WEBSOCKET_EVENT_PRODUCT_MODERATION      = "product_status_updated"
+	WEBSOCKET_EVENT_BALANCE_UPDATED         = "balance_updated"
 )
 
 type WebSocketMessage interface {
