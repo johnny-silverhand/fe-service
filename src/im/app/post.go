@@ -231,23 +231,6 @@ func (a *App) CreatePost(post *model.Post, channel *model.Channel, triggerWebhoo
 
 	}
 
-	// Normally, we would let the API layer call PreparePostForClient, but we do it here since it also needs
-	// to be done when we send the post over the websocket in handlePostEvents
-	//rpost = a.PreparePostForClient(rpost, true)
-
-	/*message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_CHANNEL_VIEWED, "", rpost.ChannelId, "", nil)
-	message.Add("channel_id", rpost.ChannelId)
-	a.Publish(message)*/
-
-	/*message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POSTED, "", rpost.ChannelId, "", nil)
-	message.Add("post", rpost.ToJson())
-	message.Add("metadata", rpost)
-	message.Add("channel_type", channel.Type)
-	message.Add("channel_name", channel.Name)
-	message.Add("team_id", channel.TeamId)
-
-	a.Publish(message)*/
-
 	if err := a.handlePostEvents(rpost, user, channel, triggerWebhooks, parentPostList); err != nil {
 		mlog.Error("Failed to handle post events", mlog.Err(err))
 	}
@@ -336,11 +319,26 @@ func (a *App) handlePostEvents(post *model.Post, user *model.User, channel *mode
 	a.InvalidateCacheForChannel(channel)
 	a.InvalidateCacheForChannelPosts(channel.Id)
 
+	/*if !isNotifyPost(post) {
+		return nil
+	}*/
+
 	if _, err := a.SendNotifications(post, team, channel, user, parentPostList); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func isNotifyPost(post *model.Post) bool {
+	if post.Metadata != nil && post.Metadata.Order != nil {
+		now := time.Now()
+		deliveryAt := model.GetMillisForTime(time.Unix(post.Metadata.Order.DeliveryAt, 0))
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()))
+
+		return deliveryAt >= tomorrow
+	}
+	return true
 }
 
 func (a *App) SendEphemeralPost(userId string, post *model.Post) *model.Post {
@@ -1299,7 +1297,11 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 
-		if channel.Status == model.CHANNEL_STATUS_CLOSED {
+		now := time.Now()
+		deliveryAt := model.GetMillisForTime(time.Unix(order.DeliveryAt, 0))
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()))
+
+		if channel.Status == model.CHANNEL_STATUS_CLOSED && deliveryAt < tomorrow {
 			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 		}
 	} else {
