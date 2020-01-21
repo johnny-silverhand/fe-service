@@ -1313,6 +1313,7 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	}
 
 	post.AddProp("order_id", order.Id)
+	post = a.PreparePostForClient(post, true)
 
 	if rpost, err := a.CreatePost(post, channel, triggerWebhooks); err != nil {
 		return nil, err
