@@ -330,6 +330,55 @@ func (a *App) createDirectChannel(userId string, otherUserId string) (*model.Cha
 	return channel, nil
 }
 
+func (a *App) createDeferredChannel(userId string, channelMemberIds []string) (*model.Channel, *model.AppError) {
+	var user *model.User
+	uc1 := make(chan store.StoreResult, 1)
+	uc2 := make(chan store.StoreResult, len(channelMemberIds))
+	go func() {
+		user, err := a.Srv.Store.User().Get(userId)
+		uc1 <- store.StoreResult{Data: user, Err: err}
+		close(uc1)
+	}()
+	go func() {
+		for _, otherUserId := range channelMemberIds {
+			user, err := a.Srv.Store.User().Get(otherUserId)
+			uc2 <- store.StoreResult{Data: user, Err: err}
+		}
+		close(uc2)
+	}()
+
+	if result := <-uc1; result.Err != nil {
+		return nil, model.NewAppError("CreateDeferredChannel", "api.channel.create_deferred_channel.invalid_user.app_error", nil, userId, http.StatusBadRequest)
+	} else {
+		user = result.Data.(*model.User)
+	}
+
+	if result := <-uc2; result.Err != nil {
+		return nil, model.NewAppError("CreateDeferredChannel", "api.channel.create_deferred_channel.invalid_user.app_error", nil, "", http.StatusBadRequest)
+	}
+
+	result := <-a.Srv.Store.Channel().CreateDeferredChannel(user, channelMemberIds)
+	if result.Err != nil {
+		if result.Err.Id == store.CHANNEL_EXISTS_ERROR {
+			return result.Data.(*model.Channel), result.Err
+		}
+		return nil, result.Err
+	}
+
+	channel := result.Data.(*model.Channel)
+
+	if result := <-a.Srv.Store.ChannelMemberHistory().LogJoinEvent(userId, channel.Id, model.GetMillis()); result.Err != nil {
+		mlog.Warn(fmt.Sprintf("Failed to update ChannelMemberHistory table %v", result.Err))
+	}
+	for _, otherUserId := range channelMemberIds {
+		if result := <-a.Srv.Store.ChannelMemberHistory().LogJoinEvent(otherUserId, channel.Id, model.GetMillis()); result.Err != nil {
+			mlog.Warn(fmt.Sprintf("Failed to update ChannelMemberHistory table %v", result.Err))
+		}
+	}
+
+	return channel, nil
+}
+
 func (a *App) WaitForChannelMembership(channelId string, userId string) {
 	if len(a.Config().SqlSettings.DataSourceReplicas) == 0 {
 		return
@@ -2019,4 +2068,71 @@ func (a *App) CreateUnresolvedChannel(userId string) (*model.Channel, *model.App
 		return rchannel, nil
 
 	}
+}
+
+func (a *App) GetOrCreateDeferredChannel(userId string) (*model.Channel, *model.AppError) {
+
+	var user *model.User
+	var err *model.AppError
+
+	if user, err = a.GetUser(userId); err != nil {
+		return nil, err
+	}
+
+	var channelMemberIds []string
+	var members []*model.TeamMember
+
+	var team *model.Team
+	if team, err = a.GetTeamByName(user.AppId); err != nil {
+		return nil, err
+	}
+
+	if members, err = a.GetTeamMembers(team.Id, 0, 50); err != nil {
+		return nil, err
+	} else {
+
+		for _, member := range members {
+			channelMemberIds = append(channelMemberIds, member.UserId)
+		}
+
+	}
+
+	result := <-a.Srv.Store.Channel().GetDeferredChannelForUser(userId)
+
+	if result.Err != nil {
+		if result.Err.Id == store.MISSING_CHANNEL_ERROR {
+			channel, err := a.createDeferredChannel(userId, channelMemberIds)
+			if err != nil {
+				if err.Id == store.CHANNEL_EXISTS_ERROR {
+					return channel, nil
+				}
+				return nil, err
+			}
+
+			a.WaitForChannelMembership(channel.Id, userId)
+
+			a.InvalidateCacheForUser(userId)
+			for _, otherUserId := range channelMemberIds {
+				a.InvalidateCacheForUser(otherUserId)
+			}
+
+			/*esInterface := a.Elasticsearch
+			if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+				a.Srv.Go(func() {
+					for _, id := range []string{userId, otherUserId} {
+						if err := a.indexUserFromId(id); err != nil {
+							mlog.Error("Encountered error indexing user", mlog.String("user_id", id), mlog.Err(err))
+						}
+					}
+				})
+			}*/
+
+			message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_DEFERRED_ADDED, "", channel.Id, "", nil)
+			a.Publish(message)
+
+			return channel, nil
+		}
+		return nil, model.NewAppError("GetOrCreateDeferredChannel", "web.incoming_webhook.channel.app_error", nil, "err="+result.Err.Message, result.Err.StatusCode)
+	}
+	return result.Data.(*model.Channel), nil
 }

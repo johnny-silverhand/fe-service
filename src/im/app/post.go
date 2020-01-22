@@ -1264,21 +1264,26 @@ func (a *App) FindPostWithOrder(orderId string) (*model.Post, *model.AppError) {
 func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
 	var post *model.Post
 	var err *model.AppError
+	var channel *model.Channel
 
 	if post, err = a.FindPostWithOrder(order.Id); err == nil {
-		post = a.PreparePostForClient(post, false)
 
-		//result := <-a.Srv.Store.Post().Update()
+		now := time.Now()
+		now.AddDate(0, 0, 1)
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
 
-		/*if post.Metadata != nil && post.Metadata.Order != nil {
-			post.Metadata.Order
-		}*/
+		if order.DeliveryAt >= tomorrow {
+			if channel, err = a.GetOrCreateDeferredChannel(order.UserId); err != nil {
+				return nil, err
+			}
 
-		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, "", nil)
-		message.Add("post", post.ToJson())
-		a.Publish(message)
+			post.ChannelId = channel.Id
+			if _, err = a.UpdatePost(post, true); err != nil {
+				return nil, err
+			}
+		}
+
 	} else {
-		fmt.Println(err)
 		return nil, err
 	}
 
@@ -1294,14 +1299,20 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	var channel *model.Channel
 	var err *model.AppError
 
-	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
+	now := time.Now()
+	now.AddDate(0, 0, 1)
+	tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+
+	if order.DeliveryAt >= tomorrow {
+		channel, err = a.GetOrCreateDeferredChannel(order.UserId)
+		if err != nil {
+			return nil, err
+		}
+		post.ChannelId = channel.Id
+	} else if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 
-		now := time.Now()
-		deliveryAt := model.GetMillisForTime(time.Unix(order.DeliveryAt, 0))
-		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()))
-
-		if channel.Status == model.CHANNEL_STATUS_CLOSED && deliveryAt < tomorrow {
+		if channel.Status == model.CHANNEL_STATUS_CLOSED {
 			a.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 		}
 	} else {

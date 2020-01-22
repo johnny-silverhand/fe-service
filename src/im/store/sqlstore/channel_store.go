@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/mattermost/gorp"
 	"github.com/pkg/errors"
@@ -920,32 +919,32 @@ func (s SqlChannelStore) GetChannels(teamId string, userId string, includeDelete
 }
 func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, status string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		now := time.Now()
+		/*now := time.Now()
 		now.AddDate(0, 0, 1)
-		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))*/
 
-		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
+		query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Channels.DeleteAt = 0 AND Channels.Status = :Status ORDER BY Channels.LastPostAt ASC"
 
-		query := `SELECT C.*
-			FROM Channels C
-				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
-				LEFT JOIN (
-					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
-						   P.ChannelId,
-						   P.Message,
-						   O.*
-					FROM Posts P
-							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
-					WHERE P.Props LIKE '{"order_id":"%"}'
-					  AND O.DeliveryAt <= :DeliveryAt
-					GROUP BY P.ChannelId
-				) CWO ON C.Id = CWO.ChannelId
-			WHERE CM.UserId = :UserId AND C.DeleteAt = 0 AND (C.Status = :Status OR CWO.DeliveryAt IS NOT NULL)
-			ORDER BY C.LastPostAt ASC`
+		/*query := `SELECT C.*
+		FROM Channels C
+			JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+			LEFT JOIN (
+				SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+					   P.ChannelId,
+					   P.Message,
+					   O.*
+				FROM Posts P
+						 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+				WHERE P.Props LIKE '{"order_id":"%"}'
+				  AND O.DeliveryAt <= :DeliveryAt
+				GROUP BY P.ChannelId
+			) CWO ON C.Id = CWO.ChannelId
+		WHERE CM.UserId = :UserId AND C.DeleteAt = 0 AND (C.Status = :Status OR CWO.DeliveryAt IS NOT NULL)
+		ORDER BY C.LastPostAt ASC`*/
 
 		if includeDeleted {
-			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
-			query = `SELECT C.*
+			query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Channels.Status = :Status ORDER BY Channels.LastPostAt ASC"
+			/*query = `SELECT C.*
 			FROM Channels C
 				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
 				LEFT JOIN (
@@ -960,11 +959,11 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, 
 					GROUP BY P.ChannelId
 				) CWO ON C.Id = CWO.ChannelId
 			WHERE CM.UserId = :UserId AND (C.Status = :Status OR CWO.DeliveryAt IS NOT NULL)
-			ORDER BY C.LastPostAt ASC`
+			ORDER BY C.LastPostAt ASC`*/
 		}
 
 		data := &model.ChannelList{}
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status, "DeliveryAt": tomorrow})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": status})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
@@ -982,31 +981,31 @@ func (s SqlChannelStore) GetChannelsForUser(userId string, includeDeleted bool, 
 
 func (s SqlChannelStore) GetChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		now := time.Now()
+		/*now := time.Now()
 		now.AddDate(0, 0, 1)
-		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))*/
 
-		query := `SELECT C.*
-			FROM Channels C
-				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
-				INNER JOIN (
-					SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
-						   P.ChannelId,
-						   P.Message,
-						   O.*
-					FROM Posts P
-							 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
-					WHERE P.Props LIKE '{"order_id":"%"}'
-					  AND O.DeliveryAt > :DeliveryAt
-					GROUP BY P.ChannelId
-				) CWO ON C.Id = CWO.ChannelId
-			WHERE CM.UserId = :UserId AND C.DeleteAt = 0
-			ORDER BY CWO.DeliveryAt ASC`
+		query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Channels.DeleteAt = 0 AND Channels.Status = :Status ORDER BY Channels.LastPostAt ASC"
+		/*query := `SELECT C.*
+		FROM Channels C
+			JOIN ChannelMembers CM ON C.Id = CM.ChannelId
+			INNER JOIN (
+				SELECT SUBSTRING(P.Props, 14, 26) AS OrderId,
+					   P.ChannelId,
+					   P.Message,
+					   O.*
+				FROM Posts P
+						 JOIN Orders O ON SUBSTRING(P.Props, 14, 26) = O.Id
+				WHERE P.Props LIKE '{"order_id":"%"}'
+				  AND O.DeliveryAt > :DeliveryAt
+				GROUP BY P.ChannelId
+			) CWO ON C.Id = CWO.ChannelId
+		WHERE CM.UserId = :UserId AND C.DeleteAt = 0
+		ORDER BY CWO.DeliveryAt ASC`*/
 
-		//query := "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND DeleteAt = 0 AND Status = :Status ORDER BY DisplayName"
 		if includeDeleted {
-			//query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Status = :Status ORDER BY DisplayName"
-			query = `SELECT C.*
+			query = "SELECT Channels.* FROM Channels, ChannelMembers WHERE Id = ChannelId AND UserId = :UserId AND Channels.Status = :Status ORDER BY Channels.LastPostAt ASC"
+			/*query = `SELECT C.*
 			FROM Channels C
 				JOIN ChannelMembers CM ON C.Id = CM.ChannelId
 				INNER JOIN (
@@ -1021,10 +1020,10 @@ func (s SqlChannelStore) GetChannelsForUserWithDeferredPosts(userId string, incl
 					GROUP BY P.ChannelId
 				) CWO ON C.Id = CWO.ChannelId
 			WHERE CM.UserId = :UserId
-			ORDER BY CWO.DeliveryAt ASC`
+			ORDER BY CWO.DeliveryAt ASC`*/
 		}
 		data := &model.ChannelList{}
-		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "DeliveryAt": tomorrow})
+		_, err := s.GetReplica().Select(data, query, map[string]interface{}{"UserId": userId, "Status": model.CHANNEL_STATUS_DEFERRED})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlChannelStore.GetChannelsForUser", "store.sql_channel.get_channels_for_user.get.app_error", nil, "userId="+userId+", err="+err.Error(), http.StatusInternalServerError)
@@ -2693,7 +2692,7 @@ func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		channel := model.Channel{}
 		//todo искате среди нераспредленных
-		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId}); err != nil {
+		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 AND Status != :Status ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId, "Status": model.CHANNEL_STATUS_DEFERRED}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlChannelStore.FindOpennedChannel", store.MISSING_CHANNEL_ERROR, nil, "сreator_id="+userId+", "+err.Error(), http.StatusNotFound)
 			} else {
@@ -2701,6 +2700,120 @@ func (s SqlChannelStore) FindOpennedChannel(userId string) store.StoreChannel {
 			}
 		} else {
 			result.Data = &channel
+		}
+
+	})
+}
+
+func (s SqlChannelStore) GetDeferredChannelForUser(userId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		channel := model.Channel{}
+
+		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 AND Status = :Status ORDER BY CreateAt", map[string]interface{}{"CreatorId": userId, "Status": model.CHANNEL_STATUS_DEFERRED}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlChannelStore.GetDeferredChannelForUser", store.MISSING_CHANNEL_ERROR, nil, "сreator_id="+userId+", "+err.Error(), http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlChannelStore.GetDeferredChannelForUser", "store.sql_channel.get_by_name.existing.app_error", nil, "сreator_id="+userId+", "+err.Error(), http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = &channel
+		}
+
+	})
+}
+
+func (s SqlChannelStore) CreateDeferredChannel(user *model.User, channelMemberIds []string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		channel := model.Channel{}
+
+		if err := s.GetReplica().SelectOne(&channel, "SELECT Channels.* FROM Channels WHERE CreatorId = :CreatorId AND DeleteAt = 0 AND Status = :Status ORDER BY CreateAt", map[string]interface{}{"CreatorId": user.Id, "Status": model.CHANNEL_STATUS_DEFERRED}); err == nil {
+			result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", store.CHANNEL_EXISTS_ERROR, nil, "id="+channel.Id+", "+err.Error(), http.StatusBadRequest)
+			result.Data = &channel
+			return
+		}
+
+		team := model.Team{}
+		if err := s.GetMaster().SelectOne(&team, "SELECT * FROM Teams WHERE Name = :AppId", map[string]interface{}{"AppId": user.AppId}); err != nil {
+			result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", "store.sql_channel.create_deferred_channel.open_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var displayName = utils.GenerateChannelName(user.Nickname, user.Phone)
+
+		channel.Name = model.NewId()
+		channel.DisplayName = displayName
+		channel.Header = displayName
+		channel.TeamId = team.Id
+
+		channel.CreatorId = user.Id
+		channel.Type = model.CHANNEL_OPEN
+		channel.Status = model.CHANNEL_STATUS_DEFERRED
+
+		cm1 := &model.ChannelMember{
+			UserId:      user.Id,
+			NotifyProps: model.GetDefaultChannelNotifyProps(),
+			Roles:       model.CHANNEL_USER_ROLE_ID,
+		}
+
+		if transaction, err := s.GetMaster().Begin(); err != nil {
+			result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", "store.sql_channel.create_deferred_channel.open_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
+		} else {
+
+			channelResult := s.saveChannelT(transaction, &channel, 0)
+
+			if channelResult.Err != nil {
+				transaction.Rollback()
+				result.Err = channelResult.Err
+
+			} else {
+				newChannel := channelResult.Data.(*model.Channel)
+
+				cm1.ChannelId = newChannel.Id
+
+				member1Result := s.saveMemberT(transaction, cm1, newChannel)
+
+				if member1Result.Err != nil {
+					transaction.Rollback()
+					result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", "store.sql_channel.create_deferred_channel.add_members.app_error", nil, member1Result.Err.Error(), http.StatusInternalServerError)
+
+				} else {
+					error := false
+					details := ""
+
+					for _, memeberId := range channelMemberIds {
+						am := &model.ChannelMember{
+							UserId:      memeberId,
+							NotifyProps: model.GetDefaultChannelNotifyProps(),
+							Roles:       model.CHANNEL_ADMIN_ROLE_ID,
+							ChannelId:   newChannel.Id,
+						}
+
+						member1Result = s.saveMemberT(transaction, am, newChannel)
+
+						if member1Result.Err != nil {
+							error = true
+							details += "Member1Err: " + member1Result.Err.Message
+						}
+					}
+
+					if error {
+						transaction.Rollback()
+						result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", "store.sql_channel.create_deferred_channel.add_members.app_error", nil, details, http.StatusInternalServerError)
+					} else {
+						if err := transaction.Commit(); err != nil {
+							result.Err = model.NewAppError("SqlChannelStore.CreateDeferredChannel", "store.sql_channel.create_deferred_channel.commit.app_error", nil, err.Error(), http.StatusInternalServerError)
+						} else {
+
+							ch := channelResult.Data.(*model.Channel)
+							channelCache.Add(ch.Id, ch)
+
+							*result = channelResult
+						}
+					}
+
+				}
+
+			}
 		}
 
 	})

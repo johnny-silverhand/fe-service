@@ -3,14 +3,14 @@ package app
 import (
 	"fmt"
 	"hash/fnv"
+	"im/mlog"
+	"im/model"
 	"runtime"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
-	"im/mlog"
-	"im/model"
 )
 
 const (
@@ -167,6 +167,7 @@ func (a *App) Publish(message *model.WebSocketEvent) {
 		if message.Event == model.WEBSOCKET_EVENT_POSTED ||
 			message.Event == model.WEBSOCKET_EVENT_POST_EDITED ||
 			message.Event == model.WEBSOCKET_EVENT_DIRECT_ADDED ||
+			message.Event == model.WEBSOCKET_EVENT_DEFERRED_ADDED ||
 			message.Event == model.WEBSOCKET_EVENT_GROUP_ADDED ||
 			message.Event == model.WEBSOCKET_EVENT_ADDED_TO_TEAM {
 			cm.SendType = model.CLUSTER_SEND_RELIABLE

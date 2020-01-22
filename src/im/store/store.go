@@ -206,6 +206,9 @@ type ChannelStore interface {
 
 	FindOpennedChannel(userId string) StoreChannel
 	CreateUnresolvedChannel(user *model.User, additionalMemeber []string, nn int64) StoreChannel
+
+	GetDeferredChannelForUser(userId string) StoreChannel
+	CreateDeferredChannel(user *model.User, channelMemberIds []string) StoreChannel
 }
 
 type ChannelMemberHistoryStore interface {

@@ -29,8 +29,9 @@ const (
 	CHANNEL_SORT_BY_USERNAME = "username"
 	CHANNEL_SORT_BY_STATUS   = "status"
 
-	CHANNEL_STATUS_OPEN   = "open"
-	CHANNEL_STATUS_CLOSED = "closed"
+	CHANNEL_STATUS_OPEN     = "open"
+	CHANNEL_STATUS_CLOSED   = "closed"
+	CHANNEL_STATUS_DEFERRED = "deferred"
 )
 
 type Channel struct {

@@ -51,6 +51,7 @@ const (
 	WEBSOCKET_EVENT_PROMO_MODERATION        = "promo_status_updated"
 	WEBSOCKET_EVENT_PRODUCT_MODERATION      = "product_status_updated"
 	WEBSOCKET_EVENT_BALANCE_UPDATED         = "balance_updated"
+	WEBSOCKET_EVENT_DEFERRED_ADDED          = "deferred_added"
 )
 
 type WebSocketMessage interface {
