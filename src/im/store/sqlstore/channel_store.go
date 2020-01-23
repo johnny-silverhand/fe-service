@@ -1227,7 +1227,7 @@ func (s SqlChannelStore) getByName(teamId string, name string, includeDeleted bo
 
 func (s SqlChannelStore) GetByOrderId(orderId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		result.Data = &model.Channel{}
+		result.Err = model.NewAppError("", "", nil, "", http.StatusNotFound)
 	})
 }
 

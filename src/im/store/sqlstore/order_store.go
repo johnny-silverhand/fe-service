@@ -173,10 +173,13 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool, 
 		}
 
 		var orders []*model.Order
-		_, err := s.GetReplica().Select(&orders, "SELECT O.* FROM Orders O JOIN Users U ON O.UserId = U.Id WHERE "+
-			" O.DeleteAt = 0 "+
-			" AND U.AppId = :AppId "+
-			" ORDER BY O.CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
+		_, err := s.GetReplica().Select(&orders,
+			"SELECT O.* FROM Orders O "+
+				" JOIN Users U ON O.UserId = U.Id "+
+				" JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId "+
+				" WHERE O.DeleteAt = 0 "+
+				" AND U.AppId = :AppId "+
+				" ORDER BY O.CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_root_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -203,7 +206,10 @@ func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool, appId 
 
 		var orders []*model.Order
 		_, err := s.GetReplica().Select(&orders,
-			`SELECT O.* FROM Orders O JOIN Users U ON O.UserId = U.Id WHERE O.UpdateAt > :Time AND U.AppId = :AppId ORDER BY O.UpdateAt`,
+			`SELECT O.* FROM Orders O 
+					JOIN Users U ON O.UserId = U.Id 
+					JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId
+					WHERE O.UpdateAt > :Time AND U.AppId = :AppId ORDER BY O.UpdateAt`,
 			map[string]interface{}{"Time": time, "AppId": appId})
 
 		if err != nil {
@@ -258,6 +264,7 @@ func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset 
 			FROM
 			    Orders O
 			JOIN Users U ON O.UserId = U.Id
+			JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId
 			WHERE (O.CreateAt `+direction+` (SELECT O.CreateAt FROM Orders O WHERE O.Id = :OrderId)) AND U.AppId = :AppId
 			ORDER BY O.CreateAt `+sort+`
 			LIMIT :NumOrders OFFSET :Offset `,

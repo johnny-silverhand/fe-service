@@ -61,9 +61,8 @@ type Order struct {
 	Comment              string    `json:"comment"`
 	Phone                string    `json:"phone"`
 	Positions            []*Basket `db:"-" json:"positions"`
-	Channel              *Channel  `db:"-" json:"channel,omitempty"`
 	Post                 *Post     `db:"-" json:"post,omitempty"`
-	OrderNum             string    `db:"-" json:"order_num"`
+	User                 *User     `db:"-" json:"user,omitempty"`
 }
 
 func (order *Order) ToJson() string {
