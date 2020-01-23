@@ -2089,6 +2089,14 @@ func (a *App) CreateStageToken(user *model.User, pwd string) (*model.Token, *mod
 func (a *App) GetUserInviteToken(user *model.User) (*model.Token, *model.AppError) {
 	var token *model.Token
 	if result := <-a.Srv.Store.Token().GetByUserInviteToken(user.Id); result.Err != nil {
+		if result.Err.Id == store.INVITE_TOKEN_NOT_FOUND {
+			code := utils.HashDigit(6)
+			if token, err := a.CreateInviteToken(user, code); err != nil {
+				return nil, model.NewAppError("GetUserInviteToken", "api.user.verify.invite_token.expired", nil, "", http.StatusBadRequest)
+			} else {
+				return token, nil
+			}
+		}
 		return nil, result.Err
 	} else {
 		token = result.Data.(*model.Token)
@@ -2134,7 +2142,7 @@ func (a *App) VerifyFromInviteToken(appId string, code string) (*model.User, *mo
 	if token, err = a.GetInviteToken(appId, code); err != nil {
 		return nil, err
 	} else {
-		if model.GetMillis()-token.CreateAt >= TOKEN_RECOVER_EXPIRY_TIME {
+		if model.GetMillis()-token.CreateAt >= TOKEN_INVITE_EXPIRY_TIME {
 			return nil, model.NewAppError("VerifyFromInviteToken", "api.user.verify.invite_token.app_error", nil, "", http.StatusBadRequest)
 		}
 

@@ -200,8 +200,12 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 func (a *App) PrepareOrderForClient(originalOrder *model.Order, isNewOrder bool) *model.Order {
 	order := originalOrder.Clone()
 
+	order.OrderNum = order.FormatOrderNumber()
 	order.Positions = a.GetBasketForOrder(order)
 	order.Channel = a.GetChannelForOrder(order)
+	if post, err := a.FindPostWithOrder(order.Id); err != nil {
+		order.Post = post
+	}
 
 	return order
 }

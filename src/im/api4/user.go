@@ -1694,6 +1694,11 @@ func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if user.Id == ruser.Id {
+		c.Err = model.NewAppError("ApiUser.VerifyUserInvite", "api.user.verify_user_invite.not_found", nil, "", http.StatusBadRequest)
+		return
+	}
+
 	_, err = c.App.PatchUser(user.Id, &model.UserPatch{InvitedBy: &ruser.Id}, false)
 
 	if err != nil {

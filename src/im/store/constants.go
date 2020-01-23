@@ -1,4 +1,3 @@
-
 package store
 
 const (
@@ -15,4 +14,6 @@ const (
 	USER_SEARCH_OPTION_ALLOW_INACTIVE          = "allow_inactive"
 
 	FEATURE_TOGGLE_PREFIX = "feature_enabled_"
+
+	INVITE_TOKEN_NOT_FOUND = "store.sql_token.get_user_invite_token.not_found"
 )
