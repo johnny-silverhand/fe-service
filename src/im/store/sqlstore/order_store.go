@@ -175,7 +175,7 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool, 
 		var orders []*model.Order
 		_, err := s.GetReplica().Select(&orders, "SELECT O.* FROM Orders O JOIN Users U ON O.UserId = U.Id WHERE "+
 			" O.DeleteAt = 0 "+
-			" U.AppId = :AppId "+
+			" AND U.AppId = :AppId "+
 			" ORDER BY O.CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
