@@ -558,6 +558,15 @@ func (s *SqlPostStore) PermanentDeleteByChannel(channelId string) store.StoreCha
 	})
 }
 
+func (s *SqlPostStore) PermanentDelete(postId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		_, err := s.GetMaster().Exec("DELETE FROM Posts WHERE Id = :Id OR RootId = :RootId", map[string]interface{}{"Id": postId, "RootId": postId})
+		if err != nil {
+			result.Err = model.NewAppError("SqlPostStore.Delete", "store.sql_post.permanent_delete.app_error", nil, "id="+postId+", err="+err.Error(), http.StatusInternalServerError)
+		}
+	})
+}
+
 func (s *SqlPostStore) GetPosts(channelId string, offset int, limit int, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {

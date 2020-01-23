@@ -70,6 +70,9 @@ type ChannelPatch struct {
 	Purpose          *string `json:"purpose"`
 	GroupConstrained *bool   `json:"group_constrained"`
 	Status           *string `json:"status"`
+	LastPostAt       *int64  `json:"last_post_at"`
+	LastPostMessage  *string `json:"last_post_message"`
+	TotalMsgCount    *int64  `json:"total_msg_count"`
 }
 
 type ChannelForExport struct {
@@ -198,6 +201,18 @@ func (o *Channel) Patch(patch *ChannelPatch) {
 
 	if patch.Status != nil {
 		o.Status = *patch.Status
+	}
+
+	if patch.LastPostAt != nil {
+		o.LastPostAt = *patch.LastPostAt
+	}
+
+	if patch.LastPostMessage != nil {
+		o.LastPostMessage = *patch.LastPostMessage
+	}
+
+	if patch.TotalMsgCount != nil {
+		o.TotalMsgCount = *patch.TotalMsgCount
 	}
 }
 

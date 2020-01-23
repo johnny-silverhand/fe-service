@@ -149,8 +149,7 @@ type ChannelStore interface {
 	GetDeleted(team_id string, offset int, limit int) StoreChannel
 	GetDeletedForUser(userId string, offset int, limit int) StoreChannel
 	GetChannels(teamId string, userId string, includeDeleted bool) StoreChannel
-	GetChannelsForUser(userId string, includeDeleted bool, status string) StoreChannel
-	GetChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) StoreChannel
+	GetChannelsForUser(userId string, includeDeleted bool) StoreChannel
 	GetAllChannels(page, perPage int, includeDeleted bool) StoreChannel
 	GetMoreChannels(teamId string, userId string, offset int, limit int) StoreChannel
 	GetPublicChannelsForTeam(teamId string, offset int, limit int) StoreChannel
@@ -209,6 +208,8 @@ type ChannelStore interface {
 
 	GetDeferredChannelForUser(userId string) StoreChannel
 	CreateDeferredChannel(user *model.User, channelMemberIds []string) StoreChannel
+
+	GetByOrderId(orderId string) StoreChannel
 }
 
 type ChannelMemberHistoryStore interface {
@@ -226,6 +227,7 @@ type PostStore interface {
 	Delete(postId string, time int64, deleteByID string) StoreChannel
 	PermanentDeleteByUser(userId string) StoreChannel
 	PermanentDeleteByChannel(channelId string) StoreChannel
+	PermanentDelete(postId string) StoreChannel
 	GetPosts(channelId string, offset int, limit int, allowFromCache bool) StoreChannel
 	GetFlaggedPosts(userId string, offset int, limit int) StoreChannel
 	GetFlaggedPostsForTeam(userId, teamId string, offset int, limit int) StoreChannel
@@ -635,10 +637,10 @@ type OrderStore interface {
 	Overwrite(order *model.Order) StoreChannel
 	Delete(orderId string, time int64, deleteByID string) StoreChannel
 
-	GetAllOrders(offset int, limit int, allowFromCache bool) StoreChannel
-	GetAllOrdersSince(time int64, allowFromCache bool) StoreChannel
-	GetAllOrdersBefore(orderId string, numOrders int, offset int) StoreChannel
-	GetAllOrdersAfter(orderId string, numOrders int, offset int) StoreChannel
+	GetAllOrders(offset int, limit int, allowFromCache bool, appId string) StoreChannel
+	GetAllOrdersSince(time int64, allowFromCache bool, appId string) StoreChannel
+	GetAllOrdersBefore(orderId string, numOrders int, offset int, appId string) StoreChannel
+	GetAllOrdersAfter(orderId string, numOrders int, offset int, appId string) StoreChannel
 
 	GetFromMaster(id string) StoreChannel
 	SaveBasket(orderId string, positions []*model.Basket) StoreChannel

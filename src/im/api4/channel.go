@@ -9,7 +9,7 @@ import (
 )
 
 func (api *API) InitChannel() {
-	//api.BaseRoutes.Channels.Handle("", api.ApiHandler(deleteAllChannels)).Methods("DELETE")
+	api.BaseRoutes.Channels.Handle("", api.ApiHandler(deleteAllChannels)).Methods("DELETE")
 	api.BaseRoutes.Channels.Handle("", api.ApiSessionRequired(getAllChannels)).Methods("GET")
 	api.BaseRoutes.Channels.Handle("", api.ApiSessionRequired(createChannel)).Methods("POST")
 	api.BaseRoutes.Channels.Handle("/direct", api.ApiSessionRequired(createDirectChannel)).Methods("POST")
@@ -26,7 +26,6 @@ func (api *API) InitChannel() {
 	api.BaseRoutes.ChannelsForTeam.Handle("/search_autocomplete", api.ApiSessionRequired(autocompleteChannelsForTeamForSearch)).Methods("GET")
 	api.BaseRoutes.User.Handle("/teams/{team_id:[A-Za-z0-9]+}/channels", api.ApiSessionRequired(getChannelsForTeamForUser)).Methods("GET")
 	api.BaseRoutes.User.Handle("/channels", api.ApiSessionRequired(getAllChannelsForUser)).Methods("GET")
-	api.BaseRoutes.User.Handle("/channels/deferred", api.ApiSessionRequired(getAllChannelsForUserWithDeferredPosts)).Methods("GET")
 
 	api.BaseRoutes.Channel.Handle("", api.ApiSessionRequired(getChannel)).Methods("GET")
 	api.BaseRoutes.Channel.Handle("", api.ApiSessionRequired(updateChannel)).Methods("PUT")
@@ -644,17 +643,13 @@ func getAllChannelsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	*/
-	status := r.URL.Query().Get("status")
-	if status == "" {
-		status = model.CHANNEL_STATUS_OPEN
-	}
 
 	c.RequireUserId()
 	if c.Err != nil {
 		return
 	}
 
-	channels, err := c.App.GetAllChannelsForUser(c.Params.UserId, false, status)
+	channels, err := c.App.GetAllChannelsForUser(c.Params.UserId, false)
 	if err != nil {
 		c.Err = err
 		return
@@ -673,41 +668,7 @@ func getAllChannelsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set(model.HEADER_ETAG_SERVER, channels.Etag())
 	w.Write([]byte(channels.ToJson()))
 }
-func getAllChannelsForUserWithDeferredPosts(c *Context, w http.ResponseWriter, r *http.Request) {
-	/*	if !c.App.SessionHasPermissionToUser(c.App.Session, c.Params.UserId) {
-			c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
-			return
-		}
-	*/
-	status := r.URL.Query().Get("status")
-	if status == "" {
-		status = model.CHANNEL_STATUS_OPEN
-	}
 
-	c.RequireUserId()
-	if c.Err != nil {
-		return
-	}
-
-	channels, err := c.App.GetAllChannelsForUserWithDeferredPosts(c.Params.UserId, false, status)
-	if err != nil {
-		c.Err = err
-		return
-	}
-
-	if c.HandleEtag(channels.Etag(), "Get Channels", w, r) {
-		return
-	}
-
-	err = c.App.FillInChannelsProps(channels)
-	if err != nil {
-		c.Err = err
-		return
-	}
-
-	w.Header().Set(model.HEADER_ETAG_SERVER, channels.Etag())
-	w.Write([]byte(channels.ToJson()))
-}
 func getChannelsForTeamForUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireUserId().RequireTeamId()
 	if c.Err != nil {

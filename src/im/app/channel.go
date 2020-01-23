@@ -1166,15 +1166,8 @@ func (a *App) GetChannelByNameForTeamName(channelName, teamName string, includeD
 
 	return result.Data.(*model.Channel), nil
 }
-func (a *App) GetAllChannelsForUser(userId string, includeDeleted bool, status string) (*model.ChannelList, *model.AppError) {
-	result := <-a.Srv.Store.Channel().GetChannelsForUser(userId, includeDeleted, status)
-	if result.Err != nil {
-		return nil, result.Err
-	}
-	return result.Data.(*model.ChannelList), nil
-}
-func (a *App) GetAllChannelsForUserWithDeferredPosts(userId string, includeDeleted bool, status string) (*model.ChannelList, *model.AppError) {
-	result := <-a.Srv.Store.Channel().GetChannelsForUserWithDeferredPosts(userId, includeDeleted, status)
+func (a *App) GetAllChannelsForUser(userId string, includeDeleted bool) (*model.ChannelList, *model.AppError) {
+	result := <-a.Srv.Store.Channel().GetChannelsForUser(userId, includeDeleted)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -2135,4 +2128,15 @@ func (a *App) GetOrCreateDeferredChannel(userId string) (*model.Channel, *model.
 		return nil, model.NewAppError("GetOrCreateDeferredChannel", "web.incoming_webhook.channel.app_error", nil, "err="+result.Err.Message, result.Err.StatusCode)
 	}
 	return result.Data.(*model.Channel), nil
+}
+
+func (a *App) GetChannelForOrder(order *model.Order) *model.Channel {
+	var channel *model.Channel
+
+	result := <-a.Srv.Store.Channel().GetByOrderId(order.Id)
+	if result.Err == nil {
+		channel = result.Data.(*model.Channel)
+	}
+
+	return channel
 }

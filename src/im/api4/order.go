@@ -11,7 +11,7 @@ import (
 
 func (api *API) InitOrder() {
 
-	api.BaseRoutes.Orders.Handle("", api.ApiHandler(getAllOrders)).Methods("GET")
+	api.BaseRoutes.Orders.Handle("", api.ApiSessionRequired(getAllOrders)).Methods("GET")
 	api.BaseRoutes.Orders.Handle("/invoice", api.ApiSessionRequired(createInvoice)).Methods("POST")
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
@@ -116,16 +116,22 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	var err *model.AppError
 	//etag := ""
 
+	user, err := c.App.GetUser(c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
 	if since > 0 {
-		list, err = c.App.GetAllOrdersSince(since)
+		list, err = c.App.GetAllOrdersSince(since, user.AppId)
 	} else if len(afterOrder) > 0 {
 
-		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, c.Params.Page, c.Params.PerPage, user.AppId)
 	} else if len(beforeOrder) > 0 {
 
-		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, c.Params.Page, c.Params.PerPage, user.AppId)
 	} else {
-		list, err = c.App.GetAllOrdersPage(c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllOrdersPage(c.Params.Page, c.Params.PerPage, user.AppId)
 	}
 
 	if err != nil {
@@ -137,7 +143,7 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
 	}*/
 
-	w.Write([]byte(list.ToJson()))
+	w.Write([]byte(c.App.PrepareOrderListForClient(list).ToJson()))
 }
 
 func getOrder(c *Context, w http.ResponseWriter, r *http.Request) {

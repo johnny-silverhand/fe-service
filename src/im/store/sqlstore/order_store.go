@@ -165,7 +165,7 @@ func (s *SqlOrderStore) Delete(orderId string, time int64, deleteByID string) st
 	})
 }
 
-func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) store.StoreChannel {
+func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool, appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if limit > 1000 {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_orders.app_error", nil, "", http.StatusBadRequest)
@@ -173,9 +173,10 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) 
 		}
 
 		var orders []*model.Order
-		_, err := s.GetReplica().Select(&orders, "SELECT * FROM Orders WHERE "+
-			" DeleteAt = 0 "+
-			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+		_, err := s.GetReplica().Select(&orders, "SELECT O.* FROM Orders O JOIN Users U ON O.UserId = U.Id WHERE "+
+			" O.DeleteAt = 0 "+
+			" U.AppId = :AppId "+
+			" ORDER BY O.CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_root_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -197,13 +198,13 @@ func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool) 
 	})
 }
 
-func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool) store.StoreChannel {
+func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool, appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
 		var orders []*model.Order
 		_, err := s.GetReplica().Select(&orders,
-			`SELECT * FROM Orders WHERE UpdateAt > :Time  ORDER BY UpdateAt`,
-			map[string]interface{}{"Time": time})
+			`SELECT O.* FROM Orders O JOIN Users U ON O.UserId = U.Id WHERE O.UpdateAt > :Time AND U.AppId = :AppId ORDER BY O.UpdateAt`,
+			map[string]interface{}{"Time": time, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrdersSince", "store.sql_order.get_orders_since.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -229,15 +230,15 @@ func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool) store.
 	})
 }
 
-func (s SqlOrderStore) GetAllOrdersBefore(orderId string, numOrders int, offset int) store.StoreChannel {
-	return s.getAllOrdersAround(orderId, numOrders, offset, true)
+func (s SqlOrderStore) GetAllOrdersBefore(orderId string, numOrders int, offset int, appId string) store.StoreChannel {
+	return s.getAllOrdersAround(orderId, numOrders, offset, true, appId)
 }
 
-func (s SqlOrderStore) GetAllOrdersAfter(orderId string, numOrders int, offset int) store.StoreChannel {
-	return s.getAllOrdersAround(orderId, numOrders, offset, false)
+func (s SqlOrderStore) GetAllOrdersAfter(orderId string, numOrders int, offset int, appId string) store.StoreChannel {
+	return s.getAllOrdersAround(orderId, numOrders, offset, false, appId)
 }
 
-func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset int, before bool) store.StoreChannel {
+func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset int, before bool, appId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -253,13 +254,14 @@ func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset 
 
 		_, err := s.GetReplica().Select(&orders,
 			`SELECT
-			    *
+			    O.*
 			FROM
-			    Orders
-			WHERE (CreateAt `+direction+` (SELECT CreateAt FROM Orders WHERE Id = :OrderId))
-			ORDER BY CreateAt `+sort+`
+			    Orders O
+			JOIN Users U ON O.UserId = U.Id
+			WHERE (O.CreateAt `+direction+` (SELECT O.CreateAt FROM Orders O WHERE O.Id = :OrderId)) AND U.AppId = :AppId
+			ORDER BY O.CreateAt `+sort+`
 			LIMIT :NumOrders OFFSET :Offset `,
-			map[string]interface{}{"OrderId": orderId, "NumOrders": numOrders, "Offset": offset})
+			map[string]interface{}{"OrderId": orderId, "NumOrders": numOrders, "Offset": offset, "AppId": appId})
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.getAllOrdersAround", "store.sql_order.get_orders_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)

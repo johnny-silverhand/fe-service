@@ -330,17 +330,6 @@ func (a *App) handlePostEvents(post *model.Post, user *model.User, channel *mode
 	return nil
 }
 
-func isNotifyPost(post *model.Post) bool {
-	if post.Metadata != nil && post.Metadata.Order != nil {
-		now := time.Now()
-		deliveryAt := model.GetMillisForTime(time.Unix(post.Metadata.Order.DeliveryAt, 0))
-		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location()))
-
-		return deliveryAt >= tomorrow
-	}
-	return true
-}
-
 func (a *App) SendEphemeralPost(userId string, post *model.Post) *model.Post {
 	post.Type = model.POST_EPHEMERAL
 
@@ -412,10 +401,10 @@ func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model
 		return nil, err
 	}
 
-	if oldPost.IsSystemMessage() {
+	/*if oldPost.IsSystemMessage() {
 		err := model.NewAppError("UpdatePost", "api.post.update_post.system_message.app_error", nil, "id="+post.Id, http.StatusBadRequest)
 		return nil, err
-	}
+	}*/
 
 	channel, err := a.GetChannel(oldPost.ChannelId)
 	if err != nil {
@@ -436,6 +425,7 @@ func (a *App) UpdatePost(post *model.Post, safeUpdate bool) (*model.Post, *model
 		newPost.Hashtags, _ = model.ParseHashtags(post.Message)
 	}
 
+	newPost.ChannelId = post.ChannelId
 	if !safeUpdate {
 		newPost.IsPinned = post.IsPinned
 		newPost.HasReactions = post.HasReactions
@@ -1264,24 +1254,40 @@ func (a *App) FindPostWithOrder(orderId string) (*model.Post, *model.AppError) {
 func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
 	var post *model.Post
 	var err *model.AppError
-	var channel *model.Channel
+	//var channel *model.Channel
 
 	if post, err = a.FindPostWithOrder(order.Id); err == nil {
 
-		now := time.Now()
-		now.AddDate(0, 0, 1)
-		tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+		post = a.PreparePostForClient(post, false)
+
+		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, "", nil)
+		message.Add("post", post.ToJson())
+		a.Publish(message)
+
+		a.InvalidateCacheForChannelPosts(post.ChannelId)
+
+		/*tomorrow := model.GetEndOfDayMillis(time.Now(), 0)
 
 		if order.DeliveryAt >= tomorrow {
-			if channel, err = a.GetOrCreateDeferredChannel(order.UserId); err != nil {
+			channel, err = a.GetOrCreateDeferredChannel(order.UserId)
+			if err != nil {
 				return nil, err
+			}
+
+			if result := <-a.Srv.Store.Post().PermanentDelete(post.Id); result.Err != nil {
+				return nil, result.Err
 			}
 
 			post.ChannelId = channel.Id
-			if _, err = a.UpdatePost(post, true); err != nil {
+			a.InvalidateCacheForChannelPosts(post.ChannelId)
+			post.Id = ""
+			if rpost, err := a.CreatePostWithOrder(post, order, true); err != nil {
 				return nil, err
+			} else {
+
+				return rpost, nil
 			}
-		}
+		}*/
 
 	} else {
 		return nil, err
@@ -1290,18 +1296,12 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 	return post, nil
 }
 
-func (a *App) DefferPostWithOrder(post *model.Post) (*model.Post, *model.AppError) {
-	return nil, nil
-}
-
 func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
 
 	var channel *model.Channel
 	var err *model.AppError
 
-	now := time.Now()
-	now.AddDate(0, 0, 1)
-	tomorrow := model.GetMillisForTime(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()))
+	/*tomorrow := model.GetEndOfDayMillis(time.Now(), 0)
 
 	if order.DeliveryAt >= tomorrow {
 		channel, err = a.GetOrCreateDeferredChannel(order.UserId)
@@ -1309,7 +1309,8 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 			return nil, err
 		}
 		post.ChannelId = channel.Id
-	} else if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
+	} else */
+	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 
 		if channel.Status == model.CHANNEL_STATUS_CLOSED {

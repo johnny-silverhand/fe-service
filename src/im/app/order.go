@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"im/model"
 	"im/services/payment/sberbank/schema"
-	"im/store"
 	"math"
 	"net/http"
 	"strconv"
@@ -202,6 +201,7 @@ func (a *App) PrepareOrderForClient(originalOrder *model.Order, isNewOrder bool)
 	order := originalOrder.Clone()
 
 	order.Positions = a.GetBasketForOrder(order)
+	order.Channel = a.GetChannelForOrder(order)
 
 	return order
 }
@@ -236,50 +236,34 @@ func (a *App) DeleteOrder(orderId, deleteByID string) (*model.Order, *model.AppE
 	return order, nil
 }
 
-func (a *App) GetAllOrdersBeforeOrder(orderId string, page, perPage int) (*model.OrderList, *model.AppError) {
+func (a *App) GetAllOrdersBeforeOrder(orderId string, page, perPage int, appId string) (*model.OrderList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersAfterOrder(orderId string, page, perPage int) (*model.OrderList, *model.AppError) {
+func (a *App) GetAllOrdersAfterOrder(orderId string, page, perPage int, appId string) (*model.OrderList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, perPage, page*perPage, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersAroundOrder(orderId string, offset, limit int, before bool) (*model.OrderList, *model.AppError) {
-	var pchan store.StoreChannel
-
-	if before {
-		pchan = a.Srv.Store.Order().GetAllOrdersBefore(orderId, limit, offset)
-	} else {
-		pchan = a.Srv.Store.Order().GetAllOrdersAfter(orderId, limit, offset)
-	}
-
-	if result := <-pchan; result.Err != nil {
+func (a *App) GetAllOrdersSince(time int64, appId string) (*model.OrderList, *model.AppError) {
+	if result := <-a.Srv.Store.Order().GetAllOrdersSince(time, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersSince(time int64) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetAllOrdersSince(time, true); result.Err != nil {
-		return nil, result.Err
-	} else {
-		return result.Data.(*model.OrderList), nil
-	}
-}
-
-func (a *App) GetAllOrdersPage(page int, perPage int) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetAllOrders(page*perPage, perPage, true); result.Err != nil {
+func (a *App) GetAllOrdersPage(page int, perPage int, appId string) (*model.OrderList, *model.AppError) {
+	if result := <-a.Srv.Store.Order().GetAllOrders(page*perPage, perPage, true, appId); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
