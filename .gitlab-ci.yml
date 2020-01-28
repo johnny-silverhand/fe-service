@@ -1,23 +1,21 @@
+image: golang:latest
+
+before_script:
+
 stages:
-  - test
   - deploy
 
-cache:
-  paths:
-    - pkg/
-    - data/
-    - src/im/vendor/
-
-variables:
-  DEPLOYMENT_PATH: /home/dmitry/git/foodexpress/bin
-  PROJECT_ROOT: /home/dmitry/git/foodexpress/fe_server
-
-fe_server_test:
-  stage: test
-  script:
-    - echo "test"
-
-fe_server_deploy:
+deploy:
   stage: deploy
   script:
-    - echo "deploy"
+    # Переходим в папку с билдом () там лежит бинарник и папка public
+    - cd $CI_PROJECT_DIR/build
+    # Используем утилиту sshpass для удаленного выполнения команд
+    - sshpass -V
+    - export SSHPASS=$USER_PASS
+    # Останавливаем сервис
+    - sshpass -e ssh -o stricthostkeychecking=no $USER@$HOST "echo $USER_PASS | sudo -S systemctl stop $SERVICE_NAME"
+    # Копируем новые файлы
+    - sshpass -e scp -o stricthostkeychecking=no -r . $USER@$HOST:$TARGET_DIR_ON_HOST
+    # Перезапускаем сервис
+    - sshpass -e ssh -o stricthostkeychecking=no $USER@$HOST "echo $USER_PASS | sudo -S systemctl restart $SERVICE_NAME"
