@@ -28,6 +28,15 @@ const (
 
 	// возврат
 	ORDER_STATUS_REFUNDED string = "refunded"
+
+	// текущие заказы
+	ORDER_STADY_CURRENT string = "current"
+	// отложенные заказы
+	ORDER_STADY_DEFERRED string = "deferred"
+	// закрытые заказы
+	ORDER_STADY_CLOSED string = "closed"
+
+	PAYMENT_SYSTEM_CASH string = "cash"
 )
 
 type Order struct {

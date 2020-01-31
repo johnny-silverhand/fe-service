@@ -112,6 +112,11 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 
 	a.RecalculateOrder(order)
 
+	for i, position := range order.Positions {
+		position = a.PrepareBasketForClient(position, true)
+		order.Positions[i] = position
+	}
+
 	result := <-a.Srv.Store.Order().SaveWithBasket(order)
 
 	if result.Err != nil {
@@ -140,16 +145,6 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		a.DeductionTransaction(transaction)
 	}
 
-	/*accural := math.Floor(newOrder.Price * 0.1)
-
-	transaction := &model.Transaction{
-		UserId:      newOrder.UserId,
-		OrderId:     newOrder.Id,
-		Description: fmt.Sprintf("Начисление по заказу № %s \n", newOrder.FormatOrderNumber()),
-		Value:       accural,
-	}
-
-	a.AccrualTransaction(transaction)*/
 	a.CreatePostWithOrder(post, newOrder, false)
 
 	return newOrder, nil
@@ -173,6 +168,39 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	if oldOrder.DeleteAt != 0 {
 		err := model.NewAppError("UpdateOrder", "api.order.update_order.permissions_details.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
 		return nil, err
+	}
+
+	/*if order.Status == oldOrder.Status && order.DeliveryAt == oldOrder.DeliveryAt {
+		err := model.NewAppError("UpdateOrder", "api.order.update_order.status.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
+		return nil, err
+	}*/
+
+	oldOrder = a.PrepareOrderForClient(oldOrder, false)
+
+	if oldOrder.User == nil {
+		err := model.NewAppError("UpdateOrder", "api.order.update_order.user.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
+		return nil, err
+	}
+
+	switch order.Status {
+	case model.ORDER_STATUS_AWAITING_PAYMENT:
+	case model.ORDER_STATUS_AWAITING_FULFILLMENT:
+	case model.ORDER_STATUS_AWAITING_PICKUP:
+	case model.ORDER_STATUS_AWAITING_SHIPMENT:
+	case model.ORDER_STATUS_DECLINED:
+		if oldOrder.Status == model.ORDER_STATUS_SHIPPED {
+			a.SetOrderCancel(order.Id)
+		}
+	case model.ORDER_STATUS_REFUNDED:
+	case model.ORDER_STATUS_SHIPPED:
+		if oldOrder.Status != model.ORDER_STATUS_SHIPPED {
+			if err := a.SetOrderShipped(order.Id); err != nil {
+				return nil, err
+			}
+		}
+	default:
+		// If not part of the scheme for this channel, then it is not allowed to apply it as an explicit role.
+		return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.not_found.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
 	}
 
 	newOrder := &model.Order{}
@@ -205,6 +233,7 @@ func (a *App) PrepareOrderForClient(originalOrder *model.Order, isNewOrder bool)
 		order.Post = post
 	}
 	if users, err := a.GetUsersByIds([]string{order.UserId}, true); err == nil {
+		a.SanitizeProfile(users[len(users)-1], false)
 		order.User = users[len(users)-1]
 	}
 
@@ -215,6 +244,7 @@ func (a *App) PrepareOrderListForClient(originalList *model.OrderList) *model.Or
 	list := &model.OrderList{
 		Orders: make(map[string]*model.Order, len(originalList.Orders)),
 		Order:  originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Total:  originalList.Total,
 	}
 
 	for id, originalOrder := range originalList.Orders {
@@ -241,34 +271,38 @@ func (a *App) DeleteOrder(orderId, deleteByID string) (*model.Order, *model.AppE
 	return order, nil
 }
 
-func (a *App) GetAllOrdersBeforeOrder(orderId string, page, perPage int, appId string) (*model.OrderList, *model.AppError) {
+func (a *App) GetAllOrdersBeforeOrder(orderId string, options *model.OrderGetOptions) (*model.OrderList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, perPage, page*perPage, appId); result.Err != nil {
+	//if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, perPage, page*perPage, appId); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersBefore(orderId, *options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersAfterOrder(orderId string, page, perPage int, appId string) (*model.OrderList, *model.AppError) {
+func (a *App) GetAllOrdersAfterOrder(orderId string, options *model.OrderGetOptions) (*model.OrderList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, perPage, page*perPage, appId); result.Err != nil {
+	//if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, perPage, page*perPage, appId); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersAfter(orderId, *options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersSince(time int64, appId string) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetAllOrdersSince(time, true, appId); result.Err != nil {
+func (a *App) GetAllOrdersSince(time int64, options *model.OrderGetOptions) (*model.OrderList, *model.AppError) {
+	//if result := <-a.Srv.Store.Order().GetAllOrdersSince(time, true, options); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrdersSince(time, *options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
 	}
 }
 
-func (a *App) GetAllOrdersPage(page int, perPage int, appId string) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetAllOrders(page*perPage, perPage, true, appId); result.Err != nil {
+func (a *App) GetAllOrdersPage(options *model.OrderGetOptions) (*model.OrderList, *model.AppError) {
+	//if result := <-a.Srv.Store.Order().GetAllOrders(page*perPage, perPage, true, appId); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetAllOrders(*options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.OrderList), nil
@@ -282,6 +316,86 @@ func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (
 		orderList := result.Data.(*model.OrderList)
 		return a.PrepareOrderListForClient(orderList), nil
 	}
+}
+
+func (a *App) SetOrderShipped(orderId string) *model.AppError {
+
+	result := <-a.Srv.Store.Order().Get(orderId)
+	if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return result.Err
+	}
+	order := result.Data.(*model.Order)
+	order = a.PrepareOrderForClient(order, false)
+
+	if result := <-a.Srv.Store.Application().Get(order.User.AppId); result.Err != nil {
+		return result.Err
+	} else {
+		order.Status = model.ORDER_STATUS_SHIPPED
+		application := result.Data.(*model.Application)
+
+		if _, err := a.UpdatePostWithOrder(order, false); err != nil {
+			fmt.Println(err)
+		}
+
+		if order.DiscountValue == 0 {
+
+			var cashback float64 = 0
+			var price float64 = 0
+
+			for _, position := range order.Positions {
+				if position.DiscountValue > 0 {
+					cashback += float64(position.Quantity) * float64(position.DiscountValue)
+				} else {
+					cashback += math.Floor(float64(position.Quantity) * position.Price * (application.Cashback / 100))
+					//cashback += float64(position.Quantity) * position.Price
+					price += float64(position.Quantity) * position.Price
+				}
+			}
+
+			a.Srv.Go(func() {
+				value := cashback
+
+				transaction := &model.Transaction{
+					UserId:      order.User.Id,
+					OrderId:     order.Id,
+					Description: fmt.Sprintf("Начисление кэшбека по заказу № %s \n", order.FormatOrderNumber()),
+					Value:       value,
+				}
+
+				if transaction.Value > 0 {
+					a.AccrualTransaction(transaction)
+				}
+			})
+
+			a.Srv.Go(func() {
+				if levels, err := a.GetAllLevelsPage(0, 60, &application.Id); err == nil {
+					levels.SortByLvl()
+					if u, e := a.GetUser(order.User.InvitedBy); e == nil {
+						for _, id := range levels.Order {
+							value := math.Floor(price * (levels.Levels[id].Value / 100))
+							transaction := &model.Transaction{
+								UserId:      u.Id,
+								OrderId:     order.Id,
+								Description: fmt.Sprintf("Начисление по заказу друга \n"),
+								Value:       value,
+								Type:        model.TRANSACTION_TYPE_BONUS,
+							}
+							if transaction.Value > 0 {
+								a.AccrualTransaction(transaction)
+							}
+							if u, e = a.GetUser(u.InvitedBy); e != nil {
+								break
+							}
+						}
+					}
+				}
+			})
+		}
+
+	}
+
+	return nil
 }
 
 func (a *App) SetOrderPayed(orderId string, response *schema.OrderStatusResponse) *model.AppError {
@@ -301,9 +415,7 @@ func (a *App) SetOrderPayed(orderId string, response *schema.OrderStatusResponse
 		return result.Err
 	} else {
 
-		if _, err := a.UpdatePostWithOrder(order, false); err != nil {
-			fmt.Println(err)
-		}
+		a.UpdatePostWithOrder(order, false)
 
 		/*a.AccrualTransaction(&model.Transaction{
 			OrderId: order.Id,
@@ -334,6 +446,10 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 
 	order := result.Data.(*model.Order)
 
+	if order.Canceled == true {
+		return nil
+	}
+
 	if result := <-a.Srv.Store.Order().SetOrderCancel(order.Id); result.Err != nil {
 		return result.Err
 	} else {
@@ -345,15 +461,28 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 			Description: "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
 		})*/
 
-		post := &model.Post{
-			UserId:   order.UserId,
-			Message:  "Отмена оплаты по транзакции № " + strconv.FormatInt(order.CreateAt, 10) + ". Заказ № " + order.FormatOrderNumber(),
-			CreateAt: model.GetMillis() + 1,
-			Type:     model.POST_WITH_TRANSACTION,
-		}
+		if order.PaySystemId != model.PAYMENT_SYSTEM_CASH {
 
-		a.CreatePostWithTransaction(post, false)
+			post := &model.Post{
+				UserId:   order.UserId,
+				Message:  "Отмена оплаты по транзакции № " + strconv.FormatInt(order.CreateAt, 10) + ". Заказ № " + order.FormatOrderNumber(),
+				CreateAt: model.GetMillis() + 1,
+				Type:     model.POST_WITH_TRANSACTION,
+			}
+
+			a.CreatePostWithTransaction(post, false)
+
+			// TODO отправка запроса в эквайринг банка об возврате денежных средств
+		}
 
 		return nil
 	}
+}
+
+func (a *App) GetOrdersStats(options model.OrderCountOptions) (*model.OrdersStats, *model.AppError) {
+	result := <-a.Srv.Store.Order().Count(options)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.OrdersStats), nil
 }

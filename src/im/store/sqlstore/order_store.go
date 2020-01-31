@@ -2,18 +2,31 @@ package sqlstore
 
 import (
 	"database/sql"
+	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/gorp"
 	"im/model"
 	"im/store"
 	"net/http"
+	"regexp"
+	"strings"
+	"time"
 )
 
 type SqlOrderStore struct {
 	SqlStore
+	// ordersQuery is a starting point for all queries that return one or more Orders.
+	ordersQuery sq.SelectBuilder
 }
 
 func NewSqlOrderStore(sqlStore SqlStore) store.OrderStore {
-	s := &SqlOrderStore{sqlStore}
+	s := &SqlOrderStore{
+		SqlStore: sqlStore,
+	}
+
+	s.ordersQuery = s.getQueryBuilder().
+		Select("O.*").
+		From("Orders O")
 
 	for _, db := range sqlStore.GetAllConns() {
 		table := db.AddTableWithName(model.Order{}, "Orders").SetKeys(false, "Id")
@@ -165,86 +178,173 @@ func (s *SqlOrderStore) Delete(orderId string, time int64, deleteByID string) st
 	})
 }
 
-func (s SqlOrderStore) GetAllOrders(offset int, limit int, allowFromCache bool, appId string) store.StoreChannel {
+func generateOrderStatusQuery(query sq.SelectBuilder, terms []string, include bool, isPostgreSQL bool) sq.SelectBuilder {
+	var sep string
+	var op string
+	if include {
+		sep = " OR "
+		op = "="
+	} else {
+		sep = " AND "
+		op = "!="
+	}
+	searchFields := []string{}
+	termArgs := []interface{}{}
+	for _, term := range terms {
+		if isPostgreSQL {
+			searchFields = append(searchFields, fmt.Sprintf("lower(%s) %s ? ", "O.Status", op))
+		} else {
+			searchFields = append(searchFields, fmt.Sprintf("%s %s ? ", "O.Status", op))
+		}
+		termArgs = append(termArgs, fmt.Sprintf("%s", strings.TrimLeft(term, "@")))
+	}
+	query = query.Where(fmt.Sprintf("(%s)", strings.Join(searchFields, sep)), termArgs...)
+
+	return query
+}
+
+func (s SqlOrderStore) GetAllOrders(options model.OrderGetOptions) store.StoreChannel {
+	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	return store.Do(func(result *store.StoreResult) {
-		if limit > 1000 {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_orders.app_error", nil, "", http.StatusBadRequest)
+
+		query := s.ordersQuery.
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
+			//Where("Username = ? OR Email = ?", loginId, loginId).
+			Where("O.DeleteAt = 0").
+			Where("U.AppId = ?", options.AppId).
+			OrderBy("O.CreateAt DESC").
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
+
+		if strings.TrimSpace(options.IncludeStatuses) != "" {
+			query = generateOrderStatusQuery(query, strings.Fields(options.IncludeStatuses), true, isPostgreSQL)
+		}
+		if strings.TrimSpace(options.ExcludeStatuses) != "" {
+			query = generateOrderStatusQuery(query, strings.Fields(options.ExcludeStatuses), false, isPostgreSQL)
+		}
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var orders []*model.Order
+		if _, err := s.GetMaster().Select(&orders, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_root_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		var orders []*model.Order
-		_, err := s.GetReplica().Select(&orders,
-			"SELECT O.* FROM Orders O "+
-				" JOIN Users U ON O.UserId = U.Id "+
-				" JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId "+
-				" WHERE O.DeleteAt = 0 "+
-				" AND U.AppId = :AppId "+
-				" ORDER BY O.CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit, "AppId": appId})
-
-		if err != nil {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_root_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
+		var count struct {
+			Total string
 		}
 
-		if err == nil {
+		var re = regexp.MustCompile(`SELECT O.\*`)
+		queryString = re.ReplaceAllString(queryString, `SELECT COUNT(*) AS Total`)
+		re = regexp.MustCompile(`LIMIT .* OFFSET .*`)
+		queryString = re.ReplaceAllString(queryString, ``)
+		if err := s.GetMaster().SelectOne(&count, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_count_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-			list := model.NewOrderList()
+		list := model.NewOrderList()
+		list.Total = count.Total
+		for _, p := range orders {
+			list.AddItem(p)
+			list.AddOrder(p.Id)
+		}
+		list.MakeNonNil()
 
-			for _, p := range orders {
-				list.AddItem(p)
-				list.AddOrder(p.Id)
+		var descending bool
+		if len(options.Sort) > 0 {
+			if options.Sort[0:1] == "-" {
+				descending = true
+				options.Sort = options.Sort[1:]
+			} else {
+				descending = false
 			}
-
-			list.MakeNonNil()
-
-			result.Data = list
+		} else {
+			descending = true
 		}
+
+		list.SortBy(options.Sort, descending)
+
+		result.Data = list
+
 	})
 }
 
-func (s SqlOrderStore) GetAllOrdersSince(time int64, allowFromCache bool, appId string) store.StoreChannel {
+func (s SqlOrderStore) GetAllOrdersSince(time int64, options model.OrderGetOptions) store.StoreChannel {
+	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	return store.Do(func(result *store.StoreResult) {
 
-		var orders []*model.Order
-		_, err := s.GetReplica().Select(&orders,
-			`SELECT O.* FROM Orders O 
-					JOIN Users U ON O.UserId = U.Id 
-					JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId
-					WHERE O.UpdateAt > :Time AND U.AppId = :AppId ORDER BY O.UpdateAt`,
-			map[string]interface{}{"Time": time, "AppId": appId})
+		query := s.ordersQuery.
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId ", model.POST_WITH_METADATA).
+			Where("O.DeleteAt = 0").
+			Where("O.DeliveryAt > ? AND U.AppId = ?", time, options.AppId).
+			OrderBy("O.CreateAt DESC")
 
+		if strings.TrimSpace(options.IncludeStatuses) != "" {
+			query = generateOrderStatusQuery(query, strings.Fields(options.IncludeStatuses), true, isPostgreSQL)
+		}
+		if strings.TrimSpace(options.ExcludeStatuses) != "" {
+			query = generateOrderStatusQuery(query, strings.Fields(options.ExcludeStatuses), false, isPostgreSQL)
+		}
+
+		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetAllOrdersSince", "store.sql_order.get_orders_since.app_error", nil, err.Error(), http.StatusInternalServerError)
-		} else {
-
-			list := model.NewOrderList()
-			var latestUpdate int64 = 0
-
-			for _, p := range orders {
-				list.AddItem(p)
-				if p.UpdateAt > time {
-					list.AddOrder(p.Id)
-				}
-				if latestUpdate < p.UpdateAt {
-					latestUpdate = p.UpdateAt
-				}
-			}
-
-			//lastOrderTimeCache.AddWithExpiresInSecs(channelId, latestUpdate, LAST_MESSAGE_TIME_CACHE_SEC)
-
-			result.Data = list
+			return
 		}
+		var orders []*model.Order
+		if _, err := s.GetReplica().Select(&orders, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrdersSince", "store.sql_order.get_orders_since.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var count struct {
+			Total string
+		}
+
+		var re = regexp.MustCompile(`SELECT O.\*`)
+		queryString = re.ReplaceAllString(queryString, `SELECT COUNT(*) AS Total`)
+		re = regexp.MustCompile(`LIMIT .* OFFSET .*`)
+		queryString = re.ReplaceAllString(queryString, ``)
+		if err := s.GetMaster().SelectOne(&count, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_count_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		list := model.NewOrderList()
+		list.Total = count.Total
+		var latestDeliveryAt int64 = 0
+		for _, p := range orders {
+			list.AddItem(p)
+			if p.DeliveryAt > time {
+				list.AddOrder(p.Id)
+			}
+			if latestDeliveryAt < p.DeliveryAt {
+				latestDeliveryAt = p.DeliveryAt
+			}
+		}
+		list.MakeNonNil()
+
+		result.Data = list
 	})
 }
 
-func (s SqlOrderStore) GetAllOrdersBefore(orderId string, numOrders int, offset int, appId string) store.StoreChannel {
-	return s.getAllOrdersAround(orderId, numOrders, offset, true, appId)
+func (s SqlOrderStore) GetAllOrdersBefore(orderId string, options model.OrderGetOptions) store.StoreChannel {
+	return s.getAllOrdersAround(orderId, true, options)
 }
 
-func (s SqlOrderStore) GetAllOrdersAfter(orderId string, numOrders int, offset int, appId string) store.StoreChannel {
-	return s.getAllOrdersAround(orderId, numOrders, offset, false, appId)
+func (s SqlOrderStore) GetAllOrdersAfter(orderId string, options model.OrderGetOptions) store.StoreChannel {
+	return s.getAllOrdersAround(orderId, false, options)
 }
 
-func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset int, before bool, appId string) store.StoreChannel {
+func (s SqlOrderStore) getAllOrdersAround(orderId string, before bool, options model.OrderGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		var direction string
 		var sort string
@@ -256,42 +356,56 @@ func (s SqlOrderStore) getAllOrdersAround(orderId string, numOrders int, offset 
 			sort = "ASC"
 		}
 
-		var orders []*model.Order
+		query := s.ordersQuery.
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
+			Where("O.CreateAt "+direction+" (SELECT O.CreateAt FROM Orders O WHERE O.Id = ?)", orderId).
+			Where("O.DeleteAt = 0").
+			Where("U.AppId = ?", options.AppId).
+			OrderBy("O.CreateAt " + sort).
+			OrderBy("O.DeliveryAt " + sort).
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
 
-		_, err := s.GetReplica().Select(&orders,
-			`SELECT
-			    O.*
-			FROM
-			    Orders O
-			JOIN Users U ON O.UserId = U.Id
-			JOIN (SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts) P ON O.Id = P.OrderId
-			WHERE (O.CreateAt `+direction+` (SELECT O.CreateAt FROM Orders O WHERE O.Id = :OrderId)) AND U.AppId = :AppId
-			ORDER BY O.CreateAt `+sort+`
-			LIMIT :NumOrders OFFSET :Offset `,
-			map[string]interface{}{"OrderId": orderId, "NumOrders": numOrders, "Offset": offset, "AppId": appId})
-
+		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.getAllOrdersAround", "store.sql_order.get_orders_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		} else {
-
-			list := model.NewOrderList()
-
-			// We need to flip the order if we selected backwards
-			if before {
-				for _, p := range orders {
-					list.AddItem(p)
-					list.AddOrder(p.Id)
-				}
-			} else {
-				l := len(orders)
-				for i := range orders {
-					list.AddItem(orders[l-i-1])
-					list.AddOrder(orders[l-i-1].Id)
-				}
-			}
-
-			result.Data = list
+			return
 		}
+		var orders []*model.Order
+		if _, err := s.GetReplica().Select(&orders, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.getAllOrdersAround", "store.sql_order.get_orders_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var count struct {
+			Total string
+		}
+
+		var re = regexp.MustCompile(`SELECT O.\*`)
+		queryString = re.ReplaceAllString(queryString, `SELECT COUNT(*) AS Total`)
+		re = regexp.MustCompile(`LIMIT .* OFFSET .*`)
+		queryString = re.ReplaceAllString(queryString, ``)
+		if err := s.GetMaster().SelectOne(&count, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_count_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		list := model.NewOrderList()
+		list.Total = count.Total
+
+		// We need to flip the order if we selected backwards
+		if before {
+			for _, p := range orders {
+				list.AddItem(p)
+				list.AddOrder(p.Id)
+			}
+		} else {
+			l := len(orders)
+			for i := range orders {
+				list.AddItem(orders[l-i-1])
+				list.AddOrder(orders[l-i-1].Id)
+			}
+		}
+		result.Data = list
 	})
 }
 
@@ -490,5 +604,68 @@ func (s SqlOrderStore) SetOrderCancel(orderId string) store.StoreChannel {
 
 		}
 
+	})
+}
+
+func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel {
+	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
+	return store.Do(func(result *store.StoreResult) {
+		var query sq.SelectBuilder
+		Totals := new(model.OrdersStats)
+		endOfDay := model.GetEndOfDayMillis(time.Now(), 0)
+		baseQuery := sq.Select("COUNT(*)").From("Orders O").
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
+			Where("O.DeleteAt = 0").
+			Where("U.AppId = ?", options.AppId)
+
+		query = baseQuery
+		query = generateOrderStatusQuery(query, strings.Fields(model.ORDER_STATUS_DECLINED+" "+model.ORDER_STATUS_SHIPPED), false, isPostgreSQL)
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountCurrent", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if count, err := s.GetReplica().SelectInt(queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountCurrent", "store.sql_order.get_total_count.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			Totals.CurrentCount = count
+		}
+
+		query = sq.Select("COUNT(*)").From("Orders O").
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId ", model.POST_WITH_METADATA).
+			Where("O.DeleteAt = 0").
+			Where("O.DeliveryAt > ? AND U.AppId = ?", endOfDay, options.AppId)
+		query = generateOrderStatusQuery(query, strings.Fields(model.ORDER_STATUS_DECLINED+" "+model.ORDER_STATUS_SHIPPED), false, isPostgreSQL)
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountDeferred", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if count, err := s.GetReplica().SelectInt(queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountDeferred", "store.sql_order.get_total_count.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			Totals.DeferredCount = count
+		}
+
+		query = baseQuery
+		query = generateOrderStatusQuery(query, strings.Fields(model.ORDER_STATUS_DECLINED+" "+model.ORDER_STATUS_SHIPPED), true, isPostgreSQL)
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountClosed", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if count, err := s.GetReplica().SelectInt(queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.CountClosed", "store.sql_order.get_total_count.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			Totals.ClosedCount = count
+		}
+
+		Totals.TotalCount = Totals.CurrentCount + Totals.DeferredCount + Totals.ClosedCount
+		result.Data = Totals
 	})
 }

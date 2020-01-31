@@ -637,10 +637,10 @@ type OrderStore interface {
 	Overwrite(order *model.Order) StoreChannel
 	Delete(orderId string, time int64, deleteByID string) StoreChannel
 
-	GetAllOrders(offset int, limit int, allowFromCache bool, appId string) StoreChannel
-	GetAllOrdersSince(time int64, allowFromCache bool, appId string) StoreChannel
-	GetAllOrdersBefore(orderId string, numOrders int, offset int, appId string) StoreChannel
-	GetAllOrdersAfter(orderId string, numOrders int, offset int, appId string) StoreChannel
+	GetAllOrders(options model.OrderGetOptions) StoreChannel
+	GetAllOrdersSince(time int64, options model.OrderGetOptions) StoreChannel
+	GetAllOrdersBefore(orderId string, options model.OrderGetOptions) StoreChannel
+	GetAllOrdersAfter(orderId string, options model.OrderGetOptions) StoreChannel
 
 	GetFromMaster(id string) StoreChannel
 	SaveBasket(orderId string, positions []*model.Basket) StoreChannel
@@ -648,8 +648,11 @@ type OrderStore interface {
 	SaveWithBasket(order *model.Order) StoreChannel
 
 	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
+
 	SetOrderPayed(orderId string) StoreChannel
 	SetOrderCancel(orderId string) StoreChannel
+
+	Count(options model.OrderCountOptions) StoreChannel
 }
 
 type BasketStore interface {

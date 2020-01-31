@@ -9,12 +9,14 @@ import (
 type OrderList struct {
 	Order  []string          `json:"order"`
 	Orders map[string]*Order `json:"orders"`
+	Total  string            `json:"total"`
 }
 
 func NewOrderList() *OrderList {
 	return &OrderList{
 		Order:  make([]string, 0),
 		Orders: make(map[string]*Order),
+		Total:  string(0),
 	}
 }
 
@@ -96,6 +98,16 @@ func (o *OrderList) Extend(other *OrderList) {
 	}
 }
 
+func (o *OrderList) SortBy(column string, descending bool) {
+	sort.Slice(o.Order, func(i, j int) bool {
+		if descending {
+			return o.Orders[o.Order[i]].CreateAt < o.Orders[o.Order[j]].CreateAt
+		} else {
+			return o.Orders[o.Order[i]].CreateAt > o.Orders[o.Order[j]].CreateAt
+		}
+	})
+}
+
 func (o *OrderList) SortByCreateAt() {
 	sort.Slice(o.Order, func(i, j int) bool {
 		return o.Orders[o.Order[i]].CreateAt > o.Orders[o.Order[j]].CreateAt
@@ -130,3 +142,5 @@ func OrderListFromJson(data io.Reader) *OrderList {
 	json.NewDecoder(data).Decode(&o)
 	return o
 }
+
+//cc-lib gcc-libs9.2.0-4-x86_64

@@ -209,6 +209,9 @@ func (m *ElasticsearcInterfaceImpl) Stop() *model.AppError {
 func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *model.AppError {
 
 	post = m.App.PreparePostForClient(post, true)
+	if post.Metadata != nil && post.Metadata.Order != nil {
+		post.Metadata.Order = m.App.PrepareOrderForClient(post.Metadata.Order, false)
+	}
 	st := post.ToJson()
 
 	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/"+post.Id, strings.NewReader(st))
@@ -357,7 +360,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:     term,
-									Fields:    []string{"message", "metadata.order.positions.name"},
+									Fields:    []string{"message", "metadata.order.positions.name", "metadata.order.address"},
 									Type:      "best_fields",
 									Operator:  "or",
 									Fuzziness: 1,
@@ -366,8 +369,16 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:    term,
-									Fields:   []string{"message", "metadata.order.positions.name"},
+									Fields:   []string{"message", "metadata.order.positions.name", "metadata.order.address"},
 									Type:     "phrase_prefix",
+									Operator: "or",
+								},
+							},
+							Should{
+								MultiMatchFuzziness: MultiMatchFuzziness{
+									Query:    term,
+									Fields:   []string{"metadata.order.phone"},
+									Type:     "phrase",
 									Operator: "or",
 								},
 							},

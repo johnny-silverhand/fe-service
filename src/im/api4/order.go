@@ -1,10 +1,8 @@
 package api4
 
 import (
-	"fmt"
 	"im/model"
 	"im/services/payment"
-	"math"
 	"net/http"
 	"strconv"
 )
@@ -12,10 +10,11 @@ import (
 func (api *API) InitOrder() {
 
 	api.BaseRoutes.Orders.Handle("", api.ApiSessionRequired(getAllOrders)).Methods("GET")
+	api.BaseRoutes.Orders.Handle("/stats", api.ApiSessionRequired(getOrdersStats)).Methods("GET")
 	api.BaseRoutes.Orders.Handle("/invoice", api.ApiSessionRequired(createInvoice)).Methods("POST")
 	api.BaseRoutes.Orders.Handle("", api.ApiHandler(createOrder)).Methods("POST")
 
-	api.BaseRoutes.Order.Handle("", api.ApiHandler(getOrder)).Methods("GET")
+	api.BaseRoutes.Orders.Handle("/{order_id:[A-Za-z0-9]+}", api.ApiHandler(getOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/cancel", api.ApiHandler(cancelOrder)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/prepayment", api.ApiHandler(getPaymentOrderUrl)).Methods("GET")
 	api.BaseRoutes.Order.Handle("/status", api.ApiHandler(getPaymentOrderStatus)).Methods("GET")
@@ -86,15 +85,40 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(result.ToJson()))
 }
 
+func getOrdersStats(c *Context, w http.ResponseWriter, r *http.Request) {
+	if c.Err != nil {
+		return
+	}
+
+	user, err := c.App.GetUser(c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	stats, err := c.App.GetOrdersStats(model.OrderCountOptions{
+		AppId: user.AppId,
+	})
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(stats.ToJson()))
+}
+
 func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	//c.RequireUserId()
 	if c.Err != nil {
 		return
 	}
 
+	filterType := r.URL.Query().Get("type")
 	afterOrder := r.URL.Query().Get("after")
 	beforeOrder := r.URL.Query().Get("before")
 	sinceString := r.URL.Query().Get("since")
+	sort := r.URL.Query().Get("sort")
 
 	var since int64
 	var parseError error
@@ -122,16 +146,32 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orderGetOptions := &model.OrderGetOptions{
+		Sort:    sort,
+		Page:    c.Params.Page,
+		PerPage: c.Params.PerPage,
+		AppId:   user.AppId,
+	}
+
+	switch filterType {
+	case model.ORDER_STADY_CURRENT:
+		orderGetOptions.ExcludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+	case model.ORDER_STADY_DEFERRED:
+		orderGetOptions.ExcludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+	case model.ORDER_STADY_CLOSED:
+		orderGetOptions.IncludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+	}
+
 	if since > 0 {
-		list, err = c.App.GetAllOrdersSince(since, user.AppId)
+		list, err = c.App.GetAllOrdersSince(since, orderGetOptions)
 	} else if len(afterOrder) > 0 {
 
-		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, c.Params.Page, c.Params.PerPage, user.AppId)
+		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, orderGetOptions)
 	} else if len(beforeOrder) > 0 {
 
-		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, c.Params.Page, c.Params.PerPage, user.AppId)
+		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, orderGetOptions)
 	} else {
-		list, err = c.App.GetAllOrdersPage(c.Params.Page, c.Params.PerPage, user.AppId)
+		list, err = c.App.GetAllOrdersPage(orderGetOptions)
 	}
 
 	if err != nil {
@@ -305,50 +345,7 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if application, err := c.App.GetApplication(user.AppId); err != nil {
-		c.Err = err
-		return
-	} else {
-		accural := math.Floor(result.Price * application.Cashback)
-
-		transaction := &model.Transaction{
-			UserId:      user.Id,
-			OrderId:     result.Id,
-			Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
-			Value:       accural,
-		}
-
-		if transaction.Value > 0 {
-			c.App.AccrualTransaction(transaction)
-		}
-	}
-
-	if list, err := c.App.GetAllLevelsPage(0, 60, &user.AppId); err == nil {
-		list.SortByLvl()
-
-		if u, e := c.App.GetUser(user.InvitedBy); e == nil {
-			for _, id := range list.Order {
-				accural := math.Floor(result.Price * (list.Levels[id].Value / 100))
-
-				transaction := &model.Transaction{
-					UserId:      u.Id,
-					OrderId:     result.Id,
-					Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
-					Value:       accural,
-					Type:        model.TRANSACTION_TYPE_BONUS,
-				}
-
-				if transaction.Value > 0 {
-					c.App.AccrualTransaction(transaction)
-				}
-
-				if u, e = c.App.GetUser(u.InvitedBy); e != nil {
-					break
-				}
-			}
-		}
-
-	}
+	/**/
 
 	w.Write([]byte(result.ToJson()))
 }
@@ -419,7 +416,7 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	var appId string
-	if user, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+	if user, err := c.App.GetUser(order.UserId); err != nil {
 		c.Err = err
 		return
 	} else {
@@ -440,13 +437,6 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 
-		/*c.App.Srv.Go(func() {
-			order.Status = response.OrderStatus
-			c.App.UpdateOrder(order, false)
-		})
-
-		w.Write([]byte(response.ToJson()))*/
-
 		c.App.Srv.Go(func() {
 			c.App.SetOrderPayed(c.Params.OrderId, response)
 		})
@@ -462,7 +452,9 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 func cancelOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
 
-	c.App.SetOrderCancel(c.Params.OrderId)
+	c.App.Srv.Go(func() {
+		c.App.SetOrderCancel(c.Params.OrderId)
+	})
 
 	if c.Err != nil {
 		return

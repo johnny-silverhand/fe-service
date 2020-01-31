@@ -1254,10 +1254,8 @@ func (a *App) FindPostWithOrder(orderId string) (*model.Post, *model.AppError) {
 func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*model.Post, *model.AppError) {
 	var post *model.Post
 	var err *model.AppError
-	//var channel *model.Channel
 
 	if post, err = a.FindPostWithOrder(order.Id); err == nil {
-
 		post = a.PreparePostForClient(post, false)
 
 		message := model.NewWebSocketEvent(model.WEBSOCKET_EVENT_POST_EDITED, "", post.ChannelId, "", nil)
@@ -1265,30 +1263,6 @@ func (a *App) UpdatePostWithOrder(order *model.Order, triggerWebhooks bool) (*mo
 		a.Publish(message)
 
 		a.InvalidateCacheForChannelPosts(post.ChannelId)
-
-		/*tomorrow := model.GetEndOfDayMillis(time.Now(), 0)
-
-		if order.DeliveryAt >= tomorrow {
-			channel, err = a.GetOrCreateDeferredChannel(order.UserId)
-			if err != nil {
-				return nil, err
-			}
-
-			if result := <-a.Srv.Store.Post().PermanentDelete(post.Id); result.Err != nil {
-				return nil, result.Err
-			}
-
-			post.ChannelId = channel.Id
-			a.InvalidateCacheForChannelPosts(post.ChannelId)
-			post.Id = ""
-			if rpost, err := a.CreatePostWithOrder(post, order, true); err != nil {
-				return nil, err
-			} else {
-
-				return rpost, nil
-			}
-		}*/
-
 	} else {
 		return nil, err
 	}
@@ -1301,15 +1275,6 @@ func (a *App) CreatePostWithOrder(post *model.Post, order *model.Order, triggerW
 	var channel *model.Channel
 	var err *model.AppError
 
-	/*tomorrow := model.GetEndOfDayMillis(time.Now(), 0)
-
-	if order.DeliveryAt >= tomorrow {
-		channel, err = a.GetOrCreateDeferredChannel(order.UserId)
-		if err != nil {
-			return nil, err
-		}
-		post.ChannelId = channel.Id
-	} else */
 	if channel, err = a.FindOpennedChannel(order.UserId); err == nil {
 		post.ChannelId = channel.Id
 
