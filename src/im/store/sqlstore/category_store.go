@@ -79,7 +79,7 @@ func (s SqlCategoryStore) GetAllPage(offset int, limit int, appId *string) store
 		appQuery := ""
 
 		if appId != nil {
-			appQuery = " where c.AppId = :AppId "
+			appQuery = " WHERE C.AppId = :AppId "
 		}
 
 		var query = `SELECT C.*, Childs.Cnt as CntChild 
