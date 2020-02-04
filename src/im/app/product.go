@@ -419,23 +419,41 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 		return nil, result.Err
 	}
 
+	keys := make(map[string]int)
+	for _, entry := range productIds {
+		if _, value := keys[entry]; !value {
+			keys[entry] = 1
+		} else {
+			keys[entry] += 1
+		}
+	}
+
+	var discount model.ProductsDiscount
+	var value int64
+
 	rproducts := result.Data.([]*model.Product)
-	var (
-		discount model.ProductsDiscount
-		value    int64
-	)
 
 	for _, product := range rproducts {
-		value = int64(product.Price * (product.DiscountLimit / 100))
+		application := (<-a.Srv.Store.Application().Get(product.AppId)).Data.(*model.Application)
+		if application == nil {
+			continue
+		}
+
+		Quantity := keys[product.Id]
+
+		value = int64(product.Price*(product.DiscountLimit/100)) * int64(Quantity)
+		if value <= 0 {
+			value = int64(product.Price*(float64(application.MaxDiscount)/100)) * int64(Quantity)
+		}
+
 		discount.Limits = append(discount.Limits, struct {
 			Id            string `json:"id"`
 			DiscountValue int64  `json:"discount_value"`
 		}{
-			product.Id,
-			value,
+			Id:            product.Id,
+			DiscountValue: value,
 		})
 		discount.Total += value
-
 	}
 
 	return &discount, nil
