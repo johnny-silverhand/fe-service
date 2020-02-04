@@ -480,7 +480,7 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 		} else {
 			post := &model.Post{
 				UserId:   order.UserId,
-				Message:  "Отмена Заказа № " + order.FormatOrderNumber(),
+				Message:  "Заказ № " + order.FormatOrderNumber() + " отменен.",
 				CreateAt: model.GetMillis() + 1,
 				Type:     model.POST_WITH_TRANSACTION,
 			}
