@@ -4,7 +4,6 @@ import (
 	"im/model"
 	"im/services/payment"
 	"net/http"
-	"strconv"
 )
 
 func (api *API) InitOrder() {
@@ -114,13 +113,13 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filterType := r.URL.Query().Get("type")
-	afterOrder := r.URL.Query().Get("after")
+	typeOrder := r.URL.Query().Get("type")
+	/*afterOrder := r.URL.Query().Get("after")
 	beforeOrder := r.URL.Query().Get("before")
-	sinceString := r.URL.Query().Get("since")
+	sinceString := r.URL.Query().Get("since")*/
 	sort := r.URL.Query().Get("sort")
 
-	var since int64
+	/*var since int64
 	var parseError error
 
 	if len(sinceString) > 0 {
@@ -129,7 +128,7 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 			c.SetInvalidParam("since")
 			return
 		}
-	}
+	}*/
 
 	/*	if !c.App.SessionHasPermissionToChannel(c.Session, c.Params.ChannelId, model.PERMISSION_READ_CHANNEL) {
 		c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
@@ -153,16 +152,18 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		AppId:   user.AppId,
 	}
 
-	switch filterType {
+	switch typeOrder {
 	case model.ORDER_STADY_CURRENT:
-		orderGetOptions.ExcludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+		orderGetOptions.Status = model.ORDER_STADY_CURRENT
 	case model.ORDER_STADY_DEFERRED:
-		orderGetOptions.ExcludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+		orderGetOptions.Status = model.ORDER_STADY_DEFERRED
 	case model.ORDER_STADY_CLOSED:
-		orderGetOptions.IncludeStatuses = model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+		orderGetOptions.Status = model.ORDER_STADY_CLOSED
+	default:
+		orderGetOptions.Status = model.ORDER_STADY_CURRENT
 	}
 
-	if since > 0 {
+	/*if since > 0 {
 		list, err = c.App.GetAllOrdersSince(since, orderGetOptions)
 	} else if len(afterOrder) > 0 {
 
@@ -170,9 +171,9 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	} else if len(beforeOrder) > 0 {
 
 		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, orderGetOptions)
-	} else {
-		list, err = c.App.GetAllOrdersPage(orderGetOptions)
-	}
+	} else {*/
+	list, err = c.App.GetAllOrdersPage(orderGetOptions)
+	/*}*/
 
 	if err != nil {
 		c.Err = err

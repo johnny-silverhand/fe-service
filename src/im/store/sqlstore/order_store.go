@@ -9,6 +9,7 @@ import (
 	"im/store"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -206,22 +207,38 @@ func generateOrderStatusQuery(query sq.SelectBuilder, terms []string, include bo
 func (s SqlOrderStore) GetAllOrders(options model.OrderGetOptions) store.StoreChannel {
 	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	return store.Do(func(result *store.StoreResult) {
-
+		var total string
+		var OrderStats *model.OrdersStats
+		endOfDay := model.GetEndOfDayMillis(time.Now(), 0)
 		query := s.ordersQuery.
 			Join("Users U ON O.UserId = U.Id").
 			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
-			//Where("Username = ? OR Email = ?", loginId, loginId).
 			Where("O.DeleteAt = 0").
 			Where("U.AppId = ?", options.AppId).
 			OrderBy("O.CreateAt DESC").
 			Offset(uint64(options.Page * options.PerPage)).
 			Limit(uint64(options.PerPage))
 
-		if strings.TrimSpace(options.IncludeStatuses) != "" {
-			query = generateOrderStatusQuery(query, strings.Fields(options.IncludeStatuses), true, isPostgreSQL)
+		r := <-s.Count(model.OrderCountOptions{AppId: options.AppId})
+		if r.Err != nil {
+			result.Err = r.Err
+			return
 		}
-		if strings.TrimSpace(options.ExcludeStatuses) != "" {
-			query = generateOrderStatusQuery(query, strings.Fields(options.ExcludeStatuses), false, isPostgreSQL)
+		OrderStats = r.Data.(*model.OrdersStats)
+		statuses := model.ORDER_STATUS_DECLINED + " " + model.ORDER_STATUS_SHIPPED
+		if options.Status == model.ORDER_STADY_CLOSED {
+			query = generateOrderStatusQuery(query, strings.Fields(statuses), true, isPostgreSQL)
+			total = strconv.FormatInt(OrderStats.ClosedCount, 10)
+		} else {
+			if options.Status == model.ORDER_STADY_DEFERRED {
+				query = generateOrderStatusQuery(query, strings.Fields(statuses), false, isPostgreSQL).
+					Where("O.DeliveryAt > ?", endOfDay)
+				total = strconv.FormatInt(OrderStats.DeferredCount, 10)
+			} else {
+				query = generateOrderStatusQuery(query, strings.Fields(statuses), false, isPostgreSQL).
+					Where("O.DeliveryAt <= ?", endOfDay)
+				total = strconv.FormatInt(OrderStats.CurrentCount, 10)
+			}
 		}
 
 		queryString, args, err := query.ToSql()
@@ -236,21 +253,8 @@ func (s SqlOrderStore) GetAllOrders(options model.OrderGetOptions) store.StoreCh
 			return
 		}
 
-		var count struct {
-			Total string
-		}
-
-		var re = regexp.MustCompile(`SELECT O.\*`)
-		queryString = re.ReplaceAllString(queryString, `SELECT COUNT(*) AS Total`)
-		re = regexp.MustCompile(`LIMIT .* OFFSET .*`)
-		queryString = re.ReplaceAllString(queryString, ``)
-		if err := s.GetMaster().SelectOne(&count, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_count_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
 		list := model.NewOrderList()
-		list.Total = count.Total
+		list.Total = total
 		for _, p := range orders {
 			list.AddItem(p)
 			list.AddOrder(p.Id)
@@ -272,54 +276,13 @@ func (s SqlOrderStore) GetAllOrders(options model.OrderGetOptions) store.StoreCh
 		list.SortBy(options.Sort, descending)
 
 		result.Data = list
-
 	})
 }
 
 func (s SqlOrderStore) GetAllOrdersSince(time int64, options model.OrderGetOptions) store.StoreChannel {
-	isPostgreSQL := s.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	return store.Do(func(result *store.StoreResult) {
 
-		query := s.ordersQuery.
-			Join("Users U ON O.UserId = U.Id").
-			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId ", model.POST_WITH_METADATA).
-			Where("O.DeleteAt = 0").
-			Where("O.DeliveryAt > ? AND U.AppId = ?", time, options.AppId).
-			OrderBy("O.CreateAt DESC")
-
-		if strings.TrimSpace(options.IncludeStatuses) != "" {
-			query = generateOrderStatusQuery(query, strings.Fields(options.IncludeStatuses), true, isPostgreSQL)
-		}
-		if strings.TrimSpace(options.ExcludeStatuses) != "" {
-			query = generateOrderStatusQuery(query, strings.Fields(options.ExcludeStatuses), false, isPostgreSQL)
-		}
-
-		queryString, args, err := query.ToSql()
-		if err != nil {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrdersSince", "store.sql_order.get_orders_since.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		var orders []*model.Order
-		if _, err := s.GetReplica().Select(&orders, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrdersSince", "store.sql_order.get_orders_since.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		var count struct {
-			Total string
-		}
-
-		var re = regexp.MustCompile(`SELECT O.\*`)
-		queryString = re.ReplaceAllString(queryString, `SELECT COUNT(*) AS Total`)
-		re = regexp.MustCompile(`LIMIT .* OFFSET .*`)
-		queryString = re.ReplaceAllString(queryString, ``)
-		if err := s.GetMaster().SelectOne(&count, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlOrderStore.GetAllOrders", "store.sql_order.get_count_orders.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		list := model.NewOrderList()
-		list.Total = count.Total
+		/*list := model.NewOrderList()
 		var latestDeliveryAt int64 = 0
 		for _, p := range orders {
 			list.AddItem(p)
@@ -330,9 +293,8 @@ func (s SqlOrderStore) GetAllOrdersSince(time int64, options model.OrderGetOptio
 				latestDeliveryAt = p.DeliveryAt
 			}
 		}
-		list.MakeNonNil()
+		list.MakeNonNil()*/
 
-		result.Data = list
 	})
 }
 
@@ -613,13 +575,12 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 		var query sq.SelectBuilder
 		Totals := new(model.OrdersStats)
 		endOfDay := model.GetEndOfDayMillis(time.Now(), 0)
-		baseQuery := sq.Select("COUNT(*)").From("Orders O").
+		query = sq.Select("COUNT(*)").From("Orders O").
 			Join("Users U ON O.UserId = U.Id").
 			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
 			Where("O.DeleteAt = 0").
-			Where("U.AppId = ?", options.AppId)
+			Where("O.DeliveryAt <= ? AND U.AppId = ?", endOfDay, options.AppId)
 
-		query = baseQuery
 		query = generateOrderStatusQuery(query, strings.Fields(model.ORDER_STATUS_DECLINED+" "+model.ORDER_STATUS_SHIPPED), false, isPostgreSQL)
 		queryString, args, err := query.ToSql()
 		if err != nil {
@@ -651,7 +612,12 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 			Totals.DeferredCount = count
 		}
 
-		query = baseQuery
+		query = sq.Select("COUNT(*)").From("Orders O").
+			Join("Users U ON O.UserId = U.Id").
+			Join("(SELECT SUBSTRING(Props, 14, 26) AS OrderId FROM Posts WHERE Type = ?) P ON O.Id = P.OrderId", model.POST_WITH_METADATA).
+			Where("O.DeleteAt = 0").
+			Where("U.AppId = ?", options.AppId)
+
 		query = generateOrderStatusQuery(query, strings.Fields(model.ORDER_STATUS_DECLINED+" "+model.ORDER_STATUS_SHIPPED), true, isPostgreSQL)
 		queryString, args, err = query.ToSql()
 		if err != nil {

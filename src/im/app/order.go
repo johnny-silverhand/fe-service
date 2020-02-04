@@ -473,6 +473,15 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 			a.CreatePostWithTransaction(post, false)
 
 			// TODO отправка запроса в эквайринг банка об возврате денежных средств
+		} else {
+			post := &model.Post{
+				UserId:   order.UserId,
+				Message:  "Отмена Заказа № " + order.FormatOrderNumber(),
+				CreateAt: model.GetMillis() + 1,
+				Type:     model.POST_WITH_TRANSACTION,
+			}
+
+			a.CreatePostWithTransaction(post, false)
 		}
 
 		return nil
