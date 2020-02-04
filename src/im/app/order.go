@@ -327,12 +327,16 @@ func (a *App) SetOrderShipped(orderId string) *model.AppError {
 		return result.Err
 	}
 	order := result.Data.(*model.Order)
+
 	order = a.PrepareOrderForClient(order, false)
 
 	if result := <-a.Srv.Store.Application().Get(order.User.AppId); result.Err != nil {
 		return result.Err
 	} else {
 		order.Status = model.ORDER_STATUS_SHIPPED
+		order.UpdateAt = model.GetMillis()
+		<-a.Srv.Store.Order().Update(order)
+
 		application := result.Data.(*model.Application)
 
 		if _, err := a.UpdatePostWithOrder(order, false); err != nil {
