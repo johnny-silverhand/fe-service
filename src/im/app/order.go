@@ -188,7 +188,7 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	case model.ORDER_STATUS_AWAITING_PICKUP:
 	case model.ORDER_STATUS_AWAITING_SHIPMENT:
 	case model.ORDER_STATUS_DECLINED:
-		if oldOrder.Status == model.ORDER_STATUS_SHIPPED {
+		if oldOrder.Status != model.ORDER_STATUS_SHIPPED {
 			a.SetOrderCancel(order.Id)
 		}
 		return order, nil
