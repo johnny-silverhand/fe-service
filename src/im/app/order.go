@@ -188,7 +188,6 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	case model.ORDER_STATUS_AWAITING_PICKUP:
 	case model.ORDER_STATUS_AWAITING_SHIPMENT:
 	case model.ORDER_STATUS_DECLINED:
-		return order, nil
 		if err := a.SetOrderCancel(order.Id); err != nil {
 			return nil, err
 		}
