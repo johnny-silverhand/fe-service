@@ -188,19 +188,17 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	case model.ORDER_STATUS_AWAITING_PICKUP:
 	case model.ORDER_STATUS_AWAITING_SHIPMENT:
 	case model.ORDER_STATUS_DECLINED:
-		if oldOrder.Status != model.ORDER_STATUS_SHIPPED {
-			a.SetOrderCancel(order.Id)
+		return order, nil
+		if err := a.SetOrderCancel(order.Id); err != nil {
+			return nil, err
 		}
 		return order, nil
 	case model.ORDER_STATUS_REFUNDED:
 	case model.ORDER_STATUS_SHIPPED:
-		if oldOrder.Status != model.ORDER_STATUS_SHIPPED {
-			if err := a.SetOrderShipped(order.Id); err != nil {
-				return nil, err
-			}
-			return order, nil
+		if err := a.SetOrderShipped(order.Id); err != nil {
+			return nil, err
 		}
-		return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
+		return order, nil
 	default:
 		// If not part of the scheme for this channel, then it is not allowed to apply it as an explicit role.
 		return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.not_found.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
