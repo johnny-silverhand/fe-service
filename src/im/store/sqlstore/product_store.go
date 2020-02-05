@@ -251,6 +251,10 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			whereClause = whereClause + " p.Active = :Active AND "
 		}
 
+		if options.Extra {
+			whereClause = whereClause + " p.Extra = true AND "
+		}
+
 		query := "SELECT p.* " +
 			"FROM Products p " + officeJoin +
 			"WHERE " + whereClause +

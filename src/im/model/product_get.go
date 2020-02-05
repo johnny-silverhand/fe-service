@@ -17,4 +17,6 @@ type ProductGetOptions struct {
 	Status string
 	// Filter the products by active
 	Active *bool
+	// Filter the products by extra
+	Extra bool
 }

@@ -9,12 +9,13 @@ func (api *API) InitProduct() {
 	api.BaseRoutes.Products.Handle("/status", api.ApiHandler(updateProductsStatuses)).Methods("PUT")
 	api.BaseRoutes.Products.Handle("/{product_id:[A-Za-z0-9]+}", api.ApiHandler(updateProduct)).Methods("PUT")
 
+	api.BaseRoutes.Products.Handle("/extra", api.ApiHandler(getExtraProducts)).Methods("GET")
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(getProducts)).Methods("GET")
 
 	api.BaseRoutes.Products.Handle("/search", api.ApiHandler(searchProducts)).Methods("POST")
 	api.BaseRoutes.Products.Handle("", api.ApiHandler(createProduct)).Methods("POST")
 
-	api.BaseRoutes.Product.Handle("", api.ApiHandler(getProduct)).Methods("GET")
+	api.BaseRoutes.Products.Handle("/{product_id:[A-Za-z0-9_-]+}", api.ApiHandler(getProduct)).Methods("GET")
 
 	api.BaseRoutes.Product.Handle("", api.ApiHandler(deleteProduct)).Methods("DELETE")
 
@@ -171,6 +172,26 @@ func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		OfficeId:   c.Params.OfficeId,
 		AppId:      c.Params.AppId,
 		Status:     c.Params.Status,
+	}
+	if len(productGetOptions.AppId) == 0 {
+		productGetOptions.AppId = c.App.Session.AppId
+	}
+	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions); err != nil {
+		c.Err = err
+		return
+	} else {
+		w.Write([]byte(products.ToJson()))
+	}
+}
+
+func getExtraProducts(c *Context, w http.ResponseWriter, r *http.Request) {
+	//c.RequireCategoryId()
+	if c.Err != nil {
+		return
+	}
+	productGetOptions := &model.ProductGetOptions{
+		AppId: c.Params.AppId,
+		Extra: true,
 	}
 	if len(productGetOptions.AppId) == 0 {
 		productGetOptions.AppId = c.App.Session.AppId

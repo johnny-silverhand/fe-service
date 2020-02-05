@@ -122,6 +122,12 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 		}
 	}
 
+	if product.ExtraProductList != nil && len(product.ExtraProductList.Products) > 0 {
+		if err := a.attachExtraToProduct(product); err != nil {
+			mlog.Error("Encountered error attaching offices to product", mlog.String("product_id", product.Id), mlog.Any("extra_products", product.ExtraProductList), mlog.Err(result.Err))
+		}
+	}
+
 	rproduct := result.Data.(*model.Product)
 
 	esInterface := a.Elasticsearch
@@ -162,6 +168,22 @@ func (a *App) attachOfficeToProduct(product *model.Product) *model.AppError {
 		}
 
 		attachedIds = append(attachedIds, office.Id)
+	}
+
+	return nil
+}
+
+func (a *App) attachExtraToProduct(product *model.Product) *model.AppError {
+	var attachedIds []string
+	for _, productExtra := range product.ExtraProductList.Products {
+		//
+		result := <-a.Srv.Store.Extra().Save(model.NewExtra(product.Id, productExtra.Id))
+		if result.Err != nil {
+			mlog.Warn("Failed to attach file to post", mlog.String("product_id", product.Id), mlog.String("extra_id", productExtra.Id), mlog.Err(result.Err))
+			continue
+		}
+
+		attachedIds = append(attachedIds, productExtra.Id)
 	}
 
 	return nil
@@ -217,6 +239,15 @@ func (a *App) deleteOfficeFromProduct(product *model.Product) *model.AppError {
 	result := <-a.Srv.Store.ProductOffice().DeleteForProduct(product.Id)
 	if result.Err != nil {
 		mlog.Warn("Failed to delete offices from product", mlog.String("product_id", product.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
+	}
+
+	return nil
+}
+
+func (a *App) deleteExtraFromProduct(product *model.Product) *model.AppError {
+	result := <-a.Srv.Store.Extra().DeleteForProduct(product.Id)
+	if result.Err != nil {
+		mlog.Warn("Failed to delete extra product list from product", mlog.String("product_id", product.Id), mlog.String("product_id", product.Id), mlog.Err(result.Err))
 	}
 
 	return nil
@@ -290,6 +321,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	//if !safeUpdate {
 	newProduct.Media = product.Media
 	newProduct.Offices = product.Offices
+	newProduct.ExtraProductList = product.ExtraProductList
 
 	/*oldProduct = a.PrepareProductForClient(oldProduct, false)
 	oldmedia := oldProduct.Media
@@ -311,6 +343,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 
 	a.deleteMediaFromProduct(oldProduct, newProduct)
 	a.deleteOfficeFromProduct(oldProduct)
+	a.deleteExtraFromProduct(oldProduct)
 
 	if len(newProduct.Media) > 0 {
 		if err := a.attachMediaToProduct(newProduct); err != nil {
@@ -321,6 +354,12 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	if len(newProduct.Offices) > 0 {
 		if err := a.attachOfficeToProduct(newProduct); err != nil {
 			mlog.Error("Encountered error attaching offices to product", mlog.String("product_id", newProduct.Id), mlog.Any("offices", newProduct.Offices), mlog.Err(result.Err))
+		}
+	}
+
+	if newProduct.ExtraProductList != nil && len(newProduct.ExtraProductList.Products) > 0 {
+		if err := a.attachExtraToProduct(newProduct); err != nil {
+			mlog.Error("Encountered error attaching extra product list to product", mlog.String("product_id", newProduct.Id), mlog.Any("offices", newProduct.Offices), mlog.Err(result.Err))
 		}
 	}
 

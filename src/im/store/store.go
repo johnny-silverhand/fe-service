@@ -697,4 +697,6 @@ type ExtraStore interface {
 	GetAllExtrasAfter(extraId string, numExtras int, offset int) StoreChannel
 
 	GetExtraProductsByIds(productIds []string, allowFromCache bool) StoreChannel
+
+	DeleteForProduct(productId string) StoreChannel
 }

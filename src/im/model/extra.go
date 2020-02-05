@@ -15,6 +15,13 @@ type Extra struct {
 	DeleteAt  int64  `json:"delete_at"`
 }
 
+func NewExtra(productId string, RefId string) *Extra {
+	return &Extra{
+		ProductId: productId,
+		RefId:     RefId,
+	}
+}
+
 type ExtraBasket struct {
 	Products []string `json:"products"`
 }

@@ -51,6 +51,12 @@ func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProdu
 		product.Offices = offices
 	}
 
+	if extra, err := a.getExtraProductListForProduct(product); err != nil {
+		mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+	} else {
+		product.ExtraProductList = extra
+	}
+
 	return product
 }
 func (a *App) getMediaForProduct(product *model.Product) ([]*model.FileInfo, *model.AppError) {
@@ -67,4 +73,11 @@ func (a *App) getOfficesForProduct(product *model.Product) ([]*model.Office, *mo
 	}*/
 
 	return a.GetOfficesForProduct(product.Id)
+}
+
+func (a *App) getExtraProductListForProduct(product *model.Product) (*model.ProductList, *model.AppError) {
+	/*if len(product.FileIds) == 0 {
+		return nil, nil
+	}*/
+	return a.GetExtrasBasket([]string{product.Id})
 }

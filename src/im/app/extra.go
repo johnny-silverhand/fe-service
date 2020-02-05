@@ -70,7 +70,6 @@ func (a *App) UpdateExtra(extra *model.Extra, safeUpdate bool) (*model.Extra, *m
 	newExtra := &model.Extra{}
 	*newExtra = *oldExtra
 
-
 	result = <-a.Srv.Store.Extra().Update(newExtra)
 	if result.Err != nil {
 		return nil, result.Err
@@ -87,10 +86,6 @@ func (a *App) UpdateExtra(extra *model.Extra, safeUpdate bool) (*model.Extra, *m
 func (a *App) PrepareExtraForClient(originalExtra *model.Extra, isNewExtra bool) *model.Extra {
 	extra := originalExtra.Clone()
 
-
-
-
-
 	//extra.Metadata.Images = a.getCategoryForExtra(extra)
 
 	return extra
@@ -99,7 +94,7 @@ func (a *App) PrepareExtraForClient(originalExtra *model.Extra, isNewExtra bool)
 func (a *App) PrepareExtraListForClient(originalList *model.ExtraList) *model.ExtraList {
 	list := &model.ExtraList{
 		Extras: make(map[string]*model.Extra, len(originalList.Extras)),
-		Order: originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
+		Order:  originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
 
 	for id, originalExtra := range originalList.Extras {
@@ -119,27 +114,23 @@ func (a *App) DeleteExtra(extraId, deleteByID string) (*model.Extra, *model.AppE
 	}
 	extra := result.Data.(*model.Extra)
 
-
 	if result := <-a.Srv.Store.Extra().Delete(extraId, model.GetMillis(), deleteByID); result.Err != nil {
 		return nil, result.Err
 	}
 
-
 	return extra, nil
 }
 
-
 func (a *App) GetAllExtrasBeforeExtra(extraId string, page, perPage int) (*model.ExtraList, *model.AppError) {
 
-	if result := <-a.Srv.Store.Extra().GetAllExtrasBefore( extraId, perPage, page*perPage); result.Err != nil {
+	if result := <-a.Srv.Store.Extra().GetAllExtrasBefore(extraId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.ExtraList), nil
 	}
 }
 
-func (a *App) GetAllExtrasAfterExtra( extraId string, page, perPage int) (*model.ExtraList, *model.AppError) {
-
+func (a *App) GetAllExtrasAfterExtra(extraId string, page, perPage int) (*model.ExtraList, *model.AppError) {
 
 	if result := <-a.Srv.Store.Extra().GetAllExtrasAfter(extraId, perPage, page*perPage); result.Err != nil {
 		return nil, result.Err
@@ -182,12 +173,11 @@ func (a *App) GetAllExtrasPage(page int, perPage int) (*model.ExtraList, *model.
 
 func (a *App) GetExtrasBasket(productIds []string) (*model.ProductList, *model.AppError) {
 
-		result := <-a.Srv.Store.Extra().GetExtraProductsByIds(productIds, true)
+	result := <-a.Srv.Store.Extra().GetExtraProductsByIds(productIds, true)
 
-		if result.Err != nil {
-			return nil, result.Err
-		}
+	if result.Err != nil {
+		return nil, result.Err
+	}
 
-		return result.Data.(*model.ProductList), nil
-
+	return result.Data.(*model.ProductList), nil
 }

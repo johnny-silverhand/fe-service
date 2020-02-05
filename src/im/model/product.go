@@ -31,12 +31,13 @@ type Product struct {
 	UpdateAt      int64   `json:"update_at"`
 	DeleteAt      int64   `json:"delete_at"`
 	CategoryId    string  `json:"category_id"`
+	Extra         bool    `json:"extra"`
 	//Category      *Category `json:"category"`
-	FileIds  StringArray `json:"file_ids,omitempty"`
-	Category *Category   `json:"category,omitempty" db:"-"`
-	Media    []*FileInfo `db:"-" json:"media,omitempty"`
-
-	Offices []*Office `db:"-" json:"offices,omitempty"`
+	FileIds          StringArray  `json:"file_ids,omitempty"`
+	Category         *Category    `json:"category,omitempty" db:"-"`
+	Media            []*FileInfo  `db:"-" json:"media,omitempty"`
+	Offices          []*Office    `db:"-" json:"offices,omitempty"`
+	ExtraProductList *ProductList `db:"-" json:"extra_product_list,omitempty"`
 }
 
 type ProductPatch struct {

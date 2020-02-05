@@ -308,3 +308,15 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 		}
 	})
 }
+
+func (s SqlExtraStore) DeleteForProduct(productId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		if _, err := s.GetMaster().Exec(`UPDATE Extras SET DeleteAt = :DeleteAt WHERE ProductId = :ProductId`,
+			map[string]interface{}{"DeleteAt": model.GetMillis(), "ProductId": productId}); err != nil {
+			result.Err = model.NewAppError("SqlExtraStore.DeleteForProduct",
+				"store.sql_extra.delete_for_product.app_error", nil, "product_id="+productId+", err="+err.Error(), http.StatusInternalServerError)
+		} else {
+			result.Data = productId
+		}
+	})
+}
