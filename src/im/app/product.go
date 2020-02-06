@@ -473,15 +473,11 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 	rproducts := result.Data.([]*model.Product)
 
 	for _, product := range rproducts {
-		application := (<-a.Srv.Store.Application().Get(product.AppId)).Data.(*model.Application)
-		if application == nil {
-			continue
-		}
-
 		Quantity := keys[product.Id]
-
-		value = int64(product.Price*(product.DiscountLimit/100)) * int64(Quantity)
-		if value <= 0 {
+		if product.DiscountLimit > 0 {
+			value = int64(product.Price*(product.DiscountLimit/100)) * int64(Quantity)
+		} else {
+			application := (<-a.Srv.Store.Application().Get(product.AppId)).Data.(*model.Application)
 			value = int64(product.Price*(float64(application.MaxDiscount)/100)) * int64(Quantity)
 		}
 
