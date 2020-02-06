@@ -57,6 +57,12 @@ func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProdu
 		product.ExtraProductList = extra
 	}
 
+	if category, err := a.GetCategory(product.CategoryId); err != nil {
+		mlog.Warn("Failed to get category for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+	} else {
+		product.Category = category
+	}
+
 	return product
 }
 func (a *App) getMediaForProduct(product *model.Product) ([]*model.FileInfo, *model.AppError) {
