@@ -102,7 +102,9 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 	// проверка DiscountValue на превышение допустимого лимита оплаты бонусами в заказе
 	var productIds = make([]string, 0)
 	for _, position := range order.Positions {
-		productIds = append(productIds, position.ProductId)
+		for i := 1; i <= position.Quantity; i++ {
+			productIds = append(productIds, position.ProductId)
+		}
 	}
 	if discountLimit, err := a.GetDiscountLimits(productIds); err != nil {
 		return nil, err
