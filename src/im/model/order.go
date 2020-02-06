@@ -74,6 +74,24 @@ type Order struct {
 	User                 *User     `db:"-" json:"user,omitempty"`
 }
 
+type OrderPatch struct {
+	Status        *string `json:"status"`
+	DeliveryAt    *int64  `json:"delivery_at"`
+	PaySystemCode *string `json:"pay_system_code"`
+}
+
+func (o *Order) Patch(patch *OrderPatch) {
+	if patch.Status != nil {
+		o.Status = *patch.Status
+	}
+	if patch.DeliveryAt != nil {
+		o.DeliveryAt = *patch.DeliveryAt
+	}
+	if patch.PaySystemCode != nil {
+		o.PaySystemCode = *patch.PaySystemCode
+	}
+}
+
 func (order *Order) ToJson() string {
 	b, _ := json.Marshal(order)
 	return string(b)
@@ -83,6 +101,12 @@ func OrderFromJson(data io.Reader) *Order {
 	var order *Order
 	json.NewDecoder(data).Decode(&order)
 	return order
+}
+
+func OrderPatchFromJson(data io.Reader) *OrderPatch {
+	var patch *OrderPatch
+	json.NewDecoder(data).Decode(&patch)
+	return patch
 }
 
 func (o *Order) Clone() *Order {

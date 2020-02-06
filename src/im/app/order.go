@@ -150,10 +150,10 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 	return newOrder, nil
 }
 
-func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *model.AppError) {
+func (a *App) UpdateOrder(id string, patch *model.OrderPatch, safeUpdate bool) (*model.Order, *model.AppError) {
 	//order.SanitizeProps()
 
-	result := <-a.Srv.Store.Order().Get(order.Id)
+	result := <-a.Srv.Store.Order().Get(id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -161,67 +161,44 @@ func (a *App) UpdateOrder(order *model.Order, safeUpdate bool) (*model.Order, *m
 	oldOrder := result.Data.(*model.Order)
 
 	if oldOrder == nil {
-		err := model.NewAppError("UpdateOrder", "api.order.update_order.find.app_error", nil, "id="+order.Id, http.StatusBadRequest)
+		err := model.NewAppError("UpdateOrder", "api.order.update_order.find.app_error", nil, "id="+id, http.StatusBadRequest)
 		return nil, err
 	}
 
 	if oldOrder.DeleteAt != 0 {
-		err := model.NewAppError("UpdateOrder", "api.order.update_order.permissions_details.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
+		err := model.NewAppError("UpdateOrder", "api.order.update_order.permissions_details.app_error", map[string]interface{}{"OrderId": id}, "", http.StatusBadRequest)
 		return nil, err
-	}
-
-	/*if order.Status == oldOrder.Status && order.DeliveryAt == oldOrder.DeliveryAt {
-		err := model.NewAppError("UpdateOrder", "api.order.update_order.status.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
-		return nil, err
-	}*/
-
-	oldOrder = a.PrepareOrderForClient(oldOrder, false)
-
-	if oldOrder.User == nil {
-		err := model.NewAppError("UpdateOrder", "api.order.update_order.user.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
-		return nil, err
-	}
-
-	switch order.Status {
-	case model.ORDER_STATUS_AWAITING_PAYMENT:
-	case model.ORDER_STATUS_AWAITING_FULFILLMENT:
-	case model.ORDER_STATUS_AWAITING_PICKUP:
-	case model.ORDER_STATUS_AWAITING_SHIPMENT:
-	case model.ORDER_STATUS_DECLINED:
-		if err := a.SetOrderCancel(order.Id); err != nil {
-			return nil, err
-		}
-		return order, nil
-	case model.ORDER_STATUS_REFUNDED:
-	case model.ORDER_STATUS_SHIPPED:
-		if err := a.SetOrderShipped(order.Id); err != nil {
-			return nil, err
-		}
-		return order, nil
-	default:
-		// If not part of the scheme for this channel, then it is not allowed to apply it as an explicit role.
-		return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.not_found.app_error", map[string]interface{}{"OrderId": order.Id}, "", http.StatusBadRequest)
 	}
 
 	newOrder := &model.Order{}
 	*newOrder = *oldOrder
+	newOrder.Patch(patch)
 
-	newOrder.PaySystemCode = order.PaySystemCode
-	newOrder.Status = order.Status
-	newOrder.DeliveryAt = order.DeliveryAt
+	if oldOrder.Status != newOrder.Status {
+		switch newOrder.Status {
+		case model.ORDER_STATUS_AWAITING_FULFILLMENT:
+		case model.ORDER_STATUS_AWAITING_PICKUP:
+		case model.ORDER_STATUS_AWAITING_SHIPMENT:
+		case model.ORDER_STATUS_DECLINED:
+			if err := a.SetOrderCancel(id); err != nil {
+				return nil, err
+			}
+		case model.ORDER_STATUS_REFUNDED:
+		case model.ORDER_STATUS_SHIPPED:
+			if err := a.SetOrderShipped(id); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.not_found.app_error", map[string]interface{}{"OrderId": id}, "", http.StatusBadRequest)
+		}
+	}
 
 	result = <-a.Srv.Store.Order().Update(newOrder)
 	if result.Err != nil {
 		return nil, result.Err
 	}
-
 	rorder := result.Data.(*model.Order)
 	rorder = a.PrepareOrderForClient(rorder, false)
-
-	a.UpdatePostWithOrder(order, false)
-
-	//a.InvalidateCacheForChannelOrders(rorder.ChannelId)
-
 	return rorder, nil
 }
 
@@ -487,6 +464,8 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 
 			a.CreatePostWithTransaction(post, false)
 		}
+
+		a.UpdatePostWithOrder(order, false)
 
 		return nil
 	}

@@ -239,8 +239,7 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		c.App.Srv.Go(func() {
-			order.PaySystemCode = response.OrderId
-			c.App.UpdateOrder(order, false)
+			c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
 		})
 
 		w.Write([]byte(response.ToJson()))
@@ -270,22 +269,14 @@ func updateOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := model.OrderFromJson(r.Body)
+	patch := model.OrderPatchFromJson(r.Body)
 
-	if order == nil {
+	if patch == nil {
 		c.SetInvalidParam("order")
 		return
 	}
 
-	// The order being updated in the payload must be the same one as indicated in the URL.
-	if order.Id != c.Params.OrderId {
-		c.SetInvalidParam("id")
-		return
-	}
-
-	order.Id = c.Params.OrderId
-
-	rorder, err := c.App.UpdateOrder(order, false)
+	rorder, err := c.App.UpdateOrder(c.Params.OrderId, patch, false)
 	if err != nil {
 		c.Err = err
 		return
