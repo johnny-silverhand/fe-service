@@ -176,7 +176,7 @@ func (a *App) attachOfficeToProduct(product *model.Product) *model.AppError {
 func (a *App) attachExtraToProduct(product *model.Product) *model.AppError {
 	var attachedIds []string
 	for _, productExtra := range product.ExtraProductList {
-		result := <-a.Srv.Store.Extra().Save(model.NewExtra(product.Id, productExtra.Id))
+		result := <-a.Srv.Store.Extra().Save(model.NewExtra(productExtra.Id, product.Id))
 		if result.Err != nil {
 			mlog.Warn("Failed to attach file to post", mlog.String("product_id", product.Id), mlog.String("extra_id", productExtra.Id), mlog.Err(result.Err))
 			continue
