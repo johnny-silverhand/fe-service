@@ -280,7 +280,7 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 		query := `SELECT p.* 
 		FROM Products p 
 		LEFT JOIN Extras ex ON (p.Id = ex.ProductId) 
-		WHERE p.DeleteAt = 0 
+		WHERE p.DeleteAt = 0 AND ex.DeleteAt = 0
 		AND ex.RefId IN ` + keys
 
 		var products []*model.Product
@@ -307,7 +307,7 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 
 func (s SqlExtraStore) DeleteForProduct(productId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := s.GetMaster().Exec(`UPDATE Extras SET DeleteAt = :DeleteAt WHERE ProductId = :ProductId`,
+		if _, err := s.GetMaster().Exec(`UPDATE Extras SET DeleteAt = :DeleteAt WHERE RefId = :ProductId`,
 			map[string]interface{}{"DeleteAt": model.GetMillis(), "ProductId": productId}); err != nil {
 			result.Err = model.NewAppError("SqlExtraStore.DeleteForProduct",
 				"store.sql_extra.delete_for_product.app_error", nil, "product_id="+productId+", err="+err.Error(), http.StatusInternalServerError)
