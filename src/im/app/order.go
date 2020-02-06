@@ -199,6 +199,11 @@ func (a *App) UpdateOrder(id string, patch *model.OrderPatch, safeUpdate bool) (
 	}
 	rorder := result.Data.(*model.Order)
 	rorder = a.PrepareOrderForClient(rorder, false)
+
+	if oldOrder.DeliveryAt != newOrder.DeliveryAt {
+		a.UpdatePostWithOrder(rorder, false)
+	}
+
 	return rorder, nil
 }
 
