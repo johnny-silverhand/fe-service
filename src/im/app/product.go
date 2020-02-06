@@ -122,7 +122,7 @@ func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppE
 		}
 	}
 
-	if product.ExtraProductList != nil && len(product.ExtraProductList.Products) > 0 {
+	if len(product.ExtraProductList) > 0 {
 		if err := a.attachExtraToProduct(product); err != nil {
 			mlog.Error("Encountered error attaching offices to product", mlog.String("product_id", product.Id), mlog.Any("extra_products", product.ExtraProductList), mlog.Err(result.Err))
 		}
@@ -175,8 +175,7 @@ func (a *App) attachOfficeToProduct(product *model.Product) *model.AppError {
 
 func (a *App) attachExtraToProduct(product *model.Product) *model.AppError {
 	var attachedIds []string
-	for _, productExtra := range product.ExtraProductList.Products {
-		//
+	for _, productExtra := range product.ExtraProductList {
 		result := <-a.Srv.Store.Extra().Save(model.NewExtra(product.Id, productExtra.Id))
 		if result.Err != nil {
 			mlog.Warn("Failed to attach file to post", mlog.String("product_id", product.Id), mlog.String("extra_id", productExtra.Id), mlog.Err(result.Err))
@@ -358,7 +357,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 		}
 	}
 
-	if newProduct.ExtraProductList != nil && len(newProduct.ExtraProductList.Products) > 0 {
+	if len(newProduct.ExtraProductList) > 0 {
 		if err := a.attachExtraToProduct(newProduct); err != nil {
 			mlog.Error("Encountered error attaching extra product list to product", mlog.String("product_id", newProduct.Id), mlog.Any("offices", newProduct.Offices), mlog.Err(result.Err))
 		}

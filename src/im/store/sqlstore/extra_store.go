@@ -277,14 +277,10 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 	return store.Do(func(result *store.StoreResult) {
 		keys, params := MapStringsToQueryParams(productIds, "Product")
 
-		query := `SELECT
-		    p.*
-		FROM
-		    Products p
-		LEFT JOIN
-		    Extras ex ON (p.Id = ex.ProductId)
-		WHERE
-		    p.DeleteAt = 0
+		query := `SELECT p.* 
+		FROM Products p 
+		LEFT JOIN Extras ex ON (p.Id = ex.ProductId) 
+		WHERE p.DeleteAt = 0 
 		AND ex.RefId IN ` + keys
 
 		var products []*model.Product

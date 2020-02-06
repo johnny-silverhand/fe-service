@@ -51,7 +51,7 @@ func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProdu
 		product.Offices = offices
 	}
 
-	if extra, err := a.getExtraProductListForProduct(product); err != nil {
+	if extra, err := a.getExtraForProduct(product); err != nil {
 		mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
 		product.ExtraProductList = extra
@@ -80,4 +80,15 @@ func (a *App) getExtraProductListForProduct(product *model.Product) (*model.Prod
 		return nil, nil
 	}*/
 	return a.GetExtrasBasket([]string{product.Id})
+}
+
+func (a *App) getExtraForProduct(product *model.Product) ([]*model.Product, *model.AppError) {
+	/*if len(product.FileIds) == 0 {
+		return nil, nil
+	}*/
+	list, err := a.GetExtrasBasket([]string{product.Id})
+	if err != nil {
+		return nil, err
+	}
+	return list.ToSlice(), nil
 }
