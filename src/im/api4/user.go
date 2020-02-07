@@ -72,7 +72,7 @@ func (api *API) InitUser() {
 	api.BaseRoutes.Users.Handle("/phone/verify", api.ApiHandler(verifyUserPhone)).Methods("POST")
 	api.BaseRoutes.Users.Handle("/phone/verify/send", api.ApiHandler(sendVerificationSms)).Methods("POST")
 
-	api.BaseRoutes.User.Handle("/invite", api.ApiHandler(getUserInviteToken)).Methods("GET")
+	api.BaseRoutes.User.Handle("/invite", api.ApiSessionRequired(getUserInviteToken)).Methods("GET")
 	api.BaseRoutes.User.Handle("/invite/reset", api.ApiHandler(resetInviteTokenByUser)).Methods("POST")
 	api.BaseRoutes.User.Handle("/invite/verify", api.ApiHandler(verifyUserInvite)).Methods("POST")
 
