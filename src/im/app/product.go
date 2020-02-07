@@ -467,7 +467,7 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 		}
 	}
 
-	var discount model.ProductsDiscount
+	discount := new(model.ProductsDiscount)
 	var value int64
 
 	rproducts := result.Data.([]*model.Product)
@@ -491,7 +491,7 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 		discount.Total += value
 	}
 
-	return &discount, nil
+	return discount, nil
 }
 
 func (a *App) UpdateProductStatus(productId string, status *model.ProductStatus) (*model.Product, *model.AppError) {
