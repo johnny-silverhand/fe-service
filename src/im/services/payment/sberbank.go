@@ -56,7 +56,7 @@ func (b *SberBankBackend) RegisterOrder(application *model.Application, order *m
 		OrderNumber: strconv.FormatInt(model.GetMillis(), 10),
 		Amount:      int(amount),
 		Description: "",
-		ReturnURL:   "http://foodexpress2.russianit.ru/api/v4/orders/" + order.Id + "/status",
+		ReturnURL:   "http://foodexpress.russianit.ru/api/v4/orders/" + order.Id + "/status",
 	}
 
 	if result, _, err := client.RegisterOrder(context.Background(), sbOrder); err != nil {

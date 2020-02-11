@@ -209,7 +209,7 @@ func (a *App) SendUserInfoEmail(userId string, email string, verified bool, loca
 	bodyPage.Props["Email"] = user.Email
 	bodyPage.Props["Password"] = user.Password
 
-	link := "http://foodexpress2.russianit.ru"
+	link := "http://foodexpress.russianit.ru"
 	bodyPage.Props["Url"] = link
 
 	/*if !verified {
