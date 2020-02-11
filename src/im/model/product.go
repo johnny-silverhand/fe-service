@@ -33,6 +33,7 @@ type Product struct {
 	CategoryId    string  `json:"category_id"`
 	Extra         bool    `json:"extra"`
 	PrivateRule   bool    `json:"private_rule"`
+	Type          string  `json:"type"`
 	//Category      *Category `json:"category"`
 	FileIds          StringArray `json:"file_ids,omitempty"`
 	Category         *Category   `json:"category,omitempty" db:"-"`

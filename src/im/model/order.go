@@ -70,6 +70,7 @@ type Order struct {
 	Address              string    `json:"address"`
 	Comment              string    `json:"comment"`
 	Phone                string    `json:"phone"`
+	Processing           bool      `json:"processing"`
 	Positions            []*Basket `db:"-" json:"positions"`
 	Post                 *Post     `db:"-" json:"post,omitempty"`
 	User                 *User     `db:"-" json:"user,omitempty"`
@@ -79,6 +80,7 @@ type OrderPatch struct {
 	Status        *string `json:"status"`
 	DeliveryAt    *int64  `json:"delivery_at"`
 	PaySystemCode *string `json:"pay_system_code"`
+	Processing    *bool   `json:"processing"`
 }
 
 func (o *Order) Patch(patch *OrderPatch) {
@@ -90,6 +92,9 @@ func (o *Order) Patch(patch *OrderPatch) {
 	}
 	if patch.PaySystemCode != nil {
 		o.PaySystemCode = *patch.PaySystemCode
+	}
+	if patch.Processing != nil {
+		o.Processing = *patch.Processing
 	}
 }
 

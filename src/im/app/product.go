@@ -316,6 +316,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	newProduct.AppId = product.AppId
 	newProduct.Extra = product.Extra
 	newProduct.PrivateRule = product.PrivateRule
+	newProduct.Type = product.Type
 
 	newProduct.Status = model.PRODUCT_STATUS_DRAFT
 
