@@ -825,11 +825,11 @@ func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, i
 	//includeDeleted := includeDeletedChannels && *a.Config().TeamSettings.ExperimentalViewArchivedChannels
 
 	esInterface := a.Elasticsearch
-	//var teamId string
+	var teamId string
 
-	/*	if teams, err := a.GetTeamsForUser(userId); err == nil {
+	if teams, err := a.GetTeamsForUser(userId); err == nil {
 		teamId = teams[0].Id
-	}*/
+	}
 
 	resultList := model.NewChannelSearchResultList()
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableSearching {
@@ -837,6 +837,7 @@ func (a *App) SearchPostsForUser(terms string, userId string, isOrSearch bool, i
 
 		for _, params := range paramsList {
 			params.OrTerms = isOrSearch
+			params.TeamId = teamId
 			// Don't allow users to search for "*"
 			/*if params.Terms != "*" {
 				// Convert channel names to channel IDs

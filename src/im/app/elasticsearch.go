@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"im/einterfaces"
 	"im/mlog"
 	"net/http"
@@ -59,6 +60,18 @@ func indexUsers(users []*model.User, esInterface einterfaces.ElasticsearchInterf
 	}
 }
 
+func indexPosts(a *App, channels *model.ChannelListWithTeamData, esInterface einterfaces.ElasticsearchInterface) {
+	for _, channel := range *channels {
+		if posts, _ := a.GetPosts(channel.Id, 0, 100000); posts != nil {
+			for _, post := range posts.Posts {
+				if err := esInterface.IndexPost(post, channel.TeamId); err != nil {
+					mlog.Error("Encountered error indexing post", mlog.String("post_id", post.Id), mlog.Err(err))
+				}
+			}
+		}
+	}
+}
+
 func (a *App) CreateElasticsearchIndexes() *model.AppError {
 	esI := a.Elasticsearch
 	if esI == nil {
@@ -73,6 +86,12 @@ func (a *App) CreateElasticsearchIndexes() *model.AppError {
 	// TODO page & per_page ?
 	if list, _ := a.GetUsers(&model.UserGetOptions{Page: 0, PerPage: 100000}); list != nil {
 		go indexUsers(list, esI)
+	}
+
+	if channels, err := a.GetAllChannels(0, 100000, false); err != nil {
+		fmt.Println(err)
+	} else {
+		go indexPosts(a, channels, esI)
 	}
 
 	return nil

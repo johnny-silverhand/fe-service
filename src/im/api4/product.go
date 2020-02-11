@@ -139,8 +139,13 @@ func searchProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if results, err := c.App.SearchProducts(terms, categoryId, timeZoneOffset, page, perPage); err != nil {
-		c.Err = err
-		return
+		var pl model.ProductList
+		pl.MakeNonNil()
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		w.Write([]byte(pl.ToJson()))
+
+		/*c.Err = err
+		return*/
 	} else {
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		w.Write([]byte(results.ToJson()))

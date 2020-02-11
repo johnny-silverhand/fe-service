@@ -214,7 +214,7 @@ func (m *ElasticsearcInterfaceImpl) IndexPost(post *model.Post, teamId string) *
 	}
 	st := post.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/"+post.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts_"+teamId+"/posts/"+post.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -257,7 +257,7 @@ func (m *ElasticsearcInterfaceImpl) IndexProduct(product *model.Product, appId s
 func (m *ElasticsearcInterfaceImpl) IndexUser(user *model.User, teamsIds, channelsIds []string) *model.AppError {
 	st := user.ToJson()
 
-	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users"+"/users/"+user.Id, strings.NewReader(st))
+	request, _ := http.NewRequest("PUT", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users_"+user.AppId+"/users/"+user.Id, strings.NewReader(st))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -346,7 +346,9 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 	//st := ""//searchParams.ToJson()
 
 	var terms []string
+	var teamId string
 	for _, param := range searchParams {
+		teamId = param.TeamId
 		terms = append(terms, strings.ToLower(param.Terms))
 	}
 
@@ -394,7 +396,7 @@ func (m *ElasticsearcInterfaceImpl) SearchPostsHint(searchParams []*model.Search
 
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts"+"/posts/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts_"+teamId+"/posts/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -527,7 +529,7 @@ func (m *ElasticsearcInterfaceImpl) SearchUsersInApp(appId, term string, options
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:     term,
-									Fields:    []string{"nickname", "phone"},
+									Fields:    []string{"nickname", "phone", "email"},
 									Type:      "best_fields",
 									Operator:  "or",
 									Fuzziness: 1,
@@ -536,8 +538,16 @@ func (m *ElasticsearcInterfaceImpl) SearchUsersInApp(appId, term string, options
 							Should{
 								MultiMatchFuzziness: MultiMatchFuzziness{
 									Query:    term,
-									Fields:   []string{"nickname", "phone"},
+									Fields:   []string{"nickname", "phone", "email"},
 									Type:     "phrase_prefix",
+									Operator: "or",
+								},
+							},
+							Should{
+								MultiMatchFuzziness: MultiMatchFuzziness{
+									Query:    term,
+									Fields:   []string{"phone"},
+									Type:     "phrase",
 									Operator: "or",
 								},
 							},
@@ -554,7 +564,7 @@ func (m *ElasticsearcInterfaceImpl) SearchUsersInApp(appId, term string, options
 	query, _ := json.Marshal(dsl)
 	fmt.Println(string(query[:]))
 
-	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users"+"/users/_search", strings.NewReader(string(query[:])))
+	request, _ := http.NewRequest("GET", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users_"+appId+"/users/_search", strings.NewReader(string(query[:])))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -631,7 +641,7 @@ func (m *ElasticsearcInterfaceImpl) TestConfig(cfg *model.Config) *model.AppErro
 }
 
 func PurgeUsersIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
-	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users", strings.NewReader(""))
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_users_*", strings.NewReader(""))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -649,7 +659,7 @@ func PurgeUsersIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
 }
 
 func PurgeProductsIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
-	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products", strings.NewReader(""))
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_products_*", strings.NewReader(""))
 	request.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
@@ -665,14 +675,34 @@ func PurgeProductsIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
 
 	return nil
 }
+func PurgePostsIndexes(m *ElasticsearcInterfaceImpl) *model.AppError {
+	request, _ := http.NewRequest("DELETE", *m.App.Config().ElasticsearchSettings.ConnectionUrl+"/"+*m.App.Config().ElasticsearchSettings.IndexPrefix+"_posts_*", strings.NewReader(""))
+	request.Header.Set("Content-Type", "application/json")
+
+	resp, err := m.App.HTTPService.MakeClient(true).Do(request)
+	if err != nil {
+		return model.NewAppError("PurgePostsElasticsearch", "ent.elasticsearch.purge.posts", nil, "", http.StatusBadRequest)
+
+	}
+	if resp.Body != nil {
+		parsed := ElasticProductsResponseFromJson(resp.Body)
+		fmt.Println(parsed)
+		m.App.HTTPService.ConsumeAndClose(resp)
+	}
+
+	return nil
+}
 
 func (m *ElasticsearcInterfaceImpl) PurgeIndexes() *model.AppError {
 
 	if err := PurgeProductsIndexes(m); err != nil {
-		return err
+		fmt.Println(err)
 	}
 	if err := PurgeUsersIndexes(m); err != nil {
-		return err
+		fmt.Println(err)
+	}
+	if err := PurgePostsIndexes(m); err != nil {
+		fmt.Println(err)
 	}
 
 	return nil

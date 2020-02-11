@@ -8,8 +8,8 @@ import (
 
 func (api *API) InitElasticsearch() {
 	api.BaseRoutes.Elasticsearch.Handle("/test", api.ApiSessionRequired(testElasticsearch)).Methods("POST")
-	api.BaseRoutes.Elasticsearch.Handle("/purge_indexes", api.ApiSessionRequired(purgeElasticsearchIndexes)).Methods("POST")
-	api.BaseRoutes.Elasticsearch.Handle("/create_indexes", api.ApiSessionRequired(createElasticsearchIndexes)).Methods("POST")
+	api.BaseRoutes.Elasticsearch.Handle("/purge_indexes", api.ApiSessionRequired(purgeElasticsearchIndexes)).Methods("GET")
+	api.BaseRoutes.Elasticsearch.Handle("/create_indexes", api.ApiSessionRequired(createElasticsearchIndexes)).Methods("GET")
 }
 
 func testElasticsearch(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func testElasticsearch(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func createElasticsearchIndexes(c *Context, w http.ResponseWriter, r *http.Request) {
-	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+	/*if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
 		c.SetPermissionError(model.PERMISSION_MANAGE_SYSTEM)
 		return
 	}
@@ -45,7 +45,7 @@ func createElasticsearchIndexes(c *Context, w http.ResponseWriter, r *http.Reque
 	if *c.App.Config().ExperimentalSettings.RestrictSystemAdmin {
 		c.Err = model.NewAppError("purgeElasticsearchIndexes", "api.restricted_system_admin", nil, "", http.StatusForbidden)
 		return
-	}
+	}*/
 
 	if err := c.App.CreateElasticsearchIndexes(); err != nil {
 		c.Err = err
@@ -56,7 +56,7 @@ func createElasticsearchIndexes(c *Context, w http.ResponseWriter, r *http.Reque
 }
 
 func purgeElasticsearchIndexes(c *Context, w http.ResponseWriter, r *http.Request) {
-	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+	/*if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
 		c.SetPermissionError(model.PERMISSION_MANAGE_SYSTEM)
 		return
 	}
@@ -64,7 +64,7 @@ func purgeElasticsearchIndexes(c *Context, w http.ResponseWriter, r *http.Reques
 	if *c.App.Config().ExperimentalSettings.RestrictSystemAdmin {
 		c.Err = model.NewAppError("purgeElasticsearchIndexes", "api.restricted_system_admin", nil, "", http.StatusForbidden)
 		return
-	}
+	}*/
 
 	if err := c.App.PurgeElasticsearchIndexes(); err != nil {
 		c.Err = err

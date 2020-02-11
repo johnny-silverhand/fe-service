@@ -423,6 +423,9 @@ func (a *App) DeleteProduct(productId, deleteByID string) (*model.Product, *mode
 
 func (a *App) SearchProducts(terms string, categoryId string, timeZoneOffset int, page, perPage int) (*model.ProductList, *model.AppError) {
 	result := <-a.Srv.Store.Product().Search(categoryId, terms, page, perPage)
+	if result.Err != nil {
+		return nil, result.Err
+	}
 	rlist := result.Data.(*model.ProductList)
 	return a.PrepareProductListForClient(rlist), nil
 
