@@ -40,6 +40,22 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken string, l
 		return nil, err
 	}
 
+	userTeams := <-a.Srv.Store.Team().GetTeamsByUserId(user.Id)
+	if userTeams.Err != nil {
+		return user, userTeams.Err
+	}
+
+	userTeamsIds := []string{}
+	for _, team := range userTeams.Data.([]*model.Team) {
+		userTeamsIds = append(userTeamsIds, team.Id)
+	}
+	if len(userTeamsIds) < 1 {
+		if team, _ := a.GetTeamByName(user.AppId); team != nil {
+			a.AddUserToTeamByTeamId(team.Id, user)
+			a.UpdateTeamMemberRoles(team.Id, user.Id, "team_user team_admin channel_user")
+		}
+	}
+
 	// and then authenticate them
 	/*	if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
 			return nil, err

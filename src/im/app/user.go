@@ -51,6 +51,24 @@ func (a *App) PreCreateUser(user *model.User) (*model.User, *model.AppError) {
 		return nil, result.Err
 	} else {
 		ruser := result.Data.(*model.User)
+
+		userTeams := <-a.Srv.Store.Team().GetTeamsByUserId(ruser.Id)
+		if userTeams.Err != nil {
+			return user, userTeams.Err
+		}
+
+		userTeamsIds := []string{}
+		for _, team := range userTeams.Data.([]*model.Team) {
+			userTeamsIds = append(userTeamsIds, team.Id)
+		}
+		if len(userTeamsIds) < 1 {
+			if team, err := a.GetTeamByName(user.AppId); err != nil {
+
+			} else {
+				a.AddUserToTeamByTeamId(team.Id, user)
+			}
+		}
+
 		ruser.Sanitize(map[string]bool{})
 		return ruser, nil
 	}

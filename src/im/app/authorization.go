@@ -37,7 +37,7 @@ func (a *App) SessionHasPermissionToChannel(session model.Session, channelId str
 		return false
 	}
 
-	cmc := a.Srv.Store.Channel().GetAllChannelMembersForUser(session.UserId, true, true)
+	cmc := a.Srv.Store.Channel().GetAllChannelMembersForUser(session.UserId, false, true)
 
 	var channelRoles []string
 	if cmcresult := <-cmc; cmcresult.Err == nil {
@@ -213,4 +213,3 @@ func (a *App) RolesGrantPermission(roleNames []string, permissionId string) bool
 
 	return false
 }
-

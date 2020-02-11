@@ -32,6 +32,7 @@ type Product struct {
 	DeleteAt      int64   `json:"delete_at"`
 	CategoryId    string  `json:"category_id"`
 	Extra         bool    `json:"extra"`
+	PrivateRule   bool    `json:"private_rule"`
 	//Category      *Category `json:"category"`
 	FileIds          StringArray `json:"file_ids,omitempty"`
 	Category         *Category   `json:"category,omitempty" db:"-"`
@@ -72,6 +73,7 @@ type ProductSearch struct {
 	Page           *int    `json:"page"`
 	PerPage        *int    `json:"per_page"`
 	CategoryId     *string `json:"category_id"`
+	AppId          *string `json:"app_id"`
 }
 
 func ProductSearchFromJson(data io.Reader) *ProductSearch {

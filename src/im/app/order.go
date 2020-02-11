@@ -49,28 +49,15 @@ func (a *App) GetOrders(offset int, limit int, sort string) (*model.OrderList, *
 }
 
 func (a *App) RecalculateOrder(order *model.Order) (*model.Order, *model.AppError) {
-
-	basket := make([]*model.Basket, 0)
-	var total float64
-
+	var price float64 = 0
 	if order.Positions != nil {
 		order.NormalizePositions()
-		for _, ps := range order.Positions {
-			pr := <-a.Srv.Store.Product().Get(ps.ProductId)
+		order.Positions = a.PrepareBasketListForClient(order.Positions, true)
 
-			if pr.Err == nil {
-				product := pr.Data.(*model.Product)
-
-				ps.Price = product.Price
-				ps.Currency = product.Currency
-				ps.Name = product.Name
-
-				total += ps.Price * float64(ps.Quantity)
-				basket = append(basket, ps)
-			}
+		for _, position := range order.Positions {
+			price += position.Price * float64(position.Quantity)
 		}
-		order.Price = total - order.DiscountValue
-		order.Positions = basket
+		order.Price = price - order.DiscountValue
 	}
 
 	return order, nil
@@ -112,10 +99,13 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 		return nil, model.NewAppError("CreateOrder", "api.order.create_order.discount_limit.app_error", nil, "id="+order.Id, http.StatusBadRequest)
 	}
 
-	a.RecalculateOrder(order)
+	var err *model.AppError
+	order, err = a.RecalculateOrder(order)
+	if err != nil {
+		return nil, err
+	}
 
 	for i, position := range order.Positions {
-		position = a.PrepareBasketForClient(position, true)
 		order.Positions[i] = position
 	}
 
@@ -141,7 +131,7 @@ func (a *App) CreateOrder(order *model.Order) (*model.Order, *model.AppError) {
 			UserId:      newOrder.UserId,
 			OrderId:     newOrder.Id,
 			Description: fmt.Sprintf("Списание по заказу № %s \n", newOrder.FormatOrderNumber()),
-			Value:       -math.Floor(newOrder.DiscountValue),
+			Value:       math.Floor(newOrder.DiscountValue),
 		}
 
 		a.DeductionTransaction(transaction)
@@ -212,7 +202,8 @@ func (a *App) UpdateOrder(id string, patch *model.OrderPatch, safeUpdate bool) (
 func (a *App) PrepareOrderForClient(originalOrder *model.Order, isNewOrder bool) *model.Order {
 	order := originalOrder.Clone()
 
-	order.Positions = a.GetBasketForOrder(order)
+	basketList := a.GetBasketForOrder(order)
+	order.Positions = a.PrepareBasketListForClient(basketList, isNewOrder)
 	if post, err := a.FindPostWithOrder(order.Id); err == nil {
 		order.Post = post
 	}
@@ -302,6 +293,69 @@ func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (
 	}
 }
 
+func (a *App) CalculateBonusForOrder(order *model.Order) *model.AppError {
+	var application *model.Application
+	order = a.PrepareOrderForClient(order, false)
+	if order.User == nil {
+		return model.NewAppError("CalculateBonusForOrder", "api.order.calculate_bonus_for_order.get_user.app_error", nil, "id="+order.Id, http.StatusBadRequest)
+	}
+	if result := <-a.Srv.Store.Application().Get(order.User.AppId); result.Err != nil {
+		return result.Err
+	} else if application = result.Data.(*model.Application); application == nil {
+		return model.NewAppError("CalculateBonusForOrder", "api.order.calculate_bonus_for_order.get_application.app_error", nil, "id="+order.Id, http.StatusBadRequest)
+	}
+
+	var cashback float64 = 0
+	var price float64 = 0
+	for _, position := range order.Positions {
+		cashback += float64(position.Quantity) * position.Cashback
+		if position.Product != nil && position.Product.PrivateRule == false {
+			price += float64(position.Quantity) * position.Price
+		}
+	}
+
+	a.Srv.Go(func() {
+		value := cashback
+
+		transaction := &model.Transaction{
+			UserId:      order.User.Id,
+			OrderId:     order.Id,
+			Description: fmt.Sprintf("Начисление кэшбека по заказу № %s \n", order.FormatOrderNumber()),
+			Value:       value,
+		}
+
+		if transaction.Value > 0 {
+			a.AccrualTransaction(transaction)
+		}
+	})
+
+	a.Srv.Go(func() {
+		if levels, err := a.GetAllLevelsPage(0, 60, &application.Id); err == nil {
+			levels.SortByLvl()
+			if user, _ := a.GetUser(order.User.InvitedBy); user != nil {
+				for _, id := range levels.Order {
+					value := math.Floor(price * (levels.Levels[id].Value / 100))
+					transaction := &model.Transaction{
+						UserId:      user.Id,
+						OrderId:     order.Id,
+						Description: fmt.Sprintf("Начисление по заказу друга \n"),
+						Value:       value,
+						Type:        model.TRANSACTION_TYPE_BONUS,
+					}
+					if transaction.Value > 0 {
+						a.AccrualTransaction(transaction)
+					}
+					if user, _ = a.GetUser(user.InvitedBy); user == nil {
+						break
+					}
+				}
+			}
+		}
+	})
+
+	return nil
+}
+
 func (a *App) SetOrderShipped(orderId string) *model.AppError {
 
 	result := <-a.Srv.Store.Order().Get(orderId)
@@ -311,77 +365,19 @@ func (a *App) SetOrderShipped(orderId string) *model.AppError {
 	}
 	order := result.Data.(*model.Order)
 
-	order = a.PrepareOrderForClient(order, false)
-
-	if result := <-a.Srv.Store.Application().Get(order.User.AppId); result.Err != nil {
-		return result.Err
-	} else {
-		order.Status = model.ORDER_STATUS_SHIPPED
-		order.UpdateAt = model.GetMillis()
-		<-a.Srv.Store.Order().Update(order)
-
-		application := result.Data.(*model.Application)
-
-		if _, err := a.UpdatePostWithOrder(order, false); err != nil {
-			fmt.Println(err)
+	if order.DiscountValue == 0 {
+		if err := a.CalculateBonusForOrder(order); err != nil {
+			return err
 		}
-
-		if order.DiscountValue == 0 {
-
-			var cashback float64 = 0
-			var price float64 = 0
-
-			for _, position := range order.Positions {
-				if position.DiscountValue > 0 {
-					cashback += float64(position.Quantity) * float64(position.DiscountValue)
-				} else {
-					cashback += math.Floor(float64(position.Quantity) * position.Price * (application.Cashback / 100))
-					//cashback += float64(position.Quantity) * position.Price
-					price += float64(position.Quantity) * position.Price
-				}
-			}
-
-			a.Srv.Go(func() {
-				value := cashback
-
-				transaction := &model.Transaction{
-					UserId:      order.User.Id,
-					OrderId:     order.Id,
-					Description: fmt.Sprintf("Начисление кэшбека по заказу № %s \n", order.FormatOrderNumber()),
-					Value:       value,
-				}
-
-				if transaction.Value > 0 {
-					a.AccrualTransaction(transaction)
-				}
-			})
-
-			a.Srv.Go(func() {
-				if levels, err := a.GetAllLevelsPage(0, 60, &application.Id); err == nil {
-					levels.SortByLvl()
-					if u, e := a.GetUser(order.User.InvitedBy); e == nil {
-						for _, id := range levels.Order {
-							value := math.Floor(price * (levels.Levels[id].Value / 100))
-							transaction := &model.Transaction{
-								UserId:      u.Id,
-								OrderId:     order.Id,
-								Description: fmt.Sprintf("Начисление по заказу друга \n"),
-								Value:       value,
-								Type:        model.TRANSACTION_TYPE_BONUS,
-							}
-							if transaction.Value > 0 {
-								a.AccrualTransaction(transaction)
-							}
-							if u, e = a.GetUser(u.InvitedBy); e != nil {
-								break
-							}
-						}
-					}
-				}
-			})
-		}
-
 	}
+
+	//order = a.PrepareOrderForClient(order, false)
+	order.Status = model.ORDER_STATUS_SHIPPED
+	order.UpdateAt = model.GetMillis()
+	if result := <-a.Srv.Store.Order().Update(order); result.Err != nil {
+		return result.Err
+	}
+	a.UpdatePostWithOrder(order, false)
 
 	return nil
 }

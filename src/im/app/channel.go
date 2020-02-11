@@ -907,6 +907,55 @@ func (a *App) AddUserToChannel(user *model.User, channel *model.Channel) (*model
 	return newMember, nil
 }
 
+func (a *App) AddChannelMemberIfNeeded(userId string, channel *model.Channel) ([]*model.ChannelMember, *model.AppError) {
+
+	var user *model.User
+	var err *model.AppError
+
+	if user, err = a.GetUser(userId); err != nil {
+		return nil, err
+	}
+
+	var channelMemberIds []string
+	var channelMembers []*model.ChannelMember
+	var members []*model.TeamMember
+
+	var team *model.Team
+	if team, err = a.GetTeamByName(user.AppId); err != nil {
+		return nil, err
+	}
+
+	if members, err = a.GetTeamMembers(team.Id, 0, 50); err != nil {
+		return nil, err
+	} else {
+		for _, member := range members {
+			if mm, _ := a.Srv.Store.Channel().GetMember(channel.Id, member.UserId); mm != nil {
+				continue
+			}
+			channelMemberIds = append(channelMemberIds, member.UserId)
+		}
+	}
+
+	for _, cmId := range channelMemberIds {
+		if cmUser, _ := a.GetUser(cmId); cmUser != nil {
+			if cm, _ := a.AddUserToChannel(cmUser, channel); cm != nil {
+				channelMembers = append(channelMembers, cm)
+			}
+		}
+	}
+
+	/*esInterface := a.Elasticsearch
+	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
+		a.Srv.Go(func() {
+			if err := a.indexUser(user); err != nil {
+				mlog.Error("Encountered error indexing user", mlog.String("user_id", user.Id), mlog.Err(err))
+			}
+		})
+	}*/
+
+	return channelMembers, nil
+}
+
 func (a *App) AddChannelMember(userId string, channel *model.Channel, userRequestorId string, postRootId string, currentSessionId string) (*model.ChannelMember, *model.AppError) {
 	if member, err := a.Srv.Store.Channel().GetMember(channel.Id, userId); err != nil {
 		if err.Id != store.MISSING_CHANNEL_MEMBER_ERROR {

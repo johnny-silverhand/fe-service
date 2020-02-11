@@ -26,6 +26,7 @@ func (api *API) InitChannel() {
 	api.BaseRoutes.ChannelsForTeam.Handle("/search_autocomplete", api.ApiSessionRequired(autocompleteChannelsForTeamForSearch)).Methods("GET")
 	api.BaseRoutes.User.Handle("/teams/{team_id:[A-Za-z0-9]+}/channels", api.ApiSessionRequired(getChannelsForTeamForUser)).Methods("GET")
 	api.BaseRoutes.User.Handle("/channels", api.ApiSessionRequired(getAllChannelsForUser)).Methods("GET")
+	//api.BaseRoutes.User.Handle("/channels", api.ApiSessionRequired(getPublicChannelsForUser)).Methods("GET")
 
 	api.BaseRoutes.Channel.Handle("", api.ApiSessionRequired(getChannel)).Methods("GET")
 	api.BaseRoutes.Channel.Handle("", api.ApiSessionRequired(updateChannel)).Methods("PUT")
@@ -523,6 +524,65 @@ func getAllChannels(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Write([]byte(channels.ToJson()))
+}
+
+func getPublicChannelsForUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	/*	if !c.App.SessionHasPermissionToUser(c.App.Session, c.Params.UserId) {
+			c.SetPermissionError(model.PERMISSION_EDIT_OTHER_USERS)
+			return
+		}
+	*/
+
+	c.RequireUserId()
+	if c.Err != nil {
+		return
+	}
+	var user *model.User
+	var teamId string
+	var err *model.AppError
+	if user, err = c.App.GetUser(c.Params.UserId); err != nil {
+		c.Err = err
+		return
+	} else {
+		if team, err := c.App.GetTeamByName(user.AppId); err != nil {
+			c.Err = err
+			return
+		} else {
+			teamId = team.Id
+		}
+	}
+
+	channels, err := c.App.GetPublicChannelsForTeam(teamId, c.Params.Page*c.Params.PerPage, c.Params.PerPage)
+	//channels, err := c.App.GetAllChannelsForUser(c.Params.UserId, false)
+
+	/*if members, err := c.App.GetChannelAllMembersForUser(user.Id); err != nil {
+		c.Err = err
+		return
+	} else {
+		if len(*members) < 1 && len(*channels) > 1 {
+			for _, ch := range *channels {
+				c.App.AddChannelMemberWithoutPost(user.Id, ch, c.App.Session.Id)
+			}
+		}
+	}*/
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	if c.HandleEtag(channels.Etag(), "Get Channels", w, r) {
+		return
+	}
+
+	err = c.App.FillInChannelsProps(channels)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Header().Set(model.HEADER_ETAG_SERVER, channels.Etag())
 	w.Write([]byte(channels.ToJson()))
 }
 

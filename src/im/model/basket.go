@@ -7,33 +7,35 @@ import (
 )
 
 type Basket struct {
-	Id            string   `json:"id"`
-	OrderId       string   `json:"order_id"`
-	ProductId     string   `json:"product_id"`
-	Price         float64  `json:"price"`
-	Currency      string   `json:"currency"`
-	InsertAt      int64    `json:"insert_at"`
-	UpdateAt      int64    `json:"update_at"`
-	RefreshAt     int64    `json:"refresh_at"`
-	Quantity      int      `json:"quantity"`
-	Name          string   `json:"name"`
-	DiscountPrice int64    `json:"discount_price"`
-	DiscountValue int64    `json:"discount_value"`
-	Sort          int      `json:"sort"`
-	
-	Product       *Product `db:"-" json:"product"`
+	Id            string  `json:"id"`
+	OrderId       string  `json:"order_id"`
+	ProductId     string  `json:"product_id"`
+	Price         float64 `json:"price"`
+	Currency      string  `json:"currency"`
+	InsertAt      int64   `json:"insert_at"`
+	UpdateAt      int64   `json:"update_at"`
+	RefreshAt     int64   `json:"refresh_at"`
+	Quantity      int     `json:"quantity"`
+	Name          string  `json:"name"`
+	DiscountPrice int64   `json:"discount_price"`
+	DiscountValue int64   `json:"discount_value"`
+	Sort          int     `json:"sort"`
 
-	CreateAt      int64   `json:"create_at"`
-	DeleteAt      int64   `json:"delete_at"`
+	Product *Product `db:"-" json:"product"`
+
+	CreateAt int64 `json:"create_at"`
+	DeleteAt int64 `json:"delete_at"`
+
+	Cashback float64 `json:"cashback"`
 }
 
 type BasketPatch struct {
-	Name        *string      `json:"name"`
-	Preview     *string      `json:"preview"`
-	Description *string      `json:"description"`
+	Name        *string `json:"name"`
+	Preview     *string `json:"preview"`
+	Description *string `json:"description"`
 
-	Latitude    string `json:"lat"`
-	Longitude   string `json:"long"`
+	Latitude  string `json:"lat"`
+	Longitude string `json:"long"`
 }
 
 func (p *Basket) Patch(patch *BasketPatch) {
@@ -41,7 +43,6 @@ func (p *Basket) Patch(patch *BasketPatch) {
 	if patch.Name != nil {
 		p.Name = *patch.Name
 	}
-	
 
 }
 
@@ -74,7 +75,6 @@ func (o *Basket) PreSave() {
 
 func (o *Basket) PreCommit() {
 
-
 }
 func (o *Basket) Fil(order *Order) {
 
@@ -98,7 +98,6 @@ func (o *Basket) IsValid() *AppError {
 	if o.UpdateAt == 0 {
 		return NewAppError("Basket.IsValid", "model.basket.is_valid.update_at.app_error", nil, "id="+o.Id, http.StatusBadRequest)
 	}
-
 
 	return nil
 }

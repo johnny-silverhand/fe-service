@@ -2785,6 +2785,9 @@ func (s SqlChannelStore) CreateUnresolvedChannel(user *model.User, additionalMem
 					details := ""
 
 					for _, memeberId := range additionalMemeber {
+						if memeberId == cm1.UserId {
+							continue
+						}
 						am := &model.ChannelMember{
 							UserId:      memeberId,
 							NotifyProps: model.GetDefaultChannelNotifyProps(),

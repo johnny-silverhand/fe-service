@@ -48,6 +48,7 @@ func createMessage(c *Context, w http.ResponseWriter, r *http.Request) {
 		if channel.Status == model.CHANNEL_STATUS_CLOSED {
 			c.App.PatchChannel(channel, &model.ChannelPatch{Status: model.NewString(model.CHANNEL_STATUS_OPEN)}, post.UserId)
 		}
+		c.App.AddChannelMemberIfNeeded(post.UserId, channel)
 	} else {
 
 		if channel, err = c.App.CreateUnresolvedChannel(post.UserId); err != nil {

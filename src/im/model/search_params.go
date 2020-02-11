@@ -22,6 +22,7 @@ type SearchParams struct {
 	TimeZoneOffset         int
 	// True if this search doesn't originate from a "current user".
 	SearchWithoutUserId bool
+	TeamId              string
 }
 
 // Returns the epoch timestamp of the start of the day specified by SearchParams.AfterDate

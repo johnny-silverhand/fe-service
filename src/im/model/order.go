@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -166,18 +167,24 @@ func (o *Order) IsValid() *AppError {
 }
 
 func (o *Order) NormalizePositions() {
-	var positions []*Basket
-normalizeLoop:
-	for _, v := range o.Positions {
-		for i, u := range positions {
-			if v.ProductId == u.ProductId {
-				positions[i].Quantity += v.Quantity
-				continue normalizeLoop
-			}
+	positions := make(map[string]*Basket)
+	var list []*Basket
+	for _, entry := range o.Positions {
+		if _, value := positions[entry.ProductId]; !value {
+			positions[entry.ProductId] = entry
+			fmt.Println("FIRST", *entry)
+		} else {
+			positions[entry.ProductId].Quantity += entry.Quantity
+			fmt.Println(*entry)
 		}
-		positions = append(positions, v)
 	}
-	o.Positions = positions
+	fmt.Println(positions)
+	for _, position := range positions {
+		if position.Quantity >= 1 {
+			list = append(list, position)
+		}
+	}
+	o.Positions = list
 }
 
 func (o *Order) FormatOrderNumber() string {
