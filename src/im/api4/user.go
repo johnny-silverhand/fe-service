@@ -89,17 +89,24 @@ func createUser(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//tokenId := r.URL.Query().Get("t")
+	tokenId := r.URL.Query().Get("t")
 	inviteId := r.URL.Query().Get("iid")
 
 	// No permission check required
 
 	var ruser *model.User
 	var err *model.AppError
-	/*if len(tokenId) > 0 {
-		ruser, err = c.App.CreateUserWithToken(user, tokenId)
-	} else*/
-	if len(inviteId) > 0 {
+	if len(tokenId) > 0 {
+		var token *model.Token
+		tokenResult := <-c.App.Srv.Store.Token().GetByToken(tokenId)
+		if tokenResult.Err != nil {
+			c.Err = model.NewAppError("CreateUserWithToken", "api.user.create_user.signup_link_invalid.app_error", nil, tokenResult.Err.Error(), http.StatusBadRequest)
+			return
+		}
+		token = tokenResult.Data.(*model.Token)
+
+		ruser, err = c.App.CreateUserWithInviteToken(user, token)
+	} else if len(inviteId) > 0 {
 		ruser, err = c.App.CreateUserWithInviteId(user, inviteId)
 	} else if c.IsSystemAdmin() {
 		ruser, err = c.App.CreateUserAsAdmin(user)

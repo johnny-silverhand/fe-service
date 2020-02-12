@@ -851,6 +851,27 @@ func (us SqlUserStore) GetSystemAdminProfiles() store.StoreChannel {
 	})
 }
 
+func (us SqlUserStore) GetByEmailAppId(email string, appId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		email = strings.ToLower(email)
+
+		query := us.usersQuery.Where("Email = ? AND AppId = ?", email, appId)
+
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetByEmail", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		user := model.User{}
+		if err := us.GetReplica().SelectOne(&user, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetByEmail", store.MISSING_ACCOUNT_ERROR, nil, "email="+email+", "+err.Error(), http.StatusInternalServerError)
+		}
+
+		result.Data = &user
+	})
+}
+
 func (us SqlUserStore) GetByEmail(email string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		email = strings.ToLower(email)

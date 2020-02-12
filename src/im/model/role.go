@@ -24,6 +24,9 @@ const (
 	CHANNEL_USER_ROLE_ID  = "channel_user"
 	CHANNEL_ADMIN_ROLE_ID = "channel_admin"
 
+	SYSTEM_MODERATOR_ROLE_ID = "system_moderator"
+	SYSTEM_DIRECTOR_ROLE_ID  = "system_director"
+
 	ROLE_NAME_MAX_LENGTH         = 64
 	ROLE_DISPLAY_NAME_MAX_LENGTH = 128
 	ROLE_DESCRIPTION_MAX_LENGTH  = 1024
@@ -187,7 +190,7 @@ func MakeDefaultRoles() map[string]*Role {
 			PERMISSION_CREATE_POST.Id,
 			PERMISSION_USE_SLASH_COMMANDS.Id,
 		},
-		SchemeManaged: true,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 
@@ -198,7 +201,7 @@ func MakeDefaultRoles() map[string]*Role {
 		Permissions: []string{
 			PERMISSION_MANAGE_CHANNEL_ROLES.Id,
 		},
-		SchemeManaged: true,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 
@@ -212,7 +215,7 @@ func MakeDefaultRoles() map[string]*Role {
 			PERMISSION_READ_PUBLIC_CHANNEL.Id,
 			PERMISSION_VIEW_TEAM.Id,
 		},
-		SchemeManaged: true,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 
@@ -255,7 +258,7 @@ func MakeDefaultRoles() map[string]*Role {
 			PERMISSION_MANAGE_INCOMING_WEBHOOKS.Id,
 			PERMISSION_MANAGE_OUTGOING_WEBHOOKS.Id,
 		},
-		SchemeManaged: true,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 
@@ -269,7 +272,7 @@ func MakeDefaultRoles() map[string]*Role {
 			PERMISSION_CREATE_DIRECT_CHANNEL.Id,
 			PERMISSION_CREATE_GROUP_CHANNEL.Id,
 		},
-		SchemeManaged: true,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 
@@ -366,7 +369,25 @@ func MakeDefaultRoles() map[string]*Role {
 			),
 			roles[CHANNEL_ADMIN_ROLE_ID].Permissions...,
 		),
-		SchemeManaged: true,
+		SchemeManaged: false,
+		BuiltIn:       true,
+	}
+
+	roles[SYSTEM_MODERATOR_ROLE_ID] = &Role{
+		Name:          "system_moderator",
+		DisplayName:   "authentication.roles.system_moderator.name",
+		Description:   "authentication.roles.system_moderator.description",
+		Permissions:   roles[SYSTEM_ADMIN_ROLE_ID].Permissions,
+		SchemeManaged: false,
+		BuiltIn:       true,
+	}
+
+	roles[SYSTEM_DIRECTOR_ROLE_ID] = &Role{
+		Name:          "system_director",
+		DisplayName:   "authentication.roles.system_director.name",
+		Description:   "authentication.roles.system_director.description",
+		Permissions:   roles[SYSTEM_ADMIN_ROLE_ID].Permissions,
+		SchemeManaged: false,
 		BuiltIn:       true,
 	}
 

@@ -177,13 +177,10 @@ func (o *Order) NormalizePositions() {
 	for _, entry := range o.Positions {
 		if _, value := positions[entry.ProductId]; !value {
 			positions[entry.ProductId] = entry
-			fmt.Println("FIRST", *entry)
 		} else {
 			positions[entry.ProductId].Quantity += entry.Quantity
-			fmt.Println(*entry)
 		}
 	}
-	fmt.Println(positions)
 	for _, position := range positions {
 		if position.Quantity >= 1 {
 			list = append(list, position)

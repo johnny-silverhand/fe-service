@@ -74,6 +74,57 @@ func (a *App) PreCreateUser(user *model.User) (*model.User, *model.AppError) {
 	}
 }
 
+func (a *App) CreateUserWithInviteToken(user *model.User, token *model.Token) (*model.User, *model.AppError) {
+	if err := a.IsUserSignUpAllowed(); err != nil {
+		return nil, err
+	}
+	tokenData := model.MapFromJson(strings.NewReader(token.Extra))
+
+	resultTeam := <-a.Srv.Store.Team().Get(tokenData["teamId"])
+	if resultTeam.Err != nil {
+		return nil, resultTeam.Err
+	}
+	team := resultTeam.Data.(*model.Team)
+
+	resultChannel := <-a.Srv.Store.Channel().GetChannelsByIds(strings.Split(tokenData["channels"], " "))
+	if resultChannel.Err != nil {
+		return nil, resultChannel.Err
+	}
+	channels := resultChannel.Data.([]*model.Channel)
+
+	user.Email = tokenData["email"]
+	user.EmailVerified = true
+	user.AppId = team.Name
+	user.Roles = model.SYSTEM_DIRECTOR_ROLE_ID
+
+	var ruser *model.User
+	var err *model.AppError
+	ruser, err = a.CreateUser(user)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.JoinUserToTeam(team, ruser, ""); err != nil {
+		return nil, err
+	}
+
+	a.AddDirectChannels(team.Id, ruser)
+
+	for _, channel := range channels {
+		_, err := a.AddChannelMember(ruser.Id, channel, "", "", "")
+		if err != nil {
+			mlog.Error("Failed to add channel member", mlog.Err(err))
+		}
+	}
+
+	if err := a.DeleteToken(token); err != nil {
+		return nil, err
+	}
+
+	return ruser, nil
+}
+
 func (a *App) CreateUserWithToken(user *model.User, pwd string) (*model.Token, *model.AppError) {
 
 	var ruser *model.User
@@ -478,6 +529,19 @@ func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) 
 	result := <-a.Srv.Store.User().GetByUsername(username)
 	if result.Err != nil && result.Err.Id == "store.sql_user.get_by_username.app_error" {
 		result.Err.StatusCode = http.StatusNotFound
+		return nil, result.Err
+	}
+	return result.Data.(*model.User), nil
+}
+
+func (a *App) GetUserApplicationByEmail(email string, appId string) (*model.User, *model.AppError) {
+	result := <-a.Srv.Store.User().GetByEmail(email)
+	if result.Err != nil {
+		if result.Err.Id == "store.sql_user.missing_account.const" {
+			result.Err.StatusCode = http.StatusNotFound
+			return nil, result.Err
+		}
+		result.Err.StatusCode = http.StatusBadRequest
 		return nil, result.Err
 	}
 	return result.Data.(*model.User), nil

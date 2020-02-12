@@ -9,10 +9,10 @@ import (
 func (api *API) InitApplication() {
 
 	api.BaseRoutes.Applications.Handle("", api.ApiHandler(getAllApplications)).Methods("GET")
-	api.BaseRoutes.Applications.Handle("", api.ApiHandler(createApplication)).Methods("POST")
+	api.BaseRoutes.Applications.Handle("", api.ApiHandler(createApplicationTeam)).Methods("POST")
 
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(getApplication)).Methods("GET")
-	api.BaseRoutes.Application.Handle("", api.ApiHandler(updateApplication)).Methods("PUT")
+	api.BaseRoutes.Application.Handle("", api.ApiHandler(updateApplicationTeam)).Methods("PUT")
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(deleteApplication)).Methods("DELETE")
 
 	api.BaseRoutes.Application.Handle("/offices", api.ApiHandler(getApplicationOffices)).Methods("GET")
@@ -248,6 +248,69 @@ func createApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(rapplication.ToJson()))
 }
 
+func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
+	application := model.ApplicationFromJson(r.Body)
+
+	if application == nil {
+		c.SetInvalidParam("application")
+		return
+	}
+
+	if application.Email == "" {
+		c.SetInvalidParam("email")
+		return
+	}
+
+	rapplication, err := c.App.CreateSingleApplication(application)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	team := &model.Team{
+		DisplayName:     rapplication.Name,
+		Name:            rapplication.Id,
+		Description:     rapplication.Description,
+		Email:           rapplication.Email,
+		Type:            "O",
+		CompanyName:     rapplication.Name,
+		AllowOpenInvite: true,
+	}
+
+	if team == nil {
+		c.SetInvalidParam("team")
+		return
+	}
+
+	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_CREATE_TEAM) {
+		c.Err = model.NewAppError("createTeam", "api.team.is_team_creation_allowed.disabled.app_error", nil, "", http.StatusForbidden)
+		return
+	}
+
+	rteam, err := c.App.CreateTeamWithUser(team, c.App.Session.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	var emailList []string
+	emailList = append(emailList, rapplication.Email)
+
+	if len(emailList) == 0 {
+		c.SetInvalidParam("user_email")
+		return
+	}
+
+	if err := c.App.InviteNewUsersToTeam(emailList, rteam.Id, c.App.Session.UserId); err != nil {
+		c.Err = err
+		return
+	}
+
+	// Don't sanitize the team here since the user will be a team admin and their session won't reflect that yet
+
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(rapplication.ToJson()))
+}
+
 func getApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireAppId()
 	if c.Err != nil {
@@ -293,6 +356,61 @@ func updateApplication(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(rapp.ToJson()))
+}
+
+func updateApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+
+	patch := model.ApplicationPatchFromJson(r.Body)
+
+	if patch == nil {
+		c.SetInvalidParam("application")
+		return
+	}
+
+	team := &model.TeamPatch{
+		DisplayName: patch.Name,
+		Description: patch.Description,
+		CompanyName: patch.Name,
+	}
+
+	if team == nil {
+		c.SetInvalidParam("team")
+		return
+	}
+	var teamId string
+	if oldTeam, err := c.App.GetTeamByName(c.Params.AppId); err != nil {
+		c.Err = err
+		return
+	} else {
+		teamId = oldTeam.Id
+	}
+
+	if !c.App.SessionHasPermissionToTeam(c.App.Session, teamId, model.PERMISSION_MANAGE_TEAM) {
+		c.SetPermissionError(model.PERMISSION_MANAGE_TEAM)
+		return
+	}
+
+	if patchedTeam, err := c.App.PatchTeam(teamId, team); err != nil {
+		c.Err = err
+		return
+	} else {
+		c.App.SanitizeTeam(c.App.Session, patchedTeam)
+		c.LogAudit(patchedTeam.ToJson())
+	}
+
+	patchedApplication, err := c.App.PatchApplication(c.Params.AppId, patch)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	c.LogAudit("")
+	w.Write([]byte(patchedApplication.ToJson()))
 }
 
 func deleteApplication(c *Context, w http.ResponseWriter, r *http.Request) {

@@ -37,6 +37,18 @@ func (a *App) GetApplications(offset int, limit int, sort string) (*model.Applic
 	return result.Data.(*model.ApplicationList), nil
 }
 
+func (a *App) CreateSingleApplication(application *model.Application) (*model.Application, *model.AppError) {
+
+	result := <-a.Srv.Store.Application().Save(application)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	rapplication := result.Data.(*model.Application)
+
+	return rapplication, nil
+}
+
 func (a *App) CreateApplication(application *model.Application) (*model.Application, *model.AppError) {
 
 	result := <-a.Srv.Store.Application().Save(application)
@@ -78,6 +90,47 @@ func (a *App) CreateApplication(application *model.Application) (*model.Applicat
 			a.UpdateTeamMemberRoles(rteam.Id, ruser.Id, "team_user team_admin channel_user")
 		}
 	}
+
+	return rapplication, nil
+}
+
+func (a *App) PatchApplication(id string, patch *model.ApplicationPatch) (*model.Application, *model.AppError) {
+	result := <-a.Srv.Store.Application().Get(id)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	oldApplication := result.Data.(*model.Application)
+
+	if oldApplication == nil {
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.find.app_error", nil, "id="+id, http.StatusBadRequest)
+		return nil, err
+	}
+
+	if oldApplication.DeleteAt != 0 {
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.permissions_details.app_error", map[string]interface{}{"ApplicationId": id}, "", http.StatusBadRequest)
+		return nil, err
+	}
+
+	newApplication := &model.Application{}
+	*newApplication = *oldApplication
+	newApplication.Patch(patch)
+
+	if newApplication.Email != oldApplication.Email {
+		if ruser, err := a.GetUserApplicationByEmail(oldApplication.Email, oldApplication.Id); err != nil {
+			return nil, err
+		} else if _, err := a.PatchUser(ruser.Id, &model.UserPatch{Email: model.NewString(newApplication.Email)}, true); err != nil {
+			return nil, err
+		}
+	}
+
+	result = <-a.Srv.Store.Application().Update(newApplication)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	rapplication := result.Data.(*model.Application)
+	rapplication = a.PrepareApplicationForClient(rapplication, false)
 
 	return rapplication, nil
 }
