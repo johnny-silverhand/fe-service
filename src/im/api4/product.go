@@ -2,6 +2,7 @@ package api4
 
 import (
 	"im/model"
+	"im/utils"
 	"net/http"
 )
 
@@ -244,65 +245,16 @@ func getProductsForCategory(c *Context, w http.ResponseWriter, r *http.Request) 
 		productGetOptions.Active = &c.Params.Active
 	}
 
-	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
+	if utils.StringInSlice(c.App.Session.Roles, []string{model.CHANNEL_USER_ROLE_ID, ""}) {
 		productGetOptions.Status = model.PRODUCT_STATUS_ACCEPTED
 		productGetOptions.Active = model.NewBool(true)
 	}
-
-	//afterProduct := r.URL.Query().Get("after")
-	//beforeProduct := r.URL.Query().Get("before")
-	//sinceString := r.URL.Query().Get("since")
-
-	//var since int64
-	//var parseError error
-
-	/*	if len(sinceString) > 0 {
-		since, parseError = strconv.ParseInt(sinceString, 10, 64)
-		if parseError != nil {
-			c.SetInvalidParam("since")
-			return
-		}
-	}*/
 
 	var list *model.ProductList
 	var err *model.AppError
 	etag := ""
 
-	/*val := reflect.ValueOf(model.Product{})
-	for i := 0; i < val.Type().NumField(); i++ {
-		// prints empty line if there is no json tag for the field
-		if ()(val.Type().Field(i).Tag.Get("json"))
-	}*/
-
 	list, err = c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions)
-
-	/*if since > 0 {
-		list, err = c.App.GetProductsSince(c.Params.ChannelId, since)
-	} else if len(afterProduct) > 0 {
-		etag = c.App.GetProductsEtag(c.Params.ChannelId)
-
-		if c.HandleEtag(etag, "Get Products After", w, r) {
-			return
-		}
-
-		list, err = c.App.GetProductsAfterProduct(c.Params.ChannelId, afterProduct, c.Params.Page, c.Params.PerPage)
-	} else if len(beforeProduct) > 0 {
-		etag = c.App.GetProductsEtag(c.Params.ChannelId)
-
-		if c.HandleEtag(etag, "Get Products Before", w, r) {
-			return
-		}
-
-		list, err = c.App.GetProductsBeforeProduct(c.Params.ChannelId, beforeProduct, c.Params.Page, c.Params.PerPage)
-	} else {
-		etag = c.App.GetProductsEtag(c.Params.ChannelId)
-
-		if c.HandleEtag(etag, "Get Products", w, r) {
-			return
-		}
-
-
-	}*/
 
 	if err != nil {
 		c.Err = err
