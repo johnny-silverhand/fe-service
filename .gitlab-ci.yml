@@ -17,8 +17,6 @@ deploy:
     - sshpass -e ssh -o stricthostkeychecking=no $USER@$HOST "echo $USER_PASS | sudo -S systemctl stop $SERVICE_NAME"
     # Копируем новые файлы
     - sshpass -e scp -o stricthostkeychecking=no -r . $USER@$HOST:$TARGET_DIR_ON_HOST
-    - sshpass -e scp -o stricthostkeychecking=no -r $CI_PROJECT_DIR/i18n $USER@$HOST:$TARGET_DIR_ON_HOST/i18n
-    - sshpass -e scp -o stricthostkeychecking=no -r $CI_PROJECT_DIR/templates $USER@$HOST:$TARGET_DIR_ON_HOST/templates
     - sshpass -e scp -o stricthostkeychecking=no -r $CI_PROJECT_DIR/src/im/i18n $USER@$HOST:$TARGET_DIR_ON_HOST/i18n
     - sshpass -e scp -o stricthostkeychecking=no -r $CI_PROJECT_DIR/src/im/templates $USER@$HOST:$TARGET_DIR_ON_HOST/templates
     - sshpass -e scp -o stricthostkeychecking=no -r $CI_PROJECT_DIR/src/im/fonts $USER@$HOST:$TARGET_DIR_ON_HOST/fonts
