@@ -57,7 +57,7 @@ func (a *App) PreCreateUser(user *model.User) (*model.User, *model.AppError) {
 			return user, userTeams.Err
 		}
 
-		userTeamsIds := []string{}
+		/*userTeamsIds := []string{}
 		for _, team := range userTeams.Data.([]*model.Team) {
 			userTeamsIds = append(userTeamsIds, team.Id)
 		}
@@ -67,7 +67,7 @@ func (a *App) PreCreateUser(user *model.User) (*model.User, *model.AppError) {
 			} else {
 				a.AddUserToTeamByTeamId(team.Id, user)
 			}
-		}
+		}*/
 
 		ruser.Sanitize(map[string]bool{})
 		return ruser, nil
