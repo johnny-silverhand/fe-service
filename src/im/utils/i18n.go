@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nicksnyder/go-i18n/i18n"
 	"im/mlog"
 	"im/model"
 	"im/utils/fileutils"
-	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 var T i18n.TranslateFunc
@@ -27,8 +27,8 @@ func TranslationsPreInit() error {
 
 	// Set T even if we fail to load the translations. Lots of shutdown handling code will
 	// segfault trying to handle the error, and the untranslated IDs are strictly better.
-	T = TfuncWithFallback("en")
-	TDefault = TfuncWithFallback("en")
+	T = TfuncWithFallback("ru")
+	TDefault = TfuncWithFallback("ru")
 	return InitTranslationsWithDir("i18n")
 }
 
