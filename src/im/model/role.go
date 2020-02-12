@@ -198,9 +198,10 @@ func MakeDefaultRoles() map[string]*Role {
 		Name:        "channel_admin",
 		DisplayName: "authentication.roles.channel_admin.name",
 		Description: "authentication.roles.channel_admin.description",
-		Permissions: []string{
+		Permissions: append([]string{
 			PERMISSION_MANAGE_CHANNEL_ROLES.Id,
-		},
+			PERMISSION_READ_CHANNEL.Id,
+		}, roles[CHANNEL_USER_ROLE_ID].Permissions...),
 		SchemeManaged: false,
 		BuiltIn:       true,
 	}
