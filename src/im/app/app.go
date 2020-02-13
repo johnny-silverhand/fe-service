@@ -1,4 +1,3 @@
-
 package app
 
 import (
@@ -7,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	goi18n "github.com/nicksnyder/go-i18n/i18n"
 	"im/einterfaces"
 	"im/jobs"
 	"im/mlog"
@@ -15,7 +15,6 @@ import (
 	"im/services/imageproxy"
 	"im/services/timezones"
 	"im/utils"
-	goi18n "github.com/nicksnyder/go-i18n/i18n"
 )
 
 type App struct {
@@ -31,11 +30,9 @@ type App struct {
 	UserAgent      string
 	AcceptLanguage string
 
+	Cluster einterfaces.ClusterInterface
 
-	Cluster          einterfaces.ClusterInterface
-
-	Elasticsearch    einterfaces.ElasticsearchInterface
-
+	Elasticsearch einterfaces.ElasticsearchInterface
 
 	HTTPService httpservice.HTTPService
 	ImageProxy  *imageproxy.ImageProxy
@@ -101,6 +98,32 @@ func (a *App) EnsureDiagnosticId() {
 		}
 
 		a.Srv.diagnosticId = id
+	}
+}
+
+func (a *App) MasterKey() string {
+	return a.Srv.masterKey
+}
+
+func (a *App) SetMasterKey(id string) {
+	a.Srv.masterKey = id
+}
+
+func (a *App) EnsureMasterKey() {
+	if a.Srv.masterKey != "" {
+		return
+	}
+	if result := <-a.Srv.Store.System().Get(); result.Err == nil {
+		props := result.Data.(model.StringMap)
+
+		id := props[model.SYSTEM_MASTER_KEY]
+		if len(id) == 0 {
+			id = model.NewId() + model.NewId()
+			systemId := &model.System{Name: model.SYSTEM_MASTER_KEY, Value: id}
+			<-a.Srv.Store.System().Save(systemId)
+		}
+
+		a.Srv.masterKey = id
 	}
 }
 

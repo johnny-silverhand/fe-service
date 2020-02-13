@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/pkg/errors"
 	"im/mlog"
 	"im/model"
 	"im/services/mailservice"
 	"im/store"
 	"im/store/sqlstore"
 	"im/utils"
-	"github.com/pkg/errors"
 )
 
 // This is a bridge between the old and new initalization for the context refactor.
@@ -73,6 +73,7 @@ func (s *Server) RunOldAppInitalization() error {
 	}
 
 	s.FakeApp().EnsureDiagnosticId()
+	s.FakeApp().EnsureMasterKey()
 	s.FakeApp().regenerateClientConfig()
 
 	s.FakeApp().Srv.clusterLeaderListenerId = s.FakeApp().Srv.AddClusterLeaderChangedListener(func() {
@@ -87,7 +88,6 @@ func (s *Server) RunOldAppInitalization() error {
 		return errors.Wrap(err, "failed to parse SiteURL subpath")
 	}
 	s.FakeApp().Srv.Router = s.FakeApp().Srv.RootRouter.PathPrefix(subpath).Subrouter()
-
 
 	// If configured with a subpath, redirect 404s at the root back into the subpath.
 	if subpath != "/" {
@@ -122,7 +122,6 @@ func (s *Server) RunOldAppInitalization() error {
 	s.FakeApp().DoPermissionsMigrations()
 
 	s.FakeApp().InitPostMetadata()
-
 
 	return nil
 }

@@ -1,4 +1,3 @@
-
 package model
 
 import (
@@ -16,6 +15,7 @@ const (
 	SYSTEM_ASYMMETRIC_SIGNING_KEY    = "AsymmetricSigningKey"
 	SYSTEM_POST_ACTION_COOKIE_SECRET = "PostActionCookieSecret"
 	SYSTEM_INSTALLATION_DATE_KEY     = "InstallationDate"
+	SYSTEM_MASTER_KEY                = "MasterKey"
 )
 
 type System struct {

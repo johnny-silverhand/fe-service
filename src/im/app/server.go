@@ -30,7 +30,6 @@ import (
 	"im/services/timezones"
 	"im/store"
 	"im/utils"
-
 )
 
 var MaxNotificationsPerChannelDefault int64 = 1000000
@@ -91,6 +90,7 @@ type Server struct {
 	clientConfigHash    string
 	limitedClientConfig map[string]string
 	diagnosticId        string
+	masterKey           string
 
 	phase2PermissionsMigrationComplete bool
 
@@ -104,9 +104,8 @@ type Server struct {
 	startMetrics       bool
 	startElasticsearch bool
 
-	Cluster          einterfaces.ClusterInterface
-	Elasticsearch    einterfaces.ElasticsearchInterface
-
+	Cluster       einterfaces.ClusterInterface
+	Elasticsearch einterfaces.ElasticsearchInterface
 }
 
 func NewServer(options ...Option) (*Server, error) {
@@ -178,8 +177,6 @@ func NewServer(options ...Option) (*Server, error) {
 	mlog.Info(fmt.Sprintf("Current working directory is %v", pwd))
 	mlog.Info("Loaded config", mlog.String("source", s.configStore.String()))
 
-
-
 	if len(s.Config().SqlSettings.DataSourceReplicas) > 1 {
 		mlog.Warn("More than 1 read replica functionality disabled by current license. Please contact your system administrator about upgrading your enterprise license.")
 		s.UpdateConfig(func(cfg *model.Config) {
@@ -187,11 +184,9 @@ func NewServer(options ...Option) (*Server, error) {
 		})
 	}
 
-
-		s.UpdateConfig(func(cfg *model.Config) {
-			cfg.TeamSettings.MaxNotificationsPerChannel = &MaxNotificationsPerChannelDefault
-		})
-
+	s.UpdateConfig(func(cfg *model.Config) {
+		cfg.TeamSettings.MaxNotificationsPerChannel = &MaxNotificationsPerChannelDefault
+	})
 
 	s.ReloadConfig()
 
@@ -229,7 +224,6 @@ func NewServer(options ...Option) (*Server, error) {
 			runTokenCleanupJob(s)
 		})
 
-
 		if *s.Config().JobSettings.RunJobs && s.Jobs != nil {
 			s.Jobs.StartWorkers()
 		}
@@ -237,7 +231,6 @@ func NewServer(options ...Option) (*Server, error) {
 			s.Jobs.StartSchedulers()
 		}
 	}
-
 
 	return s, nil
 }
@@ -297,7 +290,6 @@ func (s *Server) Shutdown() error {
 	if s.Cluster != nil {
 		s.Cluster.StopInterNodeCommunication()
 	}
-
 
 	if s.Jobs != nil && s.runjobs {
 		s.Jobs.StopWorkers()
@@ -410,8 +402,7 @@ func (s *Server) Start() error {
 		handler = corsWrapper.Handler(handler)
 	}
 
-	handler = checkOriginHttpRequest(handler);
-
+	handler = checkOriginHttpRequest(handler)
 
 	if *s.Config().RateLimitSettings.Enable {
 		mlog.Info("RateLimiter is enabled")
@@ -641,7 +632,6 @@ func doTokenCleanup(s *Server) {
 	s.Store.Token().Cleanup()
 }
 
-
 const (
 	SESSIONS_CLEANUP_BATCH_SIZE = 1000
 )
@@ -684,12 +674,10 @@ func (s *Server) StartElasticsearch() {
 		}
 	})
 
-
-			s.Go(func() {
-				if err := s.Elasticsearch.Start(); err != nil {
-					mlog.Error(err.Error())
-				}
-			})
+	s.Go(func() {
+		if err := s.Elasticsearch.Start(); err != nil {
+			mlog.Error(err.Error())
+		}
+	})
 
 }
-

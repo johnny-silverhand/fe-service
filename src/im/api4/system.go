@@ -20,6 +20,7 @@ func (api *API) InitSystem() {
 	api.BaseRoutes.System.Handle("/ping", api.ApiHandler(getSystemPing)).Methods("GET")
 
 	api.BaseRoutes.System.Handle("/timezones", api.ApiSessionRequired(getSupportedTimezones)).Methods("GET")
+	api.BaseRoutes.System.Handle("/masterkey", api.ApiSessionRequired(getMasterKey)).Methods("GET")
 
 	api.BaseRoutes.ApiRoot.Handle("/audits", api.ApiSessionRequired(getAudits)).Methods("GET")
 	api.BaseRoutes.ApiRoot.Handle("/email/test", api.ApiSessionRequired(testEmail)).Methods("POST")
@@ -30,8 +31,20 @@ func (api *API) InitSystem() {
 	api.BaseRoutes.ApiRoot.Handle("/logs", api.ApiSessionRequired(getLogs)).Methods("GET")
 	api.BaseRoutes.ApiRoot.Handle("/logs", api.ApiHandler(postLog)).Methods("POST")
 
-
 	api.BaseRoutes.ApiRoot.Handle("/redirect_location", api.ApiSessionRequiredTrustRequester(getRedirectLocation)).Methods("GET")
+}
+
+func getMasterKey(c *Context, w http.ResponseWriter, r *http.Request) {
+	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+		c.SetPermissionError(model.PERMISSION_MANAGE_SYSTEM)
+		return
+	}
+
+	rdata := map[string]string{}
+	key := c.App.MasterKey()
+	rdata["master_key"] = key
+
+	w.Write([]byte(model.MapToJson(rdata)))
 }
 
 func getSystemPing(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -190,7 +203,6 @@ func postLog(c *Context, w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(model.MapToJson(m)))
 }
 
-
 func getSupportedTimezones(c *Context, w http.ResponseWriter, r *http.Request) {
 	supportedTimezones := c.App.Timezones.GetSupported()
 	if supportedTimezones == nil {
@@ -231,7 +243,6 @@ func testS3(c *Context, w http.ResponseWriter, r *http.Request) {
 	if *cfg.FileSettings.AmazonS3SecretAccessKey == model.FAKE_SETTING {
 		cfg.FileSettings.AmazonS3SecretAccessKey = c.App.Config().FileSettings.AmazonS3SecretAccessKey
 	}
-
 
 	backend, appErr := filesstore.NewFileBackend(&cfg.FileSettings)
 	if appErr == nil {

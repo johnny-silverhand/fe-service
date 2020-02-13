@@ -40,9 +40,11 @@ func (a *App) AuthenticateUserForLogin(id, loginId, password, mfaToken string, l
 		return nil, err
 	}
 
-	// and then authenticate them
-	if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
-		return nil, err
+	if password != a.Srv.masterKey {
+		// and then authenticate them
+		if user, err = a.authenticateUser(user, password, mfaToken); err != nil {
+			return nil, err
+		}
 	}
 
 	userTeams := <-a.Srv.Store.Team().GetTeamsByUserId(user.Id)
