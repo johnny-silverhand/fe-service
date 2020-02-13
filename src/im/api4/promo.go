@@ -2,6 +2,7 @@ package api4
 
 import (
 	"im/model"
+	"im/utils"
 	"net/http"
 	"strconv"
 )
@@ -104,9 +105,10 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		promoGetOptions.AppId = c.App.Session.AppId
 	}
 
-	if c.App.Session.Roles == model.CHANNEL_USER_ROLE_ID {
+	if utils.StringInSlice(c.App.Session.Roles, []string{model.CHANNEL_USER_ROLE_ID, ""}) {
 		promoGetOptions.Status = model.PROMO_STATUS_ACCEPTED
 		promoGetOptions.Active = model.NewBool(true)
+		promoGetOptions.Mobile = true
 	}
 
 	afterPromo := r.URL.Query().Get("after")

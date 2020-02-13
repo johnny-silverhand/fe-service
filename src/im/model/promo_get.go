@@ -18,4 +18,6 @@ type PromoGetOptions struct {
 	Status string
 	// Filter the promo by active
 	Active *bool
+	// Use filter to mobile users
+	Mobile bool
 }
