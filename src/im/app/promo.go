@@ -126,6 +126,8 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 
 	newPromo.Preview = promo.Preview
 	newPromo.Description = promo.Description
+	newPromo.BeginAt = promo.BeginAt
+	newPromo.ExpireAt = promo.ExpireAt
 	//if !safeUpdate {
 	newPromo.Media = promo.Media
 	//}
