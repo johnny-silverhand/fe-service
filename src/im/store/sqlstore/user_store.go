@@ -393,6 +393,8 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 
 		if options.Inactive {
 			query = query.Where("u.DeleteAt != 0")
+		} else {
+			query = query.Where("u.DeleteAt = 0")
 		}
 
 		if options.AppId != "" {
