@@ -319,6 +319,10 @@ func (u *User) PreSave() {
 	if len(u.Password) > 0 {
 		u.Password = HashPassword(u.Password)
 	}
+
+	if u.Email == "" {
+		u.Email = NewId()
+	}
 }
 
 // PreUpdate should be run before updating the user in the db.

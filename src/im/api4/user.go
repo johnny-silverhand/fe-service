@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -550,10 +551,17 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if props.AppId == "" {
+	if ruser, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+		c.RequireSessionUserId()
+		return
+	} else {
+		props.AppId = ruser.AppId
+	}
+
+	/*if props.AppId == "" {
 		c.SetInvalidParam("app_id")
 		return
-	}
+	}*/
 
 	/*if props.TeamId == "" && props.NotInChannelId != "" {
 		c.SetInvalidParam("team_id")
@@ -605,8 +613,15 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
+	var list []*model.User
+	for _, profile := range profiles {
+		roles := strings.Fields(profile.Roles)
+		if utils.StringInSlice(props.Role, roles) {
+			list = append(list, profile)
+		}
+	}
 
-	w.Write([]byte(model.UserListToJson(profiles)))
+	w.Write([]byte(model.UserListToJson(list)))
 }
 
 func autocompleteUsers(c *Context, w http.ResponseWriter, r *http.Request) {
