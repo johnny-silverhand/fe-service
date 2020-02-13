@@ -371,6 +371,13 @@ func updateApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	patchedApplication, err := c.App.PatchApplication(c.Params.AppId, patch)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
 	team := &model.TeamPatch{
 		DisplayName: patch.Name,
 		Description: patch.Description,
@@ -400,13 +407,6 @@ func updateApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 	} else {
 		c.App.SanitizeTeam(c.App.Session, patchedTeam)
 		c.LogAudit(patchedTeam.ToJson())
-	}
-
-	patchedApplication, err := c.App.PatchApplication(c.Params.AppId, patch)
-
-	if err != nil {
-		c.Err = err
-		return
 	}
 
 	c.LogAudit("")
