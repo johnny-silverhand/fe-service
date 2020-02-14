@@ -198,9 +198,9 @@ func (u *User) IsValid() *AppError {
 		return InvalidUserError("id", "")
 	}
 
-	if len(u.AppId) != 26 {
+	/*if len(u.AppId) != 26 {
 		return InvalidUserError("app_id", u.Id)
-	}
+	}*/
 
 	if u.CreateAt == 0 {
 		return InvalidUserError("create_at", u.Id)
