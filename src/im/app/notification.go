@@ -260,7 +260,7 @@ func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *mod
 		}
 	}
 
-	sendPushNotifications := false
+	sendPushNotifications := true
 	if *a.Config().EmailSettings.SendPushNotifications {
 		pushServer := *a.Config().EmailSettings.PushNotificationServer
 		if pushServer == model.MHPNS {
