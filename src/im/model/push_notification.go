@@ -60,6 +60,8 @@ func (me *PushNotification) SetDeviceIdAndPlatform(deviceId string) {
 	if index > -1 {
 		me.Platform = deviceId[:index]
 		me.DeviceId = deviceId[index+1:]
+	} else {
+		me.DeviceId = deviceId
 	}
 }
 
@@ -69,10 +71,9 @@ func PushNotificationFromJson(data io.Reader) *PushNotification {
 	return me
 }
 
-
 type SmsNotification struct {
-	Phone	         string `json:"phone"`
-	Message         string `json:"message"`
+	Phone   string `json:"phone"`
+	Message string `json:"message"`
 }
 
 func (me *SmsNotification) ToJson() string {
