@@ -190,6 +190,15 @@ func (u *User) DeepCopy() *User {
 	return &copyUser
 }
 
+func stringInSlice(a string, slice []string) bool {
+	for _, b := range slice {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
 // IsValid validates the user and returns an error if it isn't configured
 // correctly.
 func (u *User) IsValid() *AppError {
@@ -198,9 +207,10 @@ func (u *User) IsValid() *AppError {
 		return InvalidUserError("id", "")
 	}
 
-	/*if len(u.AppId) != 26 {
+	if len(u.AppId) != 26 && stringInSlice(u.Roles, []string{
+		SYSTEM_ADMIN_ROLE_ID, SYSTEM_MODERATOR_ROLE_ID}) == false {
 		return InvalidUserError("app_id", u.Id)
-	}*/
+	}
 
 	if u.CreateAt == 0 {
 		return InvalidUserError("create_at", u.Id)
