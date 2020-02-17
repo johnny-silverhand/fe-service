@@ -1077,12 +1077,12 @@ func (us SqlUserStore) AnalyticsActiveCount(timePeriod int64) store.StoreChannel
 func (us SqlUserStore) GetUnreadCount(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		if count, err := us.GetReplica().SelectInt(`
-		SELECT SUM(CASE WHEN c.Type = 'D' THEN (c.TotalMsgCount - cm.MsgCount) ELSE cm.MentionCount END)
+		SELECT SUM(CASE WHEN c.Type = :ChannelType THEN (c.TotalMsgCount - cm.MsgCount) ELSE cm.MentionCount END)
 		FROM Channels c
 		INNER JOIN ChannelMembers cm
 		      ON cm.ChannelId = c.Id
 		      AND cm.UserId = :UserId
-		      AND c.DeleteAt = 0`, map[string]interface{}{"UserId": userId}); err != nil {
+		      AND c.DeleteAt = 0`, map[string]interface{}{"ChannelType": model.CHANNEL_OPEN, "UserId": userId}); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMentionCount", "store.sql_user.get_unread_count.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = count
