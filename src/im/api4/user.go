@@ -387,6 +387,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	inactive := r.URL.Query().Get("inactive")
 	role := r.URL.Query().Get("role")
 	sort := r.URL.Query().Get("sort")
+	email := r.URL.Query().Get("email")
 
 	if len(notInChannelId) > 0 && len(inTeamId) == 0 {
 		c.SetInvalidUrlParam("team_id")
@@ -424,6 +425,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		Page:           c.Params.Page,
 		PerPage:        c.Params.PerPage,
 		AppId:          c.Params.AppId,
+		Email:          email,
 	}
 
 	var profiles []*model.User

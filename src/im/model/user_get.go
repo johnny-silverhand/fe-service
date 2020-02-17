@@ -23,4 +23,6 @@ type UserGetOptions struct {
 	PerPage int
 	// application id
 	AppId string
+	// email
+	Email string
 }

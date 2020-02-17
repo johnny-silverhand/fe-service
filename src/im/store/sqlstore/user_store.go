@@ -401,6 +401,10 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 			query = query.Where("u.AppId = '" + options.AppId + "'")
 		}
 
+		if len(options.Email) > 0 {
+			query = query.Where("u.Email = ? ", options.Email)
+		}
+
 		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
