@@ -7,6 +7,7 @@ import (
 )
 
 func (api *API) InitTransaction() {
+	//api.BaseRoutes.Transactions.Handle("/mailing", api.ApiSessionRequired(createMailingTransactions)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/discard", api.ApiSessionRequired(discardTransactionUser)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/charge", api.ApiSessionRequired(chargeTransactionUser)).Methods("POST")
 

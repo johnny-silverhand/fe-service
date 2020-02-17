@@ -179,6 +179,7 @@ func getAllApplications(c *Context, w http.ResponseWriter, r *http.Request) {
 	afterApplication := r.URL.Query().Get("after")
 	beforeApplication := r.URL.Query().Get("before")
 	sinceString := r.URL.Query().Get("since")
+	email := r.URL.Query().Get("email")
 
 	var since int64
 	var parseError error
@@ -189,6 +190,12 @@ func getAllApplications(c *Context, w http.ResponseWriter, r *http.Request) {
 			c.SetInvalidParam("since")
 			return
 		}
+	}
+
+	applicationGetOptions := &model.ApplicationGetOptions{
+		Page:    c.Params.Page,
+		PerPage: c.Params.PerPage,
+		Email:   email,
 	}
 
 	/*	if !c.App.SessionHasPermissionToChannel(c.Session, c.Params.ChannelId, model.PERMISSION_READ_CHANNEL) {
@@ -209,7 +216,7 @@ func getAllApplications(c *Context, w http.ResponseWriter, r *http.Request) {
 
 		list, err = c.App.GetAllApplicationsBefore(beforeApplication, c.Params.Page, c.Params.PerPage)
 	} else {
-		list, err = c.App.GetAllApplicationsPage(c.Params.Page, c.Params.PerPage)
+		list, err = c.App.GetAllApplicationsPage(applicationGetOptions)
 	}
 
 	if err != nil {

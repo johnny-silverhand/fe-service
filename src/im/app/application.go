@@ -301,8 +301,8 @@ func (a *App) GetAllApplicationsSince(time int64) (*model.ApplicationList, *mode
 	}
 }
 
-func (a *App) GetAllApplicationsPage(page int, perPage int) (*model.ApplicationList, *model.AppError) {
-	if result := <-a.Srv.Store.Application().GetAllApplications(page*perPage, perPage, true); result.Err != nil {
+func (a *App) GetAllApplicationsPage(options *model.ApplicationGetOptions) (*model.ApplicationList, *model.AppError) {
+	if result := <-a.Srv.Store.Application().GetApplications(options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		return result.Data.(*model.ApplicationList), nil

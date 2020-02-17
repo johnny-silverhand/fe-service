@@ -606,6 +606,8 @@ type ApplicationStore interface {
 	Overwrite(application *model.Application) StoreChannel
 	Delete(appId string, time int64, deleteByID string) StoreChannel
 
+	GetApplications(options *model.ApplicationGetOptions) StoreChannel
+
 	GetAllApplications(offset int, limit int, allowFromCache bool) StoreChannel
 	GetAllApplicationsSince(time int64, allowFromCache bool) StoreChannel
 	GetAllApplicationsBefore(appId string, numApplications int, offset int) StoreChannel

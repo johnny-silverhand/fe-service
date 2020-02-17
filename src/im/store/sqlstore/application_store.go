@@ -299,3 +299,51 @@ func (s SqlApplicationStore) getAllApplicationsAround(appId string, numApplicati
 		}
 	})
 }
+
+func (s SqlApplicationStore) GetApplications(options *model.ApplicationGetOptions) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		query := s.getQueryBuilder().
+			Select("A.*").
+			From("Applications A").
+			Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
+
+		if len(options.Email) > 0 {
+			query = query.Where("A.Email = ? ", options.Email)
+		}
+
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var applications []*model.Application
+		if _, err := s.GetReplica().Select(&applications, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlApplicationStore.GetAllApplications", "store.sql_application.get_root_applications.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		/*var applications []*model.Application
+		_, err := s.GetReplica().Select(&applications, "SELECT * FROM Applications WHERE "+
+			" DeleteAt = 0 "+
+			" ORDER BY CreateAt DESC LIMIT :Limit OFFSET :Offset", map[string]interface{}{"Offset": offset, "Limit": limit})
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlApplicationStore.GetAllApplications", "store.sql_application.get_root_applications.app_error", nil, err.Error(), http.StatusInternalServerError)
+		}*/
+
+		if err == nil {
+
+			list := model.NewApplicationList()
+
+			for _, p := range applications {
+				list.AddApplication(p)
+				list.AddOrder(p.Id)
+			}
+
+			list.MakeNonNil()
+
+			result.Data = list
+		}
+	})
+}

@@ -2,6 +2,7 @@ package api4
 
 import (
 	"encoding/json"
+	"fmt"
 	"im/model"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 func (api *API) InitPost() {
 	api.BaseRoutes.Posts.Handle("", api.ApiSessionRequired(createPost)).Methods("POST")
+	api.BaseRoutes.Posts.Handle("/mailing", api.ApiSessionRequired(createMailingPosts)).Methods("POST")
 	api.BaseRoutes.Post.Handle("", api.ApiSessionRequired(getPost)).Methods("GET")
 	api.BaseRoutes.Post.Handle("", api.ApiSessionRequired(deletePost)).Methods("DELETE")
 	api.BaseRoutes.Posts.Handle("/ephemeral", api.ApiSessionRequired(createEphemeralPost)).Methods("POST")
@@ -23,6 +25,61 @@ func (api *API) InitPost() {
 	api.BaseRoutes.Post.Handle("/patch", api.ApiSessionRequired(patchPost)).Methods("PUT")
 	api.BaseRoutes.Post.Handle("/pin", api.ApiSessionRequired(pinPost)).Methods("POST")
 	api.BaseRoutes.Post.Handle("/unpin", api.ApiSessionRequired(unpinPost)).Methods("POST")
+}
+
+func createMailingPosts(c *Context, w http.ResponseWriter, r *http.Request) {
+	post := model.PostFromJson(r.Body)
+	if post == nil {
+		c.SetInvalidParam("post")
+		return
+	}
+
+	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+		c.SetPermissionError(model.PERMISSION_MANAGE_SYSTEM)
+		return
+	}
+
+	post.UserId = c.App.Session.UserId
+	channels, err := c.App.GetAllChannelsForUser(post.UserId, false)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	c.App.Srv.Go(func() {
+		for _, rchannel := range *channels {
+			hasPermission := false
+			if c.App.SessionHasPermissionToChannel(c.App.Session, rchannel.Id, model.PERMISSION_CREATE_POST) {
+				hasPermission = true
+			} else if channel, err := c.App.GetChannel(rchannel.Id); err == nil {
+				// Temporary permission check method until advanced permissions, please do not copy
+				if channel.Type == model.CHANNEL_OPEN && c.App.SessionHasPermissionToTeam(c.App.Session, channel.TeamId, model.PERMISSION_CREATE_POST_PUBLIC) {
+					hasPermission = true
+				}
+			}
+			if !hasPermission {
+				//c.SetPermissionError(model.PERMISSION_CREATE_POST)
+				continue
+			}
+
+			if post.CreateAt != 0 && !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+				post.CreateAt = 0
+			}
+			post.ChannelId = rchannel.Id
+			rp, err := c.App.CreatePostAsUser(c.App.PostWithProxyRemovedFromImageURLs(post), c.App.Session.Id)
+			if err != nil {
+				c.Err = err
+				return
+			}
+
+			c.App.SetStatusOnline(c.App.Session.UserId, false)
+			c.App.UpdateLastActivityAtIfNeeded(c.App.Session)
+
+			fmt.Println(rp.ToJson())
+		}
+	})
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func createPost(c *Context, w http.ResponseWriter, r *http.Request) {
