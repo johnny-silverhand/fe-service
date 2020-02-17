@@ -388,6 +388,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	role := r.URL.Query().Get("role")
 	sort := r.URL.Query().Get("sort")
 	email := r.URL.Query().Get("email")
+	appId := r.URL.Query().Get("app_id")
 
 	if len(notInChannelId) > 0 && len(inTeamId) == 0 {
 		c.SetInvalidUrlParam("team_id")
@@ -413,6 +414,12 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	withoutTeamBool, _ := strconv.ParseBool(withoutTeam)
 	inactiveBool, _ := strconv.ParseBool(inactive)
 
+	if len(appId) == 0 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			appId = user.AppId
+		}
+	}
+
 	userGetOptions := &model.UserGetOptions{
 		InTeamId:       inTeamId,
 		InChannelId:    inChannelId,
@@ -424,7 +431,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		Sort:           sort,
 		Page:           c.Params.Page,
 		PerPage:        c.Params.PerPage,
-		AppId:          c.Params.AppId,
+		AppId:          appId,
 		Email:          email,
 	}
 

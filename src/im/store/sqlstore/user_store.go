@@ -398,7 +398,7 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 		}
 
 		if options.AppId != "" {
-			query = query.Where("u.AppId = '" + options.AppId + "'")
+			query = query.Where("u.AppId = ? ", options.AppId)
 		}
 
 		if len(options.Email) > 0 {
@@ -465,7 +465,11 @@ func (us SqlUserStore) GetProfiles(options *model.UserGetOptions) store.StoreCha
 		}
 
 		if options.AppId != "" {
-			query = query.Where("u.AppId = '" + options.AppId + "'")
+			query = query.Where("u.AppId = ? ", options.AppId)
+		}
+
+		if len(options.Email) > 0 {
+			query = query.Where("u.Email = ? ", options.Email)
 		}
 
 		queryString, args, err := query.ToSql()
