@@ -38,13 +38,14 @@ func (a *App) PrepareMessageListForClient(originalList *model.MessageArray) *mod
 		Messages: make([]*model.Post, len(originalList.Messages)),
 		Order:    originalList.Order, // Note that this uses the original Order array, so it isn't a deep copy
 	}
-
+	var channelId string
 	for id, originalPost := range originalList.Messages {
 		post := a.PreparePostForClient(originalPost, false)
 
 		list.Messages[id] = post
+		channelId = post.ChannelId
 	}
-
+	a.UpdateChannelLastViewedAt([]string{channelId}, a.Session.UserId)
 	return list
 }
 
