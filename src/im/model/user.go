@@ -363,7 +363,8 @@ func (u *User) PreUpdate() {
 func (u *User) SetDefaultNotifications() {
 	u.NotifyProps = make(map[string]string)
 	u.NotifyProps[EMAIL_NOTIFY_PROP] = "true"
-	u.NotifyProps[PUSH_NOTIFY_PROP] = USER_NOTIFY_MENTION
+	//u.NotifyProps[PUSH_NOTIFY_PROP] = USER_NOTIFY_MENTION
+	u.NotifyProps[PUSH_NOTIFY_PROP] = USER_NOTIFY_ALL
 	u.NotifyProps[DESKTOP_NOTIFY_PROP] = USER_NOTIFY_MENTION
 	u.NotifyProps[DESKTOP_SOUND_NOTIFY_PROP] = "true"
 	u.NotifyProps[MENTION_KEYS_NOTIFY_PROP] = u.Username + ",@" + u.Username
