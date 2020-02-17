@@ -148,7 +148,8 @@ func (a *App) getPushNotificationMessage(postMessage string, explicitMention, ch
 		if channelType == model.CHANNEL_DIRECT {
 			return strings.Trim(userLocale("api.post.send_notifications_and_forget.push_image_only"), " ")
 		}
-		return "@" + senderName + userLocale("api.post.send_notifications_and_forget.push_image_only")
+		//return "@" + senderName + userLocale("api.post.send_notifications_and_forget.push_image_only")
+		return userLocale("api.post.send_notifications_and_forget.push_image_only")
 	}
 
 	contentsConfig := *a.Config().EmailSettings.PushNotificationContents
@@ -157,7 +158,8 @@ func (a *App) getPushNotificationMessage(postMessage string, explicitMention, ch
 		if channelType == model.CHANNEL_DIRECT {
 			return model.ClearMentionTags(postMessage)
 		}
-		return "@" + senderName + ": " + model.ClearMentionTags(postMessage)
+		//return "@" + senderName + ": " + model.ClearMentionTags(postMessage)
+		return model.ClearMentionTags(postMessage)
 	}
 
 	if channelType == model.CHANNEL_DIRECT {
