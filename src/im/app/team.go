@@ -1,4 +1,3 @@
-
 package app
 
 import (
@@ -39,7 +38,9 @@ func (a *App) CreateTeamWithUser(team *model.Team, userId string) (*model.Team, 
 	if err != nil {
 		return nil, err
 	}
-	team.Email = user.Email
+	if len(team.Email) == 0 {
+		team.Email = user.Email
+	}
 
 	if !a.isTeamEmailAllowed(user, team) {
 		return nil, model.NewAppError("isTeamEmailAllowed", "api.team.is_team_creation_allowed.domain.app_error", nil, "", http.StatusBadRequest)
@@ -503,8 +504,6 @@ func (a *App) JoinUserToTeam(team *model.Team, user *model.User, userRequestorId
 		return nil
 	}
 
-
-
 	if uua := <-a.Srv.Store.User().UpdateUpdateAt(user.Id); uua.Err != nil {
 		return uua.Err
 	}
@@ -854,8 +853,6 @@ func (a *App) LeaveTeam(team *model.Team, user *model.User, requestorId string) 
 		return result.Err
 	}
 
-
-
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 		a.Srv.Go(func() {
@@ -1041,7 +1038,6 @@ func (a *App) PermanentDeleteTeam(team *model.Team) *model.AppError {
 	if result := <-a.Srv.Store.Team().RemoveAllMembersByTeam(team.Id); result.Err != nil {
 		return result.Err
 	}
-
 
 	if result := <-a.Srv.Store.Team().PermanentDelete(team.Id); result.Err != nil {
 		return result.Err
