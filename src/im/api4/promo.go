@@ -94,8 +94,6 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	if len(appId) == 0 {
 		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
 			appId = user.AppId
-		} else {
-			appId = c.App.Session.AppId
 		}
 	}
 
