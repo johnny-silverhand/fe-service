@@ -211,17 +211,36 @@ func (s *SqlPromoStore) Delete(promoId string, time int64, deleteByID string) st
 func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 
-		if options == nil {
+		query := s.getQueryBuilder().
+			Select("P.*").
+			From("Promos P").
+			Where("P.DeleteAt = ?", 0).
+			Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
+
+		/*if options == nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_promos.app_error", nil, "", http.StatusBadRequest)
 			return
-		}
+		}*/
 
-		if limit > 1000 {
+		/*if limit > 1000 {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_promos.app_error", nil, "", http.StatusBadRequest)
 			return
+		}*/
+
+		if len(options.AppId) > 0 {
+			query = query.Where("P.AppId = ? ", options.AppId)
 		}
 
-		var whereClause string
+		if len(options.Status) > 0 {
+			query = query.Where("P.Status = ? ", options.Status)
+		}
+
+		if options.Mobile {
+			millis := model.GetMillis()
+			query = query.Where("P.Active = ? AND P.BeginAt <= ? AND P.ExpireAt >= ? ", true, millis, millis)
+		}
+
+		/*var whereClause string
 		queryArgs := make(map[string]interface{})
 
 		if options.AppId != "" {
@@ -252,14 +271,26 @@ func (s SqlPromoStore) GetAllPromos(offset int, limit int, options *model.PromoG
 		queryArgs["Offset"] = offset
 		queryArgs["AppId"] = options.AppId
 		queryArgs["Status"] = options.Status
-		queryArgs["Active"] = options.Active
+		queryArgs["Active"] = options.Active*/
+
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetAllProfiles", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		var promos []*model.Promo
+		if _, err := s.GetReplica().Select(&promos, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		/*var promos []*model.Promo
 		_, err := s.GetReplica().Select(&promos, query, queryArgs)
 
 		if err != nil {
 			result.Err = model.NewAppError("SqlPromoStore.GetAllPromos", "store.sql_promo.get_root_promos.app_error", nil, err.Error(), http.StatusInternalServerError)
-		}
+		}*/
 
 		if err == nil {
 

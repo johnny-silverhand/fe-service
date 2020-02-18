@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -560,12 +559,23 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ruser, err := c.App.GetUser(c.App.Session.UserId); err != nil {
+	appId := c.Params.AppId
+	if len(appId) == 0 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			appId = user.AppId
+		} else {
+			appId = c.App.Session.AppId
+		}
+	}
+
+	props.AppId = appId
+
+	/*if ruser, err := c.App.GetUser(c.App.Session.UserId); err != nil {
 		c.RequireSessionUserId()
 		return
 	} else {
 		props.AppId = ruser.AppId
-	}
+	}*/
 
 	/*if props.AppId == "" {
 		c.SetInvalidParam("app_id")
@@ -622,15 +632,16 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	var list []*model.User
+
+	/*var list []*model.User
 	for _, profile := range profiles {
 		roles := strings.Fields(profile.Roles)
 		if utils.StringInSlice(props.Role, roles) {
 			list = append(list, profile)
 		}
-	}
+	}*/
 
-	w.Write([]byte(model.UserListToJson(list)))
+	w.Write([]byte(model.UserListToJson(profiles)))
 }
 
 func autocompleteUsers(c *Context, w http.ResponseWriter, r *http.Request) {

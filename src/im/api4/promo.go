@@ -1,6 +1,7 @@
 package api4
 
 import (
+	"fmt"
 	"im/model"
 	"im/utils"
 	"net/http"
@@ -102,7 +103,11 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
+		Page:       c.Params.Page,
+		PerPage:    c.Params.PerPage,
 	}
+
+	fmt.Println(c.Params.Page, c.Params.PerPage)
 
 	if active := r.URL.Query().Get("active"); active != "" {
 		promoGetOptions.Active = &c.Params.Active

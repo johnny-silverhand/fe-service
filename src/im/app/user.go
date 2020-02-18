@@ -1700,7 +1700,7 @@ func (a *App) SearchUsers(props *model.UserSearch, options *model.UserSearchOpti
 
 func (a *App) SearchUsersInApp(appId, term string, options *model.UserSearchOptions) ([]*model.User, *model.AppError) {
 	var result store.StoreResult
-
+	fmt.Println(options, appId)
 	esInterface := a.Elasticsearch
 
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableAutocomplete {
