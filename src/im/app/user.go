@@ -2273,9 +2273,9 @@ func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) 
 			return nil, err
 		}
 
-		/*if err := a.DeleteToken(token); err != nil {
-			l4g.Error(err.Error())
-		}*/
+		if err := a.DeleteToken(token); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	return user, nil

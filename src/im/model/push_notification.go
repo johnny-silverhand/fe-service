@@ -6,7 +6,6 @@ package model
 import (
 	"encoding/json"
 	"io"
-	"strings"
 )
 
 const (
@@ -55,14 +54,15 @@ func (me *PushNotification) ToJson() string {
 
 func (me *PushNotification) SetDeviceIdAndPlatform(deviceId string) {
 
-	index := strings.Index(deviceId, ":")
+	/*index := strings.Index(deviceId, ":")
 
 	if index > -1 {
 		me.Platform = deviceId[:index]
 		me.DeviceId = deviceId[index+1:]
 	} else {
 		me.DeviceId = deviceId
-	}
+	}*/
+	me.DeviceId = deviceId
 }
 
 func PushNotificationFromJson(data io.Reader) *PushNotification {
