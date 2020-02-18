@@ -90,8 +90,17 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	appId := c.Params.AppId
+	if len(appId) == 0 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			appId = user.AppId
+		} else {
+			appId = c.App.Session.AppId
+		}
+	}
+
 	promoGetOptions := &model.PromoGetOptions{
-		AppId:      c.Params.AppId,
+		AppId:      appId,
 		CategoryId: c.Params.CategoryId,
 		OfficeId:   c.Params.OfficeId,
 		Status:     c.Params.Status,
