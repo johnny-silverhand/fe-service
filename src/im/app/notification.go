@@ -19,6 +19,23 @@ const (
 	THREAD_ROOT = "root"
 )
 
+func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string) {
+	post := &model.Post{Message: msg}
+	post.PreSave()
+	notification := &postNotification{
+		post:    post,
+		channel: channel,
+		sender:  &model.User{},
+	}
+	a.sendCustomPushNotification(
+		notification,
+		user,
+		false,
+		false,
+		"",
+	)
+}
+
 func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *model.Channel, sender *model.User, parentPostList *model.PostList) ([]string, error) {
 	// Do not send notifications in archived channels
 	if channel.DeleteAt > 0 {

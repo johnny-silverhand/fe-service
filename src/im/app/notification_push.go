@@ -16,6 +16,7 @@ type NotificationType string
 
 const NOTIFICATION_TYPE_CLEAR NotificationType = "clear"
 const NOTIFICATION_TYPE_MESSAGE NotificationType = "message"
+const NOTIFICATION_TYPE_CUSTOM NotificationType = "custom"
 
 const PUSH_NOTIFICATION_HUB_WORKERS = 1000
 const PUSH_NOTIFICATIONS_HUB_BUFFER_PER_WORKER = 50
@@ -44,6 +45,71 @@ func (hub *PushNotificationsHub) GetGoChannelFromUserId(userId string) chan Push
 	h.Write([]byte(userId))
 	chanIdx := h.Sum32() % PUSH_NOTIFICATION_HUB_WORKERS
 	return hub.Channels[chanIdx]
+}
+
+func (a *App) sendPushNotificationCustomSync(post *model.Post, user *model.User, channel *model.Channel, channelName string, senderName string,
+	explicitMention, channelWideMention bool, replyToThreadType string) *model.AppError {
+	cfg := a.Config()
+
+	sessions, err := a.getMobileAppSessions(user.Id)
+	if err != nil {
+		return err
+	}
+
+	msg := model.PushNotification{}
+	if badge := <-a.Srv.Store.User().GetUnreadCount(user.Id); badge.Err != nil {
+		msg.Badge = 1
+		mlog.Error(fmt.Sprint("We could not get the unread message count for the user", user.Id, badge.Err), mlog.String("user_id", user.Id))
+	} else {
+		msg.Badge = int(badge.Data.(int64))
+	}
+
+	msg.Category = model.CATEGORY_CAN_REPLY
+	msg.Version = model.PUSH_MESSAGE_V2
+	msg.Type = ""
+	msg.TeamId = channel.TeamId
+	msg.ChannelId = channel.Id
+	msg.PostId = post.Id
+	msg.RootId = post.RootId
+	msg.SenderId = post.UserId
+
+	contentsConfig := *cfg.EmailSettings.PushNotificationContents
+	if contentsConfig != model.GENERIC_NO_CHANNEL_NOTIFICATION || channel.Type == model.CHANNEL_DIRECT {
+		msg.ChannelName = channelName
+	}
+
+	if ou, ok := post.Props["override_username"].(string); ok && *cfg.ServiceSettings.EnablePostUsernameOverride {
+		msg.OverrideUsername = ou
+	}
+
+	if oi, ok := post.Props["override_icon_url"].(string); ok && *cfg.ServiceSettings.EnablePostIconOverride {
+		msg.OverrideIconUrl = oi
+	}
+
+	if fw, ok := post.Props["from_webhook"].(string); ok {
+		msg.FromWebhook = fw
+	}
+
+	userLocale := utils.GetUserTranslations(user.Locale)
+	hasFiles := post.FileIds != nil && len(post.FileIds) > 0
+
+	msg.Message = a.getPushNotificationMessage(post.Message, explicitMention, channelWideMention, hasFiles, senderName, channelName, channel.Type, replyToThreadType, userLocale)
+
+	for _, session := range sessions {
+
+		if session.IsExpired() {
+			continue
+		}
+
+		tmpMessage := *model.PushNotificationFromJson(strings.NewReader(msg.ToJson()))
+		tmpMessage.SetDeviceIdAndPlatform(session.DeviceId)
+
+		mlog.Debug(fmt.Sprintf("Sending push notification to device %v for user %v with msg of '%v'", tmpMessage.DeviceId, user.Id, msg.Message), mlog.String("user_id", user.Id))
+
+		a.sendToPushProxy(tmpMessage, session)
+	}
+
+	return nil
 }
 
 func (a *App) sendPushNotificationSync(post *model.Post, user *model.User, channel *model.Channel, channelName string, senderName string,
@@ -109,6 +175,35 @@ func (a *App) sendPushNotificationSync(post *model.Post, user *model.User, chann
 	}
 
 	return nil
+}
+
+func (a *App) sendCustomPushNotification(notification *postNotification, user *model.User, explicitMention, channelWideMention bool, replyToThreadType string) {
+	cfg := a.Config()
+	channel := notification.channel
+	post := notification.post
+
+	var nameFormat string
+	if result := <-a.Srv.Store.Preference().Get(user.Id, model.PREFERENCE_CATEGORY_DISPLAY_SETTINGS, model.PREFERENCE_NAME_NAME_FORMAT); result.Err != nil {
+		nameFormat = *a.Config().TeamSettings.TeammateNameDisplay
+	} else {
+		nameFormat = result.Data.(model.Preference).Value
+	}
+
+	channelName := notification.GetChannelName(nameFormat, user.Id)
+	senderName := notification.GetSenderName(nameFormat, *cfg.ServiceSettings.EnablePostUsernameOverride)
+
+	c := a.Srv.PushNotificationsHub.GetGoChannelFromUserId(user.Id)
+	c <- PushNotification{
+		notificationType:   NOTIFICATION_TYPE_MESSAGE,
+		post:               post,
+		user:               user,
+		channel:            channel,
+		senderName:         senderName,
+		channelName:        channelName,
+		explicitMention:    explicitMention,
+		channelWideMention: channelWideMention,
+		replyToThreadType:  replyToThreadType,
+	}
 }
 
 func (a *App) sendPushNotification(notification *postNotification, user *model.User, explicitMention, channelWideMention bool, replyToThreadType string) {
@@ -240,6 +335,17 @@ func (a *App) pushNotificationWorker(notifications chan PushNotification) {
 			a.ClearPushNotificationSync(notification.currentSessionId, notification.userId, notification.channelId)
 		case NOTIFICATION_TYPE_MESSAGE:
 			a.sendPushNotificationSync(
+				notification.post,
+				notification.user,
+				notification.channel,
+				notification.channelName,
+				notification.senderName,
+				notification.explicitMention,
+				notification.channelWideMention,
+				notification.replyToThreadType,
+			)
+		case NOTIFICATION_TYPE_CUSTOM:
+			a.sendPushNotificationCustomSync(
 				notification.post,
 				notification.user,
 				notification.channel,

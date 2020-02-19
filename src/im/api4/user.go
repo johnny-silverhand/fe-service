@@ -1595,11 +1595,16 @@ func enableUserAccessToken(c *Context, w http.ResponseWriter, r *http.Request) {
 func createUserToken(c *Context, w http.ResponseWriter, r *http.Request) {
 	user := model.UserFromJson(r.Body)
 
-	pwd := "1234" //utils.HashDigit(4)
+	//pwd := "1234" //utils.HashDigit(4)
+	pwd := utils.HashDigit(4)
 	user.Roles = model.CHANNEL_USER_ROLE_ID
 
 	token, err := c.App.CreateUserWithToken(user, pwd)
 	if err != nil {
+		c.Err = err
+		return
+	}
+	if err := c.App.SendVerifyFromStageToken(token.Token); err != nil {
 		c.Err = err
 		return
 	}
@@ -1656,8 +1661,14 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	pwd := "1234"                                   //utils.HashDigit(4)
+	//pwd := "1234"                                   //utils.HashDigit(4)
+	pwd := utils.HashDigit(4)
 	token, err := c.App.CreateStageToken(user, pwd) /*pwd*/
+
+	if err := c.App.SendVerifyFromStageToken(token.Token); err != nil {
+		c.Err = err
+		return
+	}
 
 	ReturnStatusStageTokenOK(w, token.Token)
 }

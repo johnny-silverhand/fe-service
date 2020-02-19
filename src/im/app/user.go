@@ -2116,7 +2116,8 @@ func (a *App) SendVerifyFromStagePhoneNewToken(userSuppliedTokenString string) *
 		return err
 	}
 
-	newPwd := "1234" //utils.HashDigit(4)
+	//newPwd := "1234" //utils.HashDigit(4)
+	newPwd := utils.HashDigit(4)
 
 	if err := a.VerifyPasswordPhoneNewSend(token, user, newPwd); err != nil {
 		return err
@@ -2253,7 +2254,6 @@ func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) 
 	var token *model.Token
 	var err *model.AppError
 	var user *model.User
-
 	if token, err = a.GetStageToken(userSuppliedTokenString); err != nil {
 		return nil, err
 	} else {
@@ -2263,6 +2263,10 @@ func (a *App) VerifyFromStageToken(userSuppliedTokenString string, code string) 
 
 		if user, err = a.GetUser(token.UserId); err != nil {
 			return nil, err
+		}
+
+		if token.Extra != code {
+			return nil, model.NewAppError("resetPassword", "api.user.verified.error.app_error", nil, "", http.StatusUnauthorized)
 		}
 
 		if err := a.UpdatePassword(user, token.Extra); err != nil {
@@ -2297,7 +2301,8 @@ func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.Ap
 		return err
 	}
 
-	newPwd := "1234" //utils.HashDigit(4)
+	newPwd := "1234"
+	//newPwd := utils.HashDigit(4)
 
 	if err := a.VerifyPasswordSend(token, user, newPwd); err != nil {
 		return err

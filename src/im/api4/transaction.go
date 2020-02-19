@@ -1,23 +1,96 @@
 package api4
 
 import (
+	"fmt"
 	"im/model"
 	"net/http"
 	"strconv"
 )
 
 func (api *API) InitTransaction() {
-	//api.BaseRoutes.Transactions.Handle("/mailing", api.ApiSessionRequired(createMailingTransactions)).Methods("POST")
+	api.BaseRoutes.Transactions.Handle("/mailing", api.ApiSessionRequired(createMailingTransactions)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/discard", api.ApiSessionRequired(discardTransactionUser)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/charge", api.ApiSessionRequired(chargeTransactionUser)).Methods("POST")
 
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(getAllTransactions)).Methods("GET")
 	api.BaseRoutes.Transactions.Handle("", api.ApiHandler(createTransaction)).Methods("POST")
 
-	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(getTransaction)).Methods("GET")
+	api.BaseRoutes.Transactions.Handle("/{transaction_id:[A-Za-z0-9_-]+}", api.ApiHandler(getTransaction)).Methods("GET")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(updateTransaction)).Methods("PUT")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(deleteTransaction)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/transactions", api.ApiSessionRequired(getUserTransactions)).Methods("GET")
+}
+
+func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
+	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_CREATE_POST_PUBLIC) {
+		c.SetPermissionError(model.PERMISSION_CREATE_POST_PUBLIC)
+		return
+	}
+	transaction := model.TransactionFromJson(r.Body)
+	if transaction == nil {
+		c.SetInvalidParam("transaction")
+		return
+	}
+	if len(transaction.Description) == 0 {
+		c.SetInvalidParam("description")
+		return
+	}
+	appId := r.URL.Query().Get("app_id")
+	if len(appId) == 0 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			appId = user.AppId
+		} else {
+			appId = c.App.Session.AppId
+		}
+	}
+
+	if len(appId) == 0 {
+		c.SetInvalidParam("app_id")
+		return
+	}
+	c.App.Srv.Go(func() {
+		if users, err := c.App.GetUsers(&model.UserGetOptions{
+			AppId:   appId,
+			Page:    0,
+			PerPage: 100000,
+			Role:    model.CHANNEL_USER_ROLE_ID,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			for _, user := range users {
+				var ts model.Transaction
+				ts.Value = transaction.Value
+				ts.Description = "Начисление администратором"
+				ts.UserId = user.Id
+
+				if len(ts.UserId) != 26 {
+					continue
+				}
+
+				if _, err := c.App.AccrualTransaction(&ts); err != nil {
+					continue
+				}
+
+				var channel *model.Channel
+				if channel, _ = c.App.FindOpennedChannel(user.Id); channel != nil {
+					c.App.AddChannelMemberIfNeeded(user.Id, channel)
+				} else {
+					if channel, _ = c.App.CreateUnresolvedChannel(user.Id); channel != nil {
+						<-c.App.Srv.Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis())
+					}
+				}
+
+				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
+					c.App.SendCustomNotifications(user, channel,
+						"Вам начислены дополнительные баллы! Количество начисленных баллов: "+
+							fmt.Sprintf("%.0f", ts.Value))
+				}
+			}
+		}
+	})
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
