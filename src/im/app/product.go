@@ -104,6 +104,19 @@ func (a *App) GetProducts(offset, limit int, options *model.ProductGetOptions) (
 }
 
 func (a *App) CreateProduct(product *model.Product) (*model.Product, *model.AppError) {
+	appResult := <-a.Srv.Store.Application().Get(product.AppId)
+	if appResult.Err != nil {
+		return nil, appResult.Err
+	}
+	application := appResult.Data.(*model.Application)
+
+	if application.HasModeration {
+		product.Active = false
+		product.Status = model.PRODUCT_STATUS_DRAFT
+	} else {
+		product.Active = false
+		product.Status = model.PRODUCT_STATUS_ACCEPTED
+	}
 
 	result := <-a.Srv.Store.Product().Save(product)
 	if result.Err != nil {
@@ -279,10 +292,10 @@ func (a *App) GetFileInfoForMetadata(metadataId string) ([]*model.FileInfo, *mod
 	return result.Data.([]*model.FileInfo), nil
 }
 
-func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Product, *model.AppError) {
+func (a *App) UpdateProduct(id string, patch *model.ProductPatch, safeUpdate bool) (*model.Product, *model.AppError) {
 	//product.SanitizeProps()
 
-	result := <-a.Srv.Store.Product().Get(product.Id)
+	result := <-a.Srv.Store.Product().Get(id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -290,58 +303,32 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 	oldProduct := result.Data.(*model.Product)
 
 	if oldProduct == nil {
-		err := model.NewAppError("UpdateProduct", "api.product.update_product.find.app_error", nil, "id="+product.Id, http.StatusBadRequest)
+		err := model.NewAppError("UpdateProduct", "api.product.update_product.find.app_error", nil, "id="+id, http.StatusBadRequest)
 		return nil, err
 	}
 
 	if oldProduct.DeleteAt != 0 {
-		err := model.NewAppError("UpdateProduct", "api.product.update_product.permissions_details.app_error", map[string]interface{}{"ProductId": product.Id}, "", http.StatusBadRequest)
+		err := model.NewAppError("UpdateProduct", "api.product.update_product.permissions_details.app_error", map[string]interface{}{"ProductId": id}, "", http.StatusBadRequest)
 		return nil, err
 	}
 
+	appResult := <-a.Srv.Store.Application().Get(oldProduct.AppId)
+	if appResult.Err != nil {
+		return nil, appResult.Err
+	}
+	application := appResult.Data.(*model.Application)
+
 	newProduct := &model.Product{}
 	*newProduct = *oldProduct
+	newProduct.Patch(patch)
 
-	if newProduct.Name != product.Name {
-		newProduct.Name = product.Name
+	if application.HasModeration {
+		newProduct.Active = false
+		newProduct.Status = model.PRODUCT_STATUS_DRAFT
+	} else {
+		newProduct.Active = false
+		newProduct.Status = model.PRODUCT_STATUS_ACCEPTED
 	}
-
-	newProduct.Price = product.Price
-
-	newProduct.DiscountLimit = product.DiscountLimit
-	newProduct.Cashback = product.Cashback
-	newProduct.Preview = product.Preview
-	newProduct.Description = product.Description
-	newProduct.Measure = product.Measure
-	newProduct.AppId = product.AppId
-	newProduct.Extra = product.Extra
-	newProduct.PrivateRule = product.PrivateRule
-	newProduct.Type = product.Type
-
-	newProduct.Status = model.PRODUCT_STATUS_DRAFT
-
-	//if !safeUpdate {
-	newProduct.Media = product.Media
-	newProduct.Offices = product.Offices
-	newProduct.ExtraProductList = product.ExtraProductList
-
-	/*oldProduct = a.PrepareProductForClient(oldProduct, false)
-	oldmedia := oldProduct.Media
-	newmedia := newProduct.Media*/
-
-	/*if len(oldProduct.Media) > 0 {
-		if err := a.deleteMediaFromProduct(oldProduct); err != nil {
-			mlog.Error("Encountered error deleting media from product", mlog.String("product_id", oldProduct.Id), mlog.Any("file_ids", oldProduct.FileIds), mlog.Err(result.Err))
-		}
-	}*/
-
-	/*if len(oldProduct.Offices) > 0 {
-		if err := a.deleteOfficeFromProduct(oldProduct); err != nil {
-			mlog.Error("Encountered error deleting offices from product", mlog.String("product_id", oldProduct.Id), mlog.Any("offices", oldProduct.Offices), mlog.Err(result.Err))
-		}
-	}*/
-
-	//}
 
 	a.deleteMediaFromProduct(oldProduct, newProduct)
 	a.deleteOfficeFromProduct(oldProduct)
@@ -381,7 +368,7 @@ func (a *App) UpdateProduct(product *model.Product, safeUpdate bool) (*model.Pro
 				return
 			}*/
 			if err := esInterface.IndexProduct(rproduct, rproduct.AppId); err != nil {
-				mlog.Error("Encountered error indexing product", mlog.String("product_id", product.Id), mlog.Err(err))
+				mlog.Error("Encountered error indexing product", mlog.String("product_id", id), mlog.Err(err))
 			}
 		})
 	}

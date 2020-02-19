@@ -764,9 +764,10 @@ func UpgradeDatabaseToVersion522(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion523(sqlStore SqlStore) {
-	/*if shouldPerformUpgrade(sqlStore, VERSION_5_22_0, VERSION_5_23_0) {
+	if shouldPerformUpgrade(sqlStore, VERSION_5_22_0, VERSION_5_23_0) {
+		sqlStore.CreateColumnIfNotExists("Applications", "HasModeration", "tinyint(1)", "boolean", "1")
 		saveSchemaVersion(sqlStore, VERSION_5_23_0)
-	}*/
+	}
 }
 
 func UpgradeDatabaseToVersion524(sqlStore SqlStore) {

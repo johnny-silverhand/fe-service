@@ -48,11 +48,11 @@ func updateProductsStatuses(c *Context, w http.ResponseWriter, r *http.Request) 
 		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
 	}*/
 
-	//c.App.Srv.Go(func() {
-	for _, productId := range status.ProductIds {
-		c.App.UpdateProductStatus(productId, status)
-	}
-	//})
+	c.App.Srv.Go(func() {
+		for _, productId := range status.ProductIds {
+			c.App.UpdateProductStatus(productId, status)
+		}
+	})
 
 	ReturnStatusOK(w)
 }
@@ -274,33 +274,14 @@ func updateProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	product := model.ProductFromJson(r.Body)
+	patch := model.ProductPatchFromJson(r.Body)
 
-	if product == nil {
+	if patch == nil {
 		c.SetInvalidParam("product")
 		return
 	}
 
-	// The post being updated in the payload must be the same one as indicated in the URL.
-	if product.Id != c.Params.ProductId {
-		c.SetInvalidParam("id")
-		return
-	}
-
-	/*	if !c.App.SessionHasPermissionToChannelByPost(c.App.Session, c.Params.PostId, model.PERMISSION_EDIT_POST) {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
-
-	/*originalProduct, err := c.App.GetSingleProduct(c.Params.ProductId)
-	if err != nil {
-		c.SetPermissionError(model.PERMISSION_EDIT_POST)
-		return
-	}*/
-
-	product.Id = c.Params.ProductId
-
-	rproduct, err := c.App.UpdateProduct(product, false)
+	rproduct, err := c.App.UpdateProduct(c.Params.ProductId, patch, false)
 	if err != nil {
 		c.Err = err
 		return

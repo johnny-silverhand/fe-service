@@ -43,11 +43,28 @@ type Product struct {
 }
 
 type ProductPatch struct {
-	Name        *string      `json:"name"`
-	Preview     *string      `json:"preview"`
-	Description *string      `json:"description"`
-	CategoryId  *string      `json:"category_id"`
-	FileIds     *StringArray `json:"file_ids"`
+	Name             *string      `json:"name"`
+	Preview          *string      `json:"preview"`
+	Description      *string      `json:"description"`
+	CategoryId       *string      `json:"category_id"`
+	FileIds          *StringArray `json:"file_ids"`
+	Price            *float64     `json:"price,string"`
+	DiscountLimit    *float64     `json:"discount_limit,string"`
+	Cashback         *float64     `json:"cashback,string"`
+	Measure          *string      `json:"measure"`
+	AppId            *string      `json:"app_id"`
+	Extra            *bool        `json:"extra"`
+	PrivateRule      *bool        `json:"private_rule"`
+	Type             *string      `json:"type"`
+	Media            *[]*FileInfo `json:"media"`
+	Offices          *[]*Office   `json:"offices"`
+	ExtraProductList *[]*Product  `json:"extra_product_list"`
+}
+
+func ProductPatchFromJson(data io.Reader) *ProductPatch {
+	var patch *ProductPatch
+	json.NewDecoder(data).Decode(&patch)
+	return patch
 }
 
 type ProductStatus struct {
@@ -104,7 +121,39 @@ func (p *Product) Patch(patch *ProductPatch) {
 	if patch.FileIds != nil {
 		p.FileIds = *patch.FileIds
 	}
-
+	if patch.Price != nil {
+		p.Price = *patch.Price
+	}
+	if patch.DiscountLimit != nil {
+		p.DiscountLimit = *patch.DiscountLimit
+	}
+	if patch.Cashback != nil {
+		p.Cashback = *patch.Cashback
+	}
+	if patch.Measure != nil {
+		p.Measure = *patch.Measure
+	}
+	if patch.AppId != nil {
+		p.AppId = *patch.AppId
+	}
+	if patch.Extra != nil {
+		p.Extra = *patch.Extra
+	}
+	if patch.PrivateRule != nil {
+		p.PrivateRule = *patch.PrivateRule
+	}
+	if patch.Type != nil {
+		p.Type = *patch.Type
+	}
+	if patch.Media != nil {
+		p.Media = *patch.Media
+	}
+	if patch.Offices != nil {
+		p.Offices = *patch.Offices
+	}
+	if patch.ExtraProductList != nil {
+		p.ExtraProductList = *patch.ExtraProductList
+	}
 }
 
 func (product *Product) ToJson() string {
