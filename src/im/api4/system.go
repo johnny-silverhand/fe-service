@@ -21,6 +21,7 @@ func (api *API) InitSystem() {
 
 	api.BaseRoutes.System.Handle("/timezones", api.ApiSessionRequired(getSupportedTimezones)).Methods("GET")
 	api.BaseRoutes.System.Handle("/masterkey", api.ApiSessionRequired(getMasterKey)).Methods("GET")
+	api.BaseRoutes.System.Handle("/masterkey", api.ApiSessionRequired(resetMasterKey)).Methods("DELETE")
 
 	api.BaseRoutes.ApiRoot.Handle("/audits", api.ApiSessionRequired(getAudits)).Methods("GET")
 	api.BaseRoutes.ApiRoot.Handle("/email/test", api.ApiSessionRequired(testEmail)).Methods("POST")
@@ -32,6 +33,20 @@ func (api *API) InitSystem() {
 	api.BaseRoutes.ApiRoot.Handle("/logs", api.ApiHandler(postLog)).Methods("POST")
 
 	api.BaseRoutes.ApiRoot.Handle("/redirect_location", api.ApiSessionRequiredTrustRequester(getRedirectLocation)).Methods("GET")
+}
+
+func resetMasterKey(c *Context, w http.ResponseWriter, r *http.Request) {
+	if !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+		c.SetPermissionError(model.PERMISSION_MANAGE_SYSTEM)
+		return
+	}
+
+	rdata := map[string]string{}
+	c.App.ResetMasterKey()
+	key := c.App.MasterKey()
+	rdata["master_key"] = key
+
+	w.Write([]byte(model.MapToJson(rdata)))
 }
 
 func getMasterKey(c *Context, w http.ResponseWriter, r *http.Request) {

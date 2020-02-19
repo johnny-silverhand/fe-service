@@ -109,6 +109,21 @@ func (a *App) SetMasterKey(id string) {
 	a.Srv.masterKey = id
 }
 
+func (a *App) ResetMasterKey() {
+	if result := <-a.Srv.Store.System().Get(); result.Err == nil {
+		props := result.Data.(model.StringMap)
+
+		id := props[model.SYSTEM_MASTER_KEY]
+		if len(id) != 0 {
+			id = model.NewId() + model.NewId()
+			systemId := &model.System{Name: model.SYSTEM_MASTER_KEY, Value: id}
+			<-a.Srv.Store.System().Update(systemId)
+		}
+
+		a.Srv.masterKey = id
+	}
+}
+
 func (a *App) EnsureMasterKey() {
 	if a.Srv.masterKey != "" {
 		return
