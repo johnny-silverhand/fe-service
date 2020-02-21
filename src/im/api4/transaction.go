@@ -95,12 +95,14 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
+	props := model.MapFromJson(r.Body)
+	code := props["code"]
+	token := props["token"]
 
-	/*user, err := c.App.GetUser(c.App.Session.UserId)
-	if err != nil {
-		c.Err = err
+	if len(code) == 0 || len(token) == 0 {
+		c.SetInvalidParam("code or token")
 		return
-	}*/
+	}
 
 	if transaction == nil {
 		c.SetInvalidParam("transaction")
@@ -112,9 +114,31 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	user, err := c.App.GetUser(transaction.UserId)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	if user.Balance < transaction.Value {
+		c.SetInvalidParam("value")
+		return
+	}
+
+	ruser, err := c.App.VerifyFromStageToken(token, code)
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	if ruser.Id != user.Id {
+		c.SetInvalidParam("user_id")
+		return
+	}
+
 	transaction.Description = "Списание вручную"
 
-	_, err := c.App.DeductionTransaction(transaction)
+	_, err = c.App.DeductionTransaction(transaction)
 	if err != nil {
 		c.Err = err
 		return

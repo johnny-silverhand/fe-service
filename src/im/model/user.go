@@ -90,6 +90,7 @@ type User struct {
 	AppId      string  `json:"app_id"`
 	InvitedBy  string  `json:"invited_by"`
 	BirthdayAt int64   `json:"birthday_at"`
+	BlockedAt  int64   `json:"blocked_at"`
 }
 
 type UserPatch struct {
@@ -106,6 +107,7 @@ type UserPatch struct {
 	Timezone    StringMap `json:"timezone"`
 	InvitedBy   *string   `json:"invited_by"`
 	BirthdayAt  *int64    `json:"birthday_at"`
+	BlockedAt   *int64    `json:"blocked_at"`
 }
 
 type UserAuth struct {
@@ -436,6 +438,9 @@ func (u *User) Patch(patch *UserPatch) {
 
 	if patch.BirthdayAt != nil {
 		u.BirthdayAt = *patch.BirthdayAt
+	}
+	if patch.BlockedAt != nil {
+		u.BlockedAt = *patch.BlockedAt
 	}
 }
 

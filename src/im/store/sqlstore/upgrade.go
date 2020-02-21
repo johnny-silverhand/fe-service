@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	VERSION_5_25_0           = "5.25.0"
 	VERSION_5_24_0           = "5.24.0"
 	VERSION_5_23_0           = "5.23.0"
 	VERSION_5_22_0           = "5.22.0"
@@ -128,6 +129,7 @@ func UpgradeDatabase(sqlStore SqlStore) {
 	UpgradeDatabaseToVersion522(sqlStore)
 	UpgradeDatabaseToVersion523(sqlStore)
 	UpgradeDatabaseToVersion524(sqlStore)
+	UpgradeDatabaseToVersion525(sqlStore)
 
 	// If the SchemaVersion is empty this this is the first time it has ran
 	// so lets set it to the current version.
@@ -771,7 +773,15 @@ func UpgradeDatabaseToVersion523(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion524(sqlStore SqlStore) {
-	/*if shouldPerformUpgrade(sqlStore, VERSION_5_23_0, VERSION_5_24_0) {
+	if shouldPerformUpgrade(sqlStore, VERSION_5_23_0, VERSION_5_24_0) {
+		sqlStore.CreateColumnIfNotExists("Applications", "BlockedAt", "bigint(20)", "bigint(20)", "0")
+		sqlStore.CreateColumnIfNotExists("Users", "BlockedAt", "bigint(20)", "bigint(20)", "0")
 		saveSchemaVersion(sqlStore, VERSION_5_24_0)
+	}
+}
+
+func UpgradeDatabaseToVersion525(sqlStore SqlStore) {
+	/*if shouldPerformUpgrade(sqlStore, VERSION_5_24_0, VERSION_5_25_0) {
+		saveSchemaVersion(sqlStore, VERSION_5_25_0)
 	}*/
 }

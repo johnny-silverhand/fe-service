@@ -296,6 +296,7 @@ func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	rteam, err := c.App.CreateTeamWithUser(team, c.App.Session.UserId)
 	if err != nil {
+		c.App.DeleteApplication(rapplication.Id, c.App.Session.UserId)
 		c.Err = err
 		return
 	}
