@@ -35,8 +35,12 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 		c.SetInvalidParam("description")
 		return
 	}
-	appId := r.URL.Query().Get("app_id")
-	if len(appId) == 0 {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+	appId := c.Params.AppId
+	/*if len(appId) == 0 {
 		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
 			appId = user.AppId
 		} else {
@@ -47,7 +51,7 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 	if len(appId) == 0 {
 		c.SetInvalidParam("app_id")
 		return
-	}
+	}*/
 	c.App.Srv.Go(func() {
 		if users, err := c.App.GetUsers(&model.UserGetOptions{
 			AppId:   appId,

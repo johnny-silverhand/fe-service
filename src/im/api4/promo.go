@@ -1,7 +1,6 @@
 package api4
 
 import (
-	"fmt"
 	"im/model"
 	"im/utils"
 	"net/http"
@@ -87,6 +86,7 @@ func updatePromoStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	//c.RequireUserId()
+	//c.RequireAppId()
 	if c.Err != nil {
 		return
 	}
@@ -106,8 +106,6 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 		Page:       c.Params.Page,
 		PerPage:    c.Params.PerPage,
 	}
-
-	fmt.Println(c.Params.Page, c.Params.PerPage)
 
 	if active := r.URL.Query().Get("active"); active != "" {
 		promoGetOptions.Active = &c.Params.Active

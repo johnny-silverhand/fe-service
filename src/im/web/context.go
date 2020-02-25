@@ -339,6 +339,14 @@ func (c *Context) RequireAppId() *Context {
 		c.Params.AppId = c.App.Session.AppId
 	}
 
+	if len(c.Params.AppId) == 0 && len(c.App.Session.UserId) == 26 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			c.Params.AppId = user.AppId
+		} else {
+			c.Params.AppId = c.App.Session.AppId
+		}
+	}
+
 	if len(c.Params.AppId) != 26 {
 		c.SetInvalidUrlParam("app_id")
 	}

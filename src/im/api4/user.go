@@ -387,7 +387,7 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 	role := r.URL.Query().Get("role")
 	sort := r.URL.Query().Get("sort")
 	email := r.URL.Query().Get("email")
-	appId := r.URL.Query().Get("app_id")
+	//appId := r.URL.Query().Get("app_id")
 
 	if len(notInChannelId) > 0 && len(inTeamId) == 0 {
 		c.SetInvalidUrlParam("team_id")
@@ -412,12 +412,16 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	withoutTeamBool, _ := strconv.ParseBool(withoutTeam)
 	inactiveBool, _ := strconv.ParseBool(inactive)
-
-	if len(appId) == 0 {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+	appId := c.Params.AppId
+	/*if len(appId) == 0 {
 		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
 			appId = user.AppId
 		}
-	}
+	}*/
 
 	userGetOptions := &model.UserGetOptions{
 		InTeamId:       inTeamId,
@@ -558,15 +562,19 @@ func searchUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("term")
 		return
 	}
-
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
 	appId := c.Params.AppId
+	/*appId := c.Params.AppId
 	if len(appId) == 0 {
 		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
 			appId = user.AppId
 		} else {
 			appId = c.App.Session.AppId
 		}
-	}
+	}*/
 
 	props.AppId = appId
 
@@ -1651,6 +1659,14 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	phone := props["phone"]
 	appId := props["app_id"]
 
+	if len(appId) == 0 {
+		c.RequireAppId()
+		if c.Err != nil {
+			return
+		}
+		appId = c.Params.AppId
+	}
+
 	reg, _ := regexp.Compile("[^0-9]+")
 	phone = reg.ReplaceAllString(phone, "")
 	//user, err := c.App.GetUserByPhone(phone)
@@ -1883,10 +1899,10 @@ func attachApplicationId(c *Context, w http.ResponseWriter, r *http.Request) {
 	/*props := model.MapFromJson(r.Body)*/
 
 	appId := c.Params.AppId
-	if len(appId) == 0 {
+	/*if len(appId) == 0 {
 		c.SetInvalidParam("app_id")
 		return
-	}
+	}*/
 
 	// A special case where we logout of all other sessions with the same office id
 	/*if err := c.App.RevokeSessionsForDeviceId(c.App.Session.UserId, officeId, c.App.Session.Id); err != nil {
