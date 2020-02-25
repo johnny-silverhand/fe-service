@@ -26,7 +26,8 @@ func getUpdatedBasket(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	w.Write([]byte(result.ToJson()))
+	list := c.App.PrepareProductListForClient(result)
+	w.Write([]byte(list.ToJson()))
 }
 
 func getExtraBasket(c *Context, w http.ResponseWriter, r *http.Request) {

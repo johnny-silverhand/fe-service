@@ -189,6 +189,14 @@ func (a *App) GetUpdatedBasket(productIds []string) (*model.ProductList, *model.
 	if result.Err != nil {
 		return nil, result.Err
 	}
+	rproducts := result.Data.([]*model.Product)
 
-	return result.Data.(*model.ProductList), nil
+	list := model.NewProductList()
+	for _, p := range rproducts {
+		list.AddProduct(p)
+		list.AddOrder(p.Id)
+	}
+	list.MakeNonNil()
+
+	return list, nil
 }
