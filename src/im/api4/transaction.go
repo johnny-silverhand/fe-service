@@ -29,20 +29,25 @@ func validateTransactionForOrderUser(c *Context, w http.ResponseWriter, r *http.
 	if c.Err != nil {
 		return
 	}
-	appId := c.Params.AppId
-	order := model.OrderFromJson(r.Body)
-	if order == nil {
-		c.SetInvalidParam("order")
+	props := model.MapFromJson(r.Body)
+	price := props["price"]
+	if len(price) == 0 {
+		c.SetInvalidParam("price")
 		return
 	}
+	rprice, _ := strconv.Atoi(price)
+	appId := c.Params.AppId
 	if app, err := c.App.GetApplication(appId); err != nil {
 		c.Err = err
+		return
 	} else {
-		max := int64(order.Price) * int64(app.MaxDiscount/100)
+
+		value := float64(rprice) * (float64(app.MaxDiscount) / 100)
+
 		b, _ := json.Marshal(struct {
 			DiscountValue int64 `json:"discount_value"`
 		}{
-			DiscountValue: max,
+			DiscountValue: int64(value),
 		})
 		w.Write([]byte(string(b)))
 	}
