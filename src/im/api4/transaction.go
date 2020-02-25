@@ -1,6 +1,7 @@
 package api4
 
 import (
+	"encoding/json"
 	"fmt"
 	"im/model"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 )
 
 func (api *API) InitTransaction() {
+	api.BaseRoutes.Transactions.Handle("/validate", api.ApiSessionRequired(validateTransactionForOrderUser)).Methods("POST")
+
 	api.BaseRoutes.Transactions.Handle("/mailing", api.ApiSessionRequired(createMailingTransactions)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/discard", api.ApiSessionRequired(discardTransactionUser)).Methods("POST")
 	api.BaseRoutes.Transactions.Handle("/charge", api.ApiSessionRequired(chargeTransactionUser)).Methods("POST")
@@ -19,6 +22,30 @@ func (api *API) InitTransaction() {
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(updateTransaction)).Methods("PUT")
 	api.BaseRoutes.Transaction.Handle("", api.ApiHandler(deleteTransaction)).Methods("DELETE")
 	api.BaseRoutes.User.Handle("/transactions", api.ApiSessionRequired(getUserTransactions)).Methods("GET")
+}
+
+func validateTransactionForOrderUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+	appId := c.Params.AppId
+	order := model.OrderFromJson(r.Body)
+	if order == nil {
+		c.SetInvalidParam("order")
+		return
+	}
+	if app, err := c.App.GetApplication(appId); err != nil {
+		c.Err = err
+	} else {
+		max := int64(order.Price) * int64(app.MaxDiscount/100)
+		b, _ := json.Marshal(struct {
+			DiscountValue int64 `json:"discount_value"`
+		}{
+			DiscountValue: max,
+		})
+		w.Write([]byte(string(b)))
+	}
 }
 
 func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
