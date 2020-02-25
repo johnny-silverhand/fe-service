@@ -23,6 +23,9 @@ type Transaction struct {
 	DeleteAt    int64   `json:"delete_at"`
 
 	Type string `json:"type"`
+
+	Code  string `json:"code,omitempty" db:"-"`
+	Token string `json:"token,omitempty" db:"-"`
 }
 
 type TransactionPatch struct {

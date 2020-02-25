@@ -129,11 +129,8 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	transaction := model.TransactionFromJson(r.Body)
-	props := model.MapFromJson(r.Body)
-	code := props["code"]
-	token := props["token"]
 
-	if len(code) == 0 || len(token) == 0 {
+	if len(transaction.Code) == 0 || len(transaction.Token) == 0 {
 		c.SetInvalidParam("code or token")
 		return
 	}
@@ -159,7 +156,7 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ruser, err := c.App.VerifyFromStageToken(token, code)
+	ruser, err := c.App.VerifyFromStageToken(transaction.Token, transaction.Code)
 	if err != nil {
 		c.Err = err
 		return
