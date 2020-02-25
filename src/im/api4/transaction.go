@@ -61,10 +61,10 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 		c.SetInvalidParam("transaction")
 		return
 	}
-	if len(transaction.Description) == 0 {
+	/*if len(transaction.Description) == 0 {
 		c.SetInvalidParam("description")
 		return
-	}
+	}*/
 	c.RequireAppId()
 	if c.Err != nil {
 		return
