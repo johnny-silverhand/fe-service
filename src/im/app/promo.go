@@ -66,6 +66,20 @@ func (a *App) GetPromos(offset int, limit int, sort string) (*model.PromoList, *
 
 func (a *App) CreatePromo(promo *model.Promo) (*model.Promo, *model.AppError) {
 
+	appResult := <-a.Srv.Store.Application().Get(promo.AppId)
+	if appResult.Err != nil {
+		return nil, appResult.Err
+	}
+	application := appResult.Data.(*model.Application)
+
+	if application.HasModeration {
+		promo.Active = false
+		promo.Status = model.PRODUCT_STATUS_DRAFT
+	} else {
+		promo.Active = false
+		promo.Status = model.PRODUCT_STATUS_ACCEPTED
+	}
+
 	result := <-a.Srv.Store.Promo().Save(promo)
 	if result.Err != nil {
 		return nil, result.Err
@@ -97,10 +111,10 @@ func (a *App) attachMediaToPromo(promo *model.Promo) *model.AppError {
 	return nil
 }
 
-func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *model.AppError) {
+func (a *App) UpdatePromo(id string, patch *model.PromoPatch, safeUpdate bool) (*model.Promo, *model.AppError) {
 	//promo.SanitizeProps()
 
-	result := <-a.Srv.Store.Promo().Get(promo.Id)
+	result := <-a.Srv.Store.Promo().Get(id)
 	if result.Err != nil {
 		return nil, result.Err
 	}
@@ -108,31 +122,32 @@ func (a *App) UpdatePromo(promo *model.Promo, safeUpdate bool) (*model.Promo, *m
 	oldPromo := result.Data.(*model.Promo)
 
 	if oldPromo == nil {
-		err := model.NewAppError("UpdatePromo", "api.promo.update_promo.find.app_error", nil, "id="+promo.Id, http.StatusBadRequest)
+		err := model.NewAppError("UpdatePromo", "api.promo.update_promo.find.app_error", nil, "id="+id, http.StatusBadRequest)
 		return nil, err
 	}
 
 	if oldPromo.DeleteAt != 0 {
-		err := model.NewAppError("UpdatePromo", "api.promo.update_promo.permissions_details.app_error", map[string]interface{}{"PromoId": promo.Id}, "", http.StatusBadRequest)
+		err := model.NewAppError("UpdatePromo", "api.promo.update_promo.permissions_details.app_error", map[string]interface{}{"PromoId": id}, "", http.StatusBadRequest)
 		return nil, err
 	}
 
+	appResult := <-a.Srv.Store.Application().Get(oldPromo.AppId)
+	if appResult.Err != nil {
+		return nil, appResult.Err
+	}
+	application := appResult.Data.(*model.Application)
+
 	newPromo := &model.Promo{}
 	*newPromo = *oldPromo
+	newPromo.Patch(patch)
 
-	if newPromo.Name != promo.Name {
-		newPromo.Name = promo.Name
+	if application.HasModeration {
+		newPromo.Active = false
+		newPromo.Status = model.PRODUCT_STATUS_DRAFT
+	} else {
+		newPromo.Active = false
+		newPromo.Status = model.PRODUCT_STATUS_ACCEPTED
 	}
-
-	newPromo.Preview = promo.Preview
-	newPromo.Description = promo.Description
-	newPromo.BeginAt = promo.BeginAt
-	newPromo.ExpireAt = promo.ExpireAt
-	//if !safeUpdate {
-	newPromo.Media = promo.Media
-	//}
-
-	newPromo.Status = model.PROMO_STATUS_DRAFT
 
 	a.deleteMediaFromPromo(oldPromo, newPromo)
 

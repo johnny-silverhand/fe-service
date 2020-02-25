@@ -130,6 +130,7 @@ func UpgradeDatabase(sqlStore SqlStore) {
 	UpgradeDatabaseToVersion523(sqlStore)
 	UpgradeDatabaseToVersion524(sqlStore)
 	UpgradeDatabaseToVersion525(sqlStore)
+	UpgradeDatabaseToVersion526(sqlStore)
 
 	// If the SchemaVersion is empty this this is the first time it has ran
 	// so lets set it to the current version.
@@ -781,7 +782,14 @@ func UpgradeDatabaseToVersion524(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion525(sqlStore SqlStore) {
-	/*if shouldPerformUpgrade(sqlStore, VERSION_5_24_0, VERSION_5_25_0) {
+	if shouldPerformUpgrade(sqlStore, VERSION_5_24_0, VERSION_5_25_0) {
+		sqlStore.AlterColumnTypeIfExists("Promos", "Preview", "text", "text")
 		saveSchemaVersion(sqlStore, VERSION_5_25_0)
+	}
+}
+
+func UpgradeDatabaseToVersion526(sqlStore SqlStore) {
+	/*if shouldPerformUpgrade(sqlStore, VERSION_5_25_0, VERSION_5_26_0) {
+		saveSchemaVersion(sqlStore, VERSION_5_26_0)
 	}*/
 }

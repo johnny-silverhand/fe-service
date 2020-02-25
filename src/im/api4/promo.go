@@ -242,22 +242,20 @@ func updatePromo(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	promo := model.PromoFromJson(r.Body)
+	patch := model.PromoPatchFromJson(r.Body)
 
-	if promo == nil {
+	if patch == nil {
 		c.SetInvalidParam("promo")
 		return
 	}
 
 	// The promo being updated in the payload must be the same one as indicated in the URL.
-	if promo.Id != c.Params.PromoId {
+	/*if patch.Id != c.Params.PromoId {
 		c.SetInvalidParam("id")
 		return
-	}
+	}*/
 
-	promo.Id = c.Params.PromoId
-
-	rpromo, err := c.App.UpdatePromo(promo, false)
+	rpromo, err := c.App.UpdatePromo(c.Params.PromoId, patch, false)
 	if err != nil {
 		c.Err = err
 		return

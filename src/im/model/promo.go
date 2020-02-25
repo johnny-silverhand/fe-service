@@ -38,13 +38,14 @@ type Promo struct {
 }
 
 type PromoPatch struct {
-	Name        *string `json:"name"`
-	Preview     *string `json:"preview"`
-	Description *string `json:"description"`
-	ProductId   *string `json:"product_id"`
-	ImageId     string  `json:"image_id,omitempty"`
-	BeginAt     *int64  `json:"begin_at"`
-	ExpireAt    *int64  `json:"expire_at"`
+	Name        *string      `json:"name"`
+	Preview     *string      `json:"preview"`
+	Description *string      `json:"description"`
+	ProductId   *string      `json:"product_id"`
+	ImageId     string       `json:"image_id,omitempty"`
+	BeginAt     *int64       `json:"begin_at"`
+	ExpireAt    *int64       `json:"expire_at"`
+	Media       *[]*FileInfo `json:"media"`
 }
 
 type PromoStatus struct {
@@ -79,6 +80,15 @@ func (p *Promo) Patch(patch *PromoPatch) {
 	if patch.ProductId != nil {
 		p.Description = *patch.ProductId
 	}
+	if patch.BeginAt != nil {
+		p.BeginAt = *patch.BeginAt
+	}
+	if patch.ExpireAt != nil {
+		p.ExpireAt = *patch.ExpireAt
+	}
+	if patch.Media != nil {
+		p.Media = *patch.Media
+	}
 }
 
 func (promo *Promo) ToJson() string {
@@ -90,6 +100,11 @@ func PromoFromJson(data io.Reader) *Promo {
 	var promo *Promo
 	json.NewDecoder(data).Decode(&promo)
 	return promo
+}
+func PromoPatchFromJson(data io.Reader) *PromoPatch {
+	var patch *PromoPatch
+	json.NewDecoder(data).Decode(&patch)
+	return patch
 }
 func (o *Promo) Clone() *Promo {
 	copy := *o
