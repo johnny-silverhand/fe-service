@@ -15,6 +15,7 @@ func (api *API) InitPromo() {
 	api.BaseRoutes.Promos.Handle("", api.ApiHandler(createPromo)).Methods("POST")
 
 	api.BaseRoutes.Promos.Handle("/{promo_id:[A-Za-z0-9]+}", api.ApiHandler(getPromo)).Methods("GET")
+	api.BaseRoutes.Promos.Handle("/{promo_id:[A-Za-z0-9]+}/push", api.ApiHandler(sendPromoPush)).Methods("GET")
 	api.BaseRoutes.Promo.Handle("", api.ApiHandler(deletePromo)).Methods("DELETE")
 
 	api.BaseRoutes.Promo.Handle("/status", api.ApiHandler(updatePromoStatus)).Methods("PUT")
@@ -167,6 +168,55 @@ func getAllPromos(c *Context, w http.ResponseWriter, r *http.Request) {
 	}*/
 
 	w.Write([]byte(list.ToJson()))
+}
+
+func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequirePromoId()
+	c.RequireAppId()
+	appId := c.Params.AppId
+	if c.Err != nil {
+		return
+	}
+
+	promo, err := c.App.GetPromo(c.Params.PromoId)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	c.App.Srv.Go(func() {
+		if users, err := c.App.GetUsers(&model.UserGetOptions{
+			AppId:   appId,
+			Page:    0,
+			PerPage: 100000,
+			Role:    model.CHANNEL_USER_ROLE_ID,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			for _, user := range users {
+
+				var channel *model.Channel
+				if channel, _ = c.App.FindOpennedChannel(user.Id); channel != nil {
+					c.App.AddChannelMemberIfNeeded(user.Id, channel)
+				} else {
+					if channel, _ = c.App.CreateUnresolvedChannel(user.Id); channel != nil {
+						<-c.App.Srv.Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis())
+					}
+				}
+
+				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
+					c.App.SendCustomNotifications(user, channel, promo.Preview)
+				}
+			}
+		}
+	})
+
+	w.WriteHeader(http.StatusCreated)
+
+	w.Write([]byte(promo.ToJson()))
+
 }
 
 func getPromo(c *Context, w http.ResponseWriter, r *http.Request) {

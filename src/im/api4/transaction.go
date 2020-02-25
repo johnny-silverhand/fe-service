@@ -40,12 +40,15 @@ func validateTransactionForOrderUser(c *Context, w http.ResponseWriter, r *http.
 		return
 	} else {
 
-		value := order.Price * (float64(app.MaxDiscount) / 100)
+		discount := order.Price * (float64(app.MaxDiscount) / 100)
+		cashback := order.Price * (app.Cashback / 100)
 
 		b, _ := json.Marshal(struct {
 			DiscountValue int64 `json:"discount_value"`
+			Cashback      int64 `json:"cashback"`
 		}{
-			DiscountValue: int64(value),
+			DiscountValue: int64(discount),
+			Cashback:      int64(cashback),
 		})
 		w.Write([]byte(string(b)))
 	}

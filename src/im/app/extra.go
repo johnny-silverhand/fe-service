@@ -181,3 +181,14 @@ func (a *App) GetExtrasBasket(productIds []string) (*model.ProductList, *model.A
 
 	return result.Data.(*model.ProductList), nil
 }
+
+func (a *App) GetUpdatedBasket(productIds []string) (*model.ProductList, *model.AppError) {
+
+	result := <-a.Srv.Store.Product().GetProductsByIds(productIds, false)
+
+	if result.Err != nil {
+		return nil, result.Err
+	}
+
+	return result.Data.(*model.ProductList), nil
+}
