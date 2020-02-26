@@ -2289,6 +2289,42 @@ func (a *App) VerifyUserPhone(userId string) *model.AppError {
 	return (<-a.Srv.Store.User().VerifyPhone(userId)).Err
 }
 
+func (a *App) SendVerifyFromStageTokenPush(userSuppliedTokenString string) *model.AppError {
+	var token *model.Token
+	var err *model.AppError
+	if token, err = a.GetStageToken(userSuppliedTokenString); err != nil {
+		return err
+	}
+
+	var user *model.User
+	if user, err = a.GetUser(token.UserId); err != nil {
+		return err
+	}
+
+	/*newPwd := utils.HashDigit(4)
+
+	if err := a.UpdateExtraStageToken(token, newPwd); err != nil {
+		return err
+	}*/
+
+	a.Srv.Go(func() {
+		var channel *model.Channel
+		if channel, _ = a.FindOpennedChannel(user.Id); channel != nil {
+			a.AddChannelMemberIfNeeded(user.Id, channel)
+		} else {
+			if channel, _ = a.CreateUnresolvedChannel(user.Id); channel != nil {
+				<-a.Srv.Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis())
+			}
+		}
+
+		if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
+			a.SendCustomNotifications(user, channel, "Код подтверждения: "+token.Extra)
+		}
+	})
+
+	return nil
+}
+
 func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.AppError {
 	var token *model.Token
 	var err *model.AppError
