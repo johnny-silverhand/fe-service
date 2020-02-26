@@ -1683,7 +1683,7 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	pwd := utils.HashDigit(4)
 	token, err := c.App.CreateStageToken(user, pwd) /*pwd*/
 
-	if err := c.App.SendVerifyFromStageTokenPush(token.Token); err != nil {
+	if err := c.App.SendVerifyFromStageToken(token.Token); err != nil {
 		c.Err = err
 		return
 	}
