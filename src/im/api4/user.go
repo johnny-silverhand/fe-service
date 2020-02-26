@@ -1606,6 +1606,8 @@ func createUserToken(c *Context, w http.ResponseWriter, r *http.Request) {
 	//pwd := "1234" //utils.HashDigit(4)
 	pwd := utils.HashDigit(4)
 	user.Roles = model.CHANNEL_USER_ROLE_ID
+	reg, _ := regexp.Compile("[^0-9]+")
+	user.Phone = reg.ReplaceAllString(user.Phone, "")
 
 	token, err := c.App.CreateUserWithToken(user, pwd)
 	if err != nil {
