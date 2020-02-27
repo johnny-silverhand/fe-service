@@ -127,7 +127,7 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 		}
 	})
 
-	w.WriteHeader(http.StatusCreated)
+	ReturnStatusOK(w)
 }
 
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
