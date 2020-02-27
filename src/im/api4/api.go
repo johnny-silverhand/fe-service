@@ -121,6 +121,7 @@ type Routes struct {
 	Application  *mux.Router // 'api/v4/applications/{application_id:[A-Za-z0-9_-]+}'
 
 	Notifications *mux.Router // 'api/v4/notifications'
+	Metrics       *mux.Router // 'api/v4/metrics'
 }
 
 type API struct {
@@ -237,6 +238,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.BaseRoutes.Application = api.BaseRoutes.Applications.PathPrefix("/{app_id:[A-Za-z0-9]+}").Subrouter()
 
 	api.BaseRoutes.Notifications = api.BaseRoutes.ApiRoot.PathPrefix("/notifications").Subrouter()
+	api.BaseRoutes.Metrics = api.BaseRoutes.ApiRoot.PathPrefix("/metrics").Subrouter()
 
 	api.InitUser()
 
@@ -279,6 +281,7 @@ func Init(configservice configservice.ConfigService, globalOptionsFunc app.AppOp
 	api.InitBasket()
 	api.InitApplication()
 	api.InitNotification()
+	api.InitMetric()
 	root.Handle("/api/v4/{anything:.*}", http.HandlerFunc(api.Handle404))
 
 	return api

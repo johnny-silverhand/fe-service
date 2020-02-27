@@ -635,3 +635,44 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 		result.Data = Totals
 	})
 }
+
+func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt int64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		query := s.getQueryBuilder().
+			Select("sum(o.Price) AS TotalPrice, sum(o.DiscountValue) AS TotalDiscount, avg(o.Price) AS AvgPrice, sum(Canceled) AS TotalReturn").
+			From("Orders o").
+			Join("Users u ON u.Id = o.UserId").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
+			//Where("o.Payed = ?", true)
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var metrics *model.MetricsForOrders
+		if err := s.GetReplica().SelectOne(&metrics, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		query = s.getQueryBuilder().
+			Select("FROM_UNIXTIME(o.CreateAt / 1000, '%d.%m.%Y') AS Date, count(*) AS Count").
+			From("Orders o").
+			Join("Users u ON o.UserId = u.Id").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("o.CreateAt >= ? AND o.CreateAt <= ?", beginAt, expireAt).
+			GroupBy("Date")
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if _, err := s.GetReplica().Select(&metrics.OrdersByDay, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		metrics.Total = metrics.TotalPrice + metrics.TotalDiscount
+
+		result.Data = metrics
+	})
+}

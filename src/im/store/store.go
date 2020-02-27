@@ -332,6 +332,8 @@ type UserStore interface {
 	AccrualBalance(userId string, value float64) StoreChannel
 	DeductionBalance(userId string, value float64) StoreChannel
 	GetInvitedUsers(userId string) StoreChannel
+
+	GetMetricsForRegister(appId string, beginAt int64, expireAt int64) StoreChannel
 }
 
 type SessionStore interface {
@@ -656,6 +658,8 @@ type OrderStore interface {
 	SetOrderCancel(orderId string) StoreChannel
 
 	Count(options model.OrderCountOptions) StoreChannel
+
+	GetMetricsForOrders(appId string, beginAt int64, expireAt int64) StoreChannel
 }
 
 type BasketStore interface {

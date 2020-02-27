@@ -1712,3 +1712,124 @@ func (us SqlUserStore) GetInvitedUsers(userId string) store.StoreChannel {
 		result.Data = users
 	})
 }
+
+func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expireAt int64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		query := us.getQueryBuilder().
+			Select("FROM_UNIXTIME(u.CreateAt / 1000, '%d.%m.%Y') AS Date, count(*) AS Count").
+			From("Users u").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("u.CreateAt >= ? AND u.CreateAt <= ?", beginAt, expireAt).
+			GroupBy("Date")
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var additional []*model.AdditionalMetricsForRegister
+		if _, err := us.GetReplica().Select(&additional, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		q1 := us.getQueryBuilder().
+			Select("u.Id, count(*) Count").
+			From("Users u").
+			Join("Orders o ON o.UserId = u.Id").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			GroupBy("u.Id")
+
+		query = us.getQueryBuilder().
+			Select("count(*) AS ClientsWithOrders").
+			FromSelect(q1, "tbl1")
+
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var metrics *model.MetricsForRegister
+		if err := us.GetReplica().SelectOne(&metrics, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		q1 = q1.Where("o.DiscountValue > ?", 0)
+		query = us.getQueryBuilder().
+			Select("count(*) AS ClientsPaidWithBonuses").
+			FromSelect(q1, "tbl2")
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := us.GetReplica().SelectOne(&metrics.ClientsPaidWithBonuses, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		tBaseQuery := us.getQueryBuilder().
+			Select("sum(t.Value) AS Value").
+			From("Transactions t").
+			Join("Users u ON u.Id = t.UserId").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
+
+		tCharge := tBaseQuery.Where("t.Value > ?", 0)
+		tDiscard := tBaseQuery.Where("t.Value < ?", 0)
+
+		queryString, args, err = tCharge.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := us.GetReplica().SelectOne(&metrics.ClientsChargeBonuses, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		queryString, args, err = tDiscard.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := us.GetReplica().SelectOne(&metrics.ClientsDiscardBonuses, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		totalUsersQuery := us.getQueryBuilder().
+			Select("count(*) AS Count").
+			From("Users u").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
+		queryString, args, err = totalUsersQuery.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := us.GetReplica().SelectOne(&metrics.TotalClients, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		totalUsersBalanceQuery := us.getQueryBuilder().
+			Select("sum(u.Balance) AS Balance").
+			From("Users u").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
+		queryString, args, err = totalUsersBalanceQuery.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := us.GetReplica().SelectOne(&metrics.ClientsBonuses, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		metrics.RegisterClientsByDay = additional
+
+		result.Data = metrics
+	})
+}
