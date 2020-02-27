@@ -78,7 +78,7 @@ func (p *Promo) Patch(patch *PromoPatch) {
 		p.Description = *patch.Description
 	}
 	if patch.ProductId != nil {
-		p.Description = *patch.ProductId
+		p.ProductId = *patch.ProductId
 	}
 	if patch.BeginAt != nil {
 		p.BeginAt = *patch.BeginAt
