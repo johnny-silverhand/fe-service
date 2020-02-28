@@ -21,7 +21,9 @@ func GetOrder(s string) ColumnOrder {
 		}
 	}
 
-	order.Column = s
+	if len(s) > 2 {
+		order.Column = s
+	}
 
 	return order
 }
