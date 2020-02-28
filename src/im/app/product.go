@@ -486,7 +486,7 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 		discount.Total += value
 	}
 	if discount.Total > int64(totalPrice) {
-		discount.Total = int64(totalPrice)
+		discount.Total = int64(totalPrice) - 1
 	}
 
 	return discount, nil
