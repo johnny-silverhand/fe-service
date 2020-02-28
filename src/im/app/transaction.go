@@ -202,8 +202,9 @@ func (a *App) DeductionTransaction(transaction *model.Transaction) (*model.Trans
 	return rtransaction, nil
 }
 
-func (a *App) GetUserTransactions(userId string, page int, perPage int, sort string) (*model.TransactionList, *model.AppError) {
-	if result := <-a.Srv.Store.Transaction().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
+func (a *App) GetUserTransactions(options *model.TransactionGetOptions) (*model.TransactionList, *model.AppError) {
+	//if result := <-a.Srv.Store.Transaction().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
+	if result := <-a.Srv.Store.Transaction().GetByUserId(*options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		transactionList := result.Data.(*model.TransactionList)

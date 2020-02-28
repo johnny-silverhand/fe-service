@@ -272,22 +272,61 @@ func (s SqlTransactionStore) getAllTransactionsAround(transactionId string, numT
 	})
 }
 
-func (s SqlTransactionStore) GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) store.StoreChannel {
+func (s SqlTransactionStore) GetByUserId(options model.TransactionGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		var orders []*model.Transaction
+		sort := model.GetOrder(options.Sort)
 
-		query := `SELECT *
-                  FROM Transactions
-WHERE UserId = :UserId `
+		query := s.getQueryBuilder().
+			Select("t.*").
+			From("Transactions t").
+			Join("Users u ON t.UserId = u.Id").
+			Where("t.DeleteAt = 0").
+			Where("u.AppId = ?", options.AppId).
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
+
+		if sort.Validate() {
+			query = query.OrderBy(sort.Column + " " + sort.Type)
+		} else {
+			query = query.OrderBy("t.CreateAt DESC")
+		}
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var transactions []*model.Transaction
+		if _, err := s.GetMaster().Select(&transactions, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		list := model.NewTransactionList()
+		list.MakeNonNil()
+		for _, p := range transactions {
+			list.AddTransaction(p)
+			list.AddOrder(p.Id)
+		}
+
+		result.Data = list
+
+		//var orders []*model.Transaction
+
+		/**query := `SELECT *
+		                  FROM Transactions
+		WHERE UserId = :UserId `*/
 		//ORDER BY ` + order.Column + ` `
 
 		/*if order.Column == "price" { // cuz price is string
 			query += `+ 0 ` // hack for sorting string as integer
 		}*/
 
-		query += /*order.Type + */ ` LIMIT :Limit OFFSET :Offset `
+		/*query += /*order.Type + */ /*` LIMIT :Limit OFFSET :Offset `*/
 
-		if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
+		/*if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
 			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error",
 				nil, err.Error(),
 				http.StatusInternalServerError)
@@ -303,7 +342,7 @@ WHERE UserId = :UserId `
 			list.MakeNonNil()
 
 			result.Data = list
-		}
+		}*/
 	})
 }
 

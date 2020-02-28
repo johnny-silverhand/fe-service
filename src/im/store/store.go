@@ -628,7 +628,8 @@ type TransactionStore interface {
 	GetAllTransactionsSince(time int64, allowFromCache bool) StoreChannel
 	GetAllTransactionsBefore(transactionId string, numTransactions int, offset int) StoreChannel
 	GetAllTransactionsAfter(transactionId string, numTransactions int, offset int) StoreChannel
-	GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
+	//GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) StoreChannel
+	GetByUserId(options model.TransactionGetOptions) StoreChannel
 
 	GetBonusTransactionsForUser(orderUserId string, userId string) StoreChannel
 }

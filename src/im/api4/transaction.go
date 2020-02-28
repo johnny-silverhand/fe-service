@@ -366,6 +366,7 @@ func deleteTransaction(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func getUserTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireUserId()
+	c.RequireAppId()
 	if c.Err != nil {
 		return
 	}
@@ -373,8 +374,15 @@ func getUserTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
 	var list *model.TransactionList
 	var err *model.AppError
 	//etag := ""
+	sort := r.URL.Query().Get("sort")
+	transactionGetOptions := &model.TransactionGetOptions{
+		Sort:    sort,
+		Page:    c.Params.Page,
+		PerPage: c.Params.PerPage,
+		AppId:   c.Params.AppId,
+	}
 
-	list, err = c.App.GetUserTransactions(c.Params.UserId, c.Params.Page, c.Params.PerPage, "")
+	list, err = c.App.GetUserTransactions(transactionGetOptions)
 
 	if err != nil {
 		c.Err = err

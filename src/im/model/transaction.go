@@ -37,6 +37,20 @@ type TransactionPatch struct {
 	Longitude string `json:"long"`
 }
 
+type TransactionGetOptions struct {
+	Status string
+	// Sorting option
+	Sort string
+	// Page
+	Page int
+	// Page size
+	PerPage int
+	// application id
+	AppId string
+	// user id
+	UserId string
+}
+
 func (p *Transaction) Patch(patch *TransactionPatch) {
 
 	if patch.Description != nil {
