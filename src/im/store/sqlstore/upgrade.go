@@ -792,10 +792,13 @@ func UpgradeDatabaseToVersion525(sqlStore SqlStore) {
 }
 
 func UpgradeDatabaseToVersion526(sqlStore SqlStore) {
-	/*if shouldPerformUpgrade(sqlStore, VERSION_5_25_0, VERSION_5_26_0) {
-		sqlStore.CreateColumnIfNotExists("Extras", "Primary", "tinyint(1)", "boolean", "0")
-		saveSchemaVersion(sqlStore, VERSION_5_26_0)
-	}*/
+	if shouldPerformUpgrade(sqlStore, VERSION_5_25_0, VERSION_5_26_0) {
+
+		sqlStore.CreateColumnIfNotExists("Extras", "Required", "tinyint(1)", "boolean", "0")
+		sqlStore.AlterColumnTypeIfExists("Applications", "PaymentDetails", "text", "text")
+
+		//saveSchemaVersion(sqlStore, VERSION_5_26_0)
+	}
 }
 
 func UpgradeDatabaseToVersion527(sqlStore SqlStore) {

@@ -284,8 +284,8 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 			From("Products p").
 			LeftJoin("Extras ex ON (p.Id = ex.ProductId)").
 			Where("p.DeleteAt = ? AND ex.DeleteAt = ?", 0, 0).
-			Where("ex.RefId IN "+keys, params...) /*.
-			OrderBy("ex.Primary DESC")*/
+			Where("ex.RefId IN "+keys, params...).
+			OrderBy("ex.Primary DESC")
 
 		queryString, args, err := query.ToSql()
 
@@ -313,12 +313,29 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 
 func (s SqlExtraStore) DeleteForProduct(productId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		if _, err := s.GetMaster().Exec(`UPDATE Extras SET DeleteAt = :DeleteAt WHERE RefId = :ProductId`,
+		query := s.getQueryBuilder().
+			Delete("Extras").
+			Where("RefId = ?", productId)
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlExtraStore.DeleteForProduct", "store.sql_extra.delete_for_product.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if _, err := s.GetMaster().Exec(queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlExtraStore.DeleteForProduct",
+				"store.sql_extra.delete_for_product.app_error", nil, "product_id="+productId+", err="+err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			result.Data = productId
+		}
+
+		/*if _, err := s.GetMaster().Exec(`UPDATE Extras SET DeleteAt = :DeleteAt WHERE RefId = :ProductId`,
 			map[string]interface{}{"DeleteAt": model.GetMillis(), "ProductId": productId}); err != nil {
 			result.Err = model.NewAppError("SqlExtraStore.DeleteForProduct",
 				"store.sql_extra.delete_for_product.app_error", nil, "product_id="+productId+", err="+err.Error(), http.StatusInternalServerError)
 		} else {
 			result.Data = productId
-		}
+		}*/
 	})
 }

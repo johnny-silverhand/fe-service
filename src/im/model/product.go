@@ -40,6 +40,7 @@ type Product struct {
 	Media            []*FileInfo `db:"-" json:"media,omitempty"`
 	Offices          []*Office   `db:"-" json:"offices,omitempty"`
 	ExtraProductList []*Product  `db:"-" json:"extra_product_list,omitempty"`
+	Required         bool        `db:"-" json:"required"`
 }
 
 type ProductPatch struct {
@@ -59,6 +60,7 @@ type ProductPatch struct {
 	Media            *[]*FileInfo `json:"media"`
 	Offices          *[]*Office   `json:"offices"`
 	ExtraProductList *[]*Product  `json:"extra_product_list"`
+	Required         *bool        `json:"required"`
 }
 
 func ProductPatchFromJson(data io.Reader) *ProductPatch {
@@ -153,6 +155,9 @@ func (p *Product) Patch(patch *ProductPatch) {
 	}
 	if patch.ExtraProductList != nil {
 		p.ExtraProductList = *patch.ExtraProductList
+	}
+	if patch.Required != nil {
+		p.Required = *patch.Required
 	}
 }
 

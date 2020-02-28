@@ -13,13 +13,14 @@ type Extra struct {
 	CreateAt  int64  `json:"create_at"`
 	UpdateAt  int64  `json:"update_at"`
 	DeleteAt  int64  `json:"delete_at"`
-	//Primary	  bool   `json:"primary"`
+	Required  bool   `json:"required"`
 }
 
-func NewExtra(productId string, RefId string) *Extra {
+func NewExtra(productId string, RefId string, required bool) *Extra {
 	return &Extra{
 		ProductId: productId,
 		RefId:     RefId,
+		Required:  required,
 	}
 }
 
