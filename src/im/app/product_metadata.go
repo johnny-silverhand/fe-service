@@ -1,7 +1,6 @@
 package app
 
 import (
-	"im/mlog"
 	"im/model"
 	"im/utils"
 )
@@ -39,26 +38,26 @@ func (a *App) PrepareProductForClient(originalProduct *model.Product, isNewProdu
 	product := originalProduct.Clone()
 
 	if fileInfos, err := a.getMediaForProduct(product); err != nil {
-		mlog.Warn("Failed to get files for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+		//mlog.Warn("Failed to get files for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
 		product.Media = fileInfos
 
 	}
 
 	if offices, err := a.getOfficesForProduct(product); err != nil {
-		mlog.Warn("Failed to get offices for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+		//mlog.Warn("Failed to get offices for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
 		product.Offices = offices
 	}
 
 	if extra, err := a.getExtraForProduct(product); err != nil {
-		mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+		//mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
 		product.ExtraProductList = extra
 	}
 
 	if category, err := a.GetCategory(product.CategoryId); err != nil {
-		mlog.Warn("Failed to get category for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
+		//mlog.Warn("Failed to get category for a product", mlog.String("product_id", product.Id), mlog.Any("err", err))
 	} else {
 		product.Category = category
 	}

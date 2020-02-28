@@ -275,33 +275,39 @@ func (s SqlExtraStore) getAllExtrasAround(extraId string, numExtras int, offset 
 
 func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache bool) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		keys, params := MapStringsToQueryParams(productIds, "Product")
+		list := model.NewProductList()
+		list.MakeNonNil()
+		keys, params := StringsToQueryParams(productIds)
 
-		query := `SELECT p.* 
-		FROM Products p 
-		LEFT JOIN Extras ex ON (p.Id = ex.ProductId) 
-		WHERE p.DeleteAt = 0 AND ex.DeleteAt = 0
-		AND ex.RefId IN ` + keys
+		query := s.getQueryBuilder().
+			Select("p.*").
+			From("Products p").
+			LeftJoin("Extras ex ON (p.Id = ex.ProductId)").
+			Where("p.DeleteAt = ? AND ex.DeleteAt = ?", 0, 0).
+			Where("ex.RefId IN "+keys, params...) /*.
+			OrderBy("ex.Primary DESC")*/
 
-		var products []*model.Product
-		_, err := s.GetReplica().Select(&products, query, params)
+		queryString, args, err := query.ToSql()
 
 		if err != nil {
-			result.Err = model.NewAppError("SqlExtraStore.GetExtraProductsByIds", "store.sql_extra.get_extras_around.get.app_error", nil, err.Error(), http.StatusInternalServerError)
-		} else {
-
-			list := model.NewProductList()
-
-			// We need to flip the order if we selected backwards
-
-			l := len(products)
-			for i := range products {
-				list.AddProduct(products[l-i-1])
-				list.AddOrder(products[l-i-1].Id)
-			}
-
+			//result.Err = model.NewAppError("SqlExtraStore.GetExtraProductsByIds", "store.sql_extra.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 			result.Data = list
+			return
 		}
+
+		var products []*model.Product
+		if _, err := s.GetMaster().Select(&products, queryString, args...); err != nil {
+			//result.Err = model.NewAppError("SqlExtraStore.GetExtraProductsByIds", "store.sql_extra.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+			result.Data = list
+			return
+		}
+
+		for _, p := range products {
+			list.AddProduct(p)
+			list.AddOrder(p.Id)
+		}
+
+		result.Data = list
 	})
 }
 
