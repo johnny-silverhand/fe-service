@@ -13,4 +13,6 @@ type OrderGetOptions struct {
 	PerPage int
 	// application id
 	AppId string
+	// user id
+	UserId string
 }

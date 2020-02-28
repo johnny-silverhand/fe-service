@@ -281,7 +281,7 @@ func (s SqlTransactionStore) GetByUserId(options model.TransactionGetOptions) st
 			From("Transactions t").
 			Join("Users u ON t.UserId = u.Id").
 			Where("t.DeleteAt = 0").
-			Where("u.AppId = ?", options.AppId).
+			Where("u.Id = ? AND u.AppId = ?", options.UserId, options.AppId).
 			Offset(uint64(options.Page * options.PerPage)).
 			Limit(uint64(options.PerPage))
 
@@ -294,13 +294,13 @@ func (s SqlTransactionStore) GetByUserId(options model.TransactionGetOptions) st
 		queryString, args, err := query.ToSql()
 
 		if err != nil {
-			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		var transactions []*model.Transaction
 		if _, err := s.GetMaster().Select(&transactions, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -312,37 +312,6 @@ func (s SqlTransactionStore) GetByUserId(options model.TransactionGetOptions) st
 		}
 
 		result.Data = list
-
-		//var orders []*model.Transaction
-
-		/**query := `SELECT *
-		                  FROM Transactions
-		WHERE UserId = :UserId `*/
-		//ORDER BY ` + order.Column + ` `
-
-		/*if order.Column == "price" { // cuz price is string
-			query += `+ 0 ` // hack for sorting string as integer
-		}*/
-
-		/*query += /*order.Type + */ /*` LIMIT :Limit OFFSET :Offset `*/
-
-		/*if _, err := s.GetReplica().Select(&orders, query, map[string]interface{}{"UserId": userId, "Limit": limit, "Offset": offset}); err != nil {
-			result.Err = model.NewAppError("SqlTransactionStore.GetAllPage", "store.sql_orders.get_all_page.app_error",
-				nil, err.Error(),
-				http.StatusInternalServerError)
-		} else {
-
-			list := model.NewTransactionList()
-
-			for _, p := range orders {
-				list.AddTransaction(p)
-				list.AddOrder(p.Id)
-			}
-
-			list.MakeNonNil()
-
-			result.Data = list
-		}*/
 	})
 }
 

@@ -375,7 +375,7 @@ func deleteOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserOrders(c *Context, w http.ResponseWriter, r *http.Request) {
-	c.RequireUserId()
+	/*c.RequireUserId()
 	if c.Err != nil {
 		return
 	}
@@ -385,6 +385,33 @@ func getUserOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	//etag := ""
 
 	list, err = c.App.GetUserOrders(c.Params.UserId, c.Params.Page, c.Params.PerPage, "")
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	w.Write([]byte(list.ToJson()))*/
+
+	c.RequireUserId()
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+
+	var list *model.OrderList
+	var err *model.AppError
+	//etag := ""
+	sort := r.URL.Query().Get("sort")
+	orderGetOptions := &model.OrderGetOptions{
+		Sort:    sort,
+		Page:    c.Params.Page,
+		PerPage: c.Params.PerPage,
+		AppId:   c.Params.AppId,
+		UserId:  c.Params.UserId,
+	}
+
+	list, err = c.App.GetUserOrders(orderGetOptions)
 
 	if err != nil {
 		c.Err = err

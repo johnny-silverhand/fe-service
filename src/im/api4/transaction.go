@@ -380,6 +380,7 @@ func getUserTransactions(c *Context, w http.ResponseWriter, r *http.Request) {
 		Page:    c.Params.Page,
 		PerPage: c.Params.PerPage,
 		AppId:   c.Params.AppId,
+		UserId:  c.Params.UserId,
 	}
 
 	list, err = c.App.GetUserTransactions(transactionGetOptions)

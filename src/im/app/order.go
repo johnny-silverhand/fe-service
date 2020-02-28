@@ -284,8 +284,9 @@ func (a *App) GetAllOrdersPage(options *model.OrderGetOptions) (*model.OrderList
 	}
 }
 
-func (a *App) GetUserOrders(userId string, page int, perPage int, sort string) (*model.OrderList, *model.AppError) {
-	if result := <-a.Srv.Store.Order().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
+func (a *App) GetUserOrders(options *model.OrderGetOptions) (*model.OrderList, *model.AppError) {
+	//if result := <-a.Srv.Store.Order().GetByUserId(userId, page*perPage, perPage, model.GetOrder(sort)); result.Err != nil {
+	if result := <-a.Srv.Store.Order().GetByUserId(*options); result.Err != nil {
 		return nil, result.Err
 	} else {
 		orderList := result.Data.(*model.OrderList)

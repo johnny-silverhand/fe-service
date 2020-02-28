@@ -21,11 +21,13 @@ func GetOrder(s string) ColumnOrder {
 		}
 	}
 
+	order.Column = s
+
 	return order
 }
 
 func (s *ColumnOrder) Validate() bool {
-	if (s.Type == "DESC" || s.Type == "ASC") && (len(s.Column) > 2) {
+	if (s.Type == "DESC" || s.Type == "ASC") && (len(s.Column) >= 2) {
 		return true
 	}
 	return false

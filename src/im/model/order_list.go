@@ -16,7 +16,7 @@ func NewOrderList() *OrderList {
 	return &OrderList{
 		Order:  make([]string, 0),
 		Orders: make(map[string]*Order),
-		Total:  string(0),
+		Total:  "0",
 	}
 }
 

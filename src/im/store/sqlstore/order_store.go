@@ -515,9 +515,47 @@ func (s *SqlOrderStore) SaveWithBasket(order *model.Order) store.StoreChannel {
 	})
 }
 
-func (s SqlOrderStore) GetByUserId(userId string, offset int, limit int, order model.ColumnOrder) store.StoreChannel {
+func (s SqlOrderStore) GetByUserId(options model.OrderGetOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		sort := model.GetOrder(options.Sort)
+
+		query := s.getQueryBuilder().
+			Select("o.*").
+			From("Orders o").
+			Join("Users u ON o.UserId = u.Id").
+			Where("o.DeleteAt = 0").
+			Where("u.Id = ? AND u.AppId = ?", options.UserId, options.AppId).
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
+
+		if sort.Validate() {
+			query = query.OrderBy(sort.Column + " " + sort.Type)
+		} else {
+			query = query.OrderBy("o.CreateAt DESC")
+		}
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		var orders []*model.Order
+		if _, err := s.GetMaster().Select(&orders, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlOrderStore.GetAllPage", "store.sql_orders.get_all_page.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		list := model.NewOrderList()
+		list.MakeNonNil()
+		for _, p := range orders {
+			list.AddItem(p)
+			list.AddOrder(p.Id)
+		}
+
+		result.Data = list
+		/*var orders []*model.Order
 
 		query := `SELECT * FROM Orders WHERE UserId = :UserId LIMIT :Limit OFFSET :Offset`
 
@@ -537,7 +575,7 @@ func (s SqlOrderStore) GetByUserId(userId string, offset int, limit int, order m
 			list.MakeNonNil()
 
 			result.Data = list
-		}
+		}*/
 	})
 }
 
