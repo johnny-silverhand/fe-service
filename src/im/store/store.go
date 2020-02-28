@@ -334,6 +334,7 @@ type UserStore interface {
 	GetInvitedUsers(userId string) StoreChannel
 
 	GetMetricsForRegister(appId string, beginAt int64, expireAt int64) StoreChannel
+	GetMetricsForRating(options model.UserGetOptions) StoreChannel
 }
 
 type SessionStore interface {

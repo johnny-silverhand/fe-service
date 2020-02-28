@@ -10,7 +10,25 @@ func (api *API) InitMetric() {
 
 	api.BaseRoutes.Metrics.Handle("/clients", api.ApiSessionRequired(metricsForClients)).Methods("GET")
 	api.BaseRoutes.Metrics.Handle("/orders", api.ApiSessionRequired(metricsForOrders)).Methods("GET")
+	api.BaseRoutes.Metrics.Handle("/ratings", api.ApiSessionRequired(metricsForClientsRating)).Methods("GET")
 
+}
+
+func metricsForClientsRating(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+
+	options := &model.UserGetOptions{
+		AppId:   c.Params.AppId,
+		Page:    c.Params.Page,
+		PerPage: c.Params.PerPage,
+	}
+
+	result := <-c.App.Srv.Store.User().GetMetricsForRating(*options)
+	metrics := result.Data.(*model.UserMetricsForRatingList)
+	w.Write([]byte(metrics.ToJson()))
 }
 
 func metricsForClients(c *Context, w http.ResponseWriter, r *http.Request) {

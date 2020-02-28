@@ -41,3 +41,68 @@ type AdditionalMetricsForOrders struct {
 	Date  string `json:"date"`
 	Count int    `json:"count"`
 }
+
+type UserMetricsForRating struct {
+	User
+	OrdersCount int64   `json:"orders_count"`
+	OrdersSum   float64 `json:"orders_sum"`
+}
+
+func (o *UserMetricsForRating) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}
+
+type UserMetricsForRatingList struct {
+	Order                []string                         `json:"order"`
+	UserMetricsForRating map[string]*UserMetricsForRating `json:"users"`
+}
+
+func NewUserMetricsForRatingList() *UserMetricsForRatingList {
+	return &UserMetricsForRatingList{
+		Order:                make([]string, 0),
+		UserMetricsForRating: make(map[string]*UserMetricsForRating),
+	}
+}
+
+func (o *UserMetricsForRatingList) ToJson() string {
+	copy := *o
+	b, err := json.Marshal(&copy)
+	if err != nil {
+		return ""
+	} else {
+		return string(b)
+	}
+}
+
+func (o *UserMetricsForRatingList) MakeNonNil() {
+	if o.Order == nil {
+		o.Order = make([]string, 0)
+	}
+
+	if o.UserMetricsForRating == nil {
+		o.UserMetricsForRating = make(map[string]*UserMetricsForRating)
+	}
+
+	for _, v := range o.UserMetricsForRating {
+		v.MakeNonNil()
+	}
+}
+
+func (o *UserMetricsForRatingList) AddOrder(id string) {
+
+	if o.Order == nil {
+		o.Order = make([]string, 0, 128)
+	}
+
+	o.Order = append(o.Order, id)
+}
+
+func (o *UserMetricsForRatingList) AddItem(user *UserMetricsForRating) {
+
+	if o.UserMetricsForRating == nil {
+		o.UserMetricsForRating = make(map[string]*UserMetricsForRating)
+	}
+
+	o.UserMetricsForRating[user.Id] = user
+}

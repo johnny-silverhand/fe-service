@@ -1833,3 +1833,38 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 		result.Data = metrics
 	})
 }
+
+func (us SqlUserStore) GetMetricsForRating(options model.UserGetOptions) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		query := us.getQueryBuilder().
+			Select("u.*, COUNT(*) AS OrdersCount, SUM(o.Price) AS OrdersSum").
+			From("Orders o").
+			Join("Users u ON o.UserId = u.Id").
+			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
+			GroupBy("o.UserId").
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRating", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var metrics []*model.UserMetricsForRating
+		if _, err := us.GetReplica().Select(&metrics, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRating", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		list := model.NewUserMetricsForRatingList()
+		list.MakeNonNil()
+		for _, p := range metrics {
+			p.ClearNonProfileFields()
+			list.AddItem(p)
+			list.AddOrder(p.Id)
+		}
+		result.Data = list
+	})
+}
