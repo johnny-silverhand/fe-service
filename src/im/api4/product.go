@@ -202,6 +202,9 @@ func getExtraProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	if len(productGetOptions.AppId) == 0 {
 		productGetOptions.AppId = c.App.Session.AppId
 	}
+	if active := r.URL.Query().Get("active"); active != "" {
+		productGetOptions.Active = &c.Params.Active
+	}
 	if products, err := c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions); err != nil {
 		c.Err = err
 		return
