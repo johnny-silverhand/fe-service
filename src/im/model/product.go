@@ -116,7 +116,7 @@ func (p *Product) Patch(patch *ProductPatch) {
 		p.Description = *patch.Description
 	}
 	if patch.CategoryId != nil {
-		p.Description = *patch.CategoryId
+		p.CategoryId = *patch.CategoryId
 	}
 	if patch.FileIds != nil {
 		p.FileIds = *patch.FileIds
