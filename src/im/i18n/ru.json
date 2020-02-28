@@ -1920,7 +1920,7 @@
   },
   {
     "id": "api.templates.email_change_verify_body.button",
-    "translation": "Проверить email"
+    "translation": "Подтвердить email"
   },
   {
     "id": "api.templates.email_change_verify_body.info",
@@ -2076,7 +2076,7 @@
   },
   {
     "id": "api.templates.verify_body.button",
-    "translation": "Проверить email"
+    "translation": "Подтвердить email"
   },
   {
     "id": "api.templates.verify_body.info",
@@ -2096,7 +2096,7 @@
   },
   {
     "id": "api.templates.welcome_body.button",
-    "translation": "Проверить email"
+    "translation": "Подтвердить email"
   },
   {
     "id": "api.templates.welcome_body.info",
