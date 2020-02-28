@@ -461,6 +461,7 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 
 	discount := new(model.ProductsDiscount)
 	var value int64
+	var totalPrice float64 = 0
 
 	rproducts := result.Data.([]*model.Product)
 
@@ -481,8 +482,11 @@ func (a *App) GetDiscountLimits(productIds []string) (*model.ProductsDiscount, *
 			Id:            product.Id,
 			DiscountValue: value,
 		})
-
+		totalPrice += product.Price
 		discount.Total += value
+	}
+	if discount.Total > int64(totalPrice) {
+		discount.Total = int64(totalPrice)
 	}
 
 	return discount, nil
