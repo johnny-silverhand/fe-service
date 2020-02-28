@@ -553,6 +553,7 @@ func (s SqlOrderStore) GetByUserId(options model.OrderGetOptions) store.StoreCha
 			list.AddItem(p)
 			list.AddOrder(p.Id)
 		}
+		list.Total = strconv.Itoa(len(orders))
 
 		result.Data = list
 		/*var orders []*model.Order
