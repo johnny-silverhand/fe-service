@@ -72,6 +72,10 @@ type Params struct {
 	Q            string
 	IsLinked     *bool
 	IsConfigured *bool
+
+	BuildId       string
+	BuildType     string
+	BuildSettings string
 }
 
 func ParamsFromRequest(r *http.Request) *Params {
@@ -250,6 +254,14 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, ok := props["remote_id"]; ok {
 		params.RemoteId = val
+	}
+
+	if val := query.Get("build_id"); val != "" {
+		params.BuildId = val
+	}
+
+	if val := query.Get("build_type"); val != "" {
+		params.BuildType = val
 	}
 
 	params.Scope = query.Get("scope")
