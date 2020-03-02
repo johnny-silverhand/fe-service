@@ -333,23 +333,25 @@ func (a *App) GetAllPromosPage(page int, perPage int, options *model.PromoGetOpt
 }
 
 func (a *App) UpdatePromoStatus(promoId string, status *model.PromoStatus) (*model.Promo, *model.AppError) {
-	switch status.Status {
-	case model.PROMO_STATUS_DRAFT:
-	case model.PROMO_STATUS_MODERATION:
-	case model.PROMO_STATUS_ACCEPTED:
-	case model.PROMO_STATUS_REJECTED:
-	default:
-		return nil, model.NewAppError("UpdatePromoStatus", "api.promo.update_promo_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
-	}
 	promo, err := a.GetPromo(promoId)
 	if err != nil {
 		return nil, err
+	}
+	if len(status.Status) > 0 {
+		switch status.Status {
+		case model.PROMO_STATUS_DRAFT:
+		case model.PROMO_STATUS_MODERATION:
+		case model.PROMO_STATUS_ACCEPTED:
+		case model.PROMO_STATUS_REJECTED:
+		default:
+			return nil, model.NewAppError("UpdatePromoStatus", "api.promo.update_promo_status.status_validate.app_error", nil, status.Status, http.StatusBadRequest)
+		}
+		promo.Status = status.Status
 	}
 	/*if err == nil && promo.Status == status.Status {
 		return promo, nil
 	}*/
 
-	promo.Status = status.Status
 	promo.Active = status.Active
 	result := <-a.Srv.Store.Promo().Update(promo)
 
