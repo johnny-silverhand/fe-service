@@ -27,8 +27,13 @@ func metricsForClientsRating(c *Context, w http.ResponseWriter, r *http.Request)
 	}
 
 	result := <-c.App.Srv.Store.User().GetMetricsForRating(*options)
-	metrics := result.Data.(*model.UserMetricsForRatingList)
-	w.Write([]byte(metrics.ToJson()))
+	if result.Err != nil {
+		metrics := result.Data.(*model.UserMetricsForRatingList)
+		w.Write([]byte(metrics.ToJson()))
+	} else {
+		metrics := new(model.UserMetricsForRatingList)
+		w.Write([]byte(metrics.ToJson()))
+	}
 }
 
 func metricsForClients(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -60,8 +65,13 @@ func metricsForClients(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := <-c.App.Srv.Store.User().GetMetricsForRegister(c.Params.AppId, beginAt, expireAt)
-	metrics := result.Data.(*model.MetricsForRegister)
-	w.Write([]byte(metrics.ToJson()))
+	if result.Err != nil {
+		metrics := result.Data.(*model.MetricsForRegister)
+		w.Write([]byte(metrics.ToJson()))
+	} else {
+		metrics := new(model.MetricsForRegister)
+		w.Write([]byte(metrics.ToJson()))
+	}
 }
 
 func metricsForOrders(c *Context, w http.ResponseWriter, r *http.Request) {
@@ -93,6 +103,11 @@ func metricsForOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := <-c.App.Srv.Store.Order().GetMetricsForOrders(c.Params.AppId, beginAt, expireAt)
-	metrics := result.Data.(*model.MetricsForOrders)
-	w.Write([]byte(metrics.ToJson()))
+	if result.Err != nil {
+		metrics := result.Data.(*model.MetricsForOrders)
+		w.Write([]byte(metrics.ToJson()))
+	} else {
+		metrics := new(model.MetricsForOrders)
+		w.Write([]byte(metrics.ToJson()))
+	}
 }

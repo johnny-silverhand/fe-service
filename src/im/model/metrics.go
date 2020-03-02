@@ -10,7 +10,7 @@ type MetricsForRegister struct {
 	ClientsAppNotInstalled int                             `json:"clients_app_not_installed"`
 	ClientsBonuses         int                             `json:"clients_bonuses"`
 	ClientsDiscardBonuses  int                             `json:"clients_discard_bonuses"`
-	RegisterClientsByDay   []*AdditionalMetricsForRegister `json:"register_clients_by_day,omitempty"`
+	RegisterClientsByDay   []*AdditionalMetricsForRegister `json:"register_clients_by_day"`
 }
 
 func (o *MetricsForRegister) ToJson() string {
@@ -29,7 +29,7 @@ type MetricsForOrders struct {
 	TotalPrice    float64                         `json:"total_price"`
 	AvgPrice      float64                         `json:"avg_price"`
 	TotalReturn   float64                         `json:"total_return"`
-	OrdersByDay   []*AdditionalMetricsForRegister `json:"orders_by_day,omitempty"`
+	OrdersByDay   []*AdditionalMetricsForRegister `json:"orders_by_day"`
 }
 
 func (o *MetricsForOrders) ToJson() string {
