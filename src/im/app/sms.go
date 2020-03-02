@@ -33,7 +33,7 @@ func (a *App) sendToSmsProxy(msg model.SmsNotification) {
 	client := smsaero.NewClient("osmary@bk.ru", "QxXk6d6055rG7bgttUUeQEtHrsmn", "", "")
 	msgAero := smsaero.MessageRequest{
 		Numbers: []string{msg.Phone},
-		Sign:    "SMS_86153",
+		Sign:    "SMS Aero",
 		Text:    msg.Message,
 		Channel: smsaero.ChannelDirect,
 	}
