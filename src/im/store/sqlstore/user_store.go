@@ -1767,9 +1767,13 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := us.GetReplica().SelectOne(&metrics.ClientsPaidWithBonuses, queryString, args...); err != nil {
+		var paidInt *int
+		if err := us.GetReplica().SelectOne(&paidInt, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if paidInt != nil {
+			metrics.ClientsPaidWithBonuses = *paidInt
 		}
 
 		tBaseQuery := us.getQueryBuilder().
@@ -1786,20 +1790,27 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := us.GetReplica().SelectOne(&metrics.ClientsChargeBonuses, queryString, args...); err != nil {
+		var chargeInt *int
+		if err := us.GetReplica().SelectOne(&chargeInt, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if chargeInt != nil {
+			metrics.ClientsChargeBonuses = *chargeInt
 		}
 		queryString, args, err = tDiscard.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := us.GetReplica().SelectOne(&metrics.ClientsDiscardBonuses, queryString, args...); err != nil {
+		var discardInt *int
+		if err := us.GetReplica().SelectOne(&discardInt, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
+		if discardInt != nil {
+			metrics.ClientsDiscardBonuses = *discardInt
+		}
 		totalUsersQuery := us.getQueryBuilder().
 			Select("count(*) AS Count").
 			From("Users u").
@@ -1809,9 +1820,13 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := us.GetReplica().SelectOne(&metrics.TotalClients, queryString, args...); err != nil {
+		var totalInt *int
+		if err := us.GetReplica().SelectOne(&totalInt, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if totalInt != nil {
+			metrics.TotalClients = *totalInt
 		}
 
 		totalUsersBalanceQuery := us.getQueryBuilder().
@@ -1823,9 +1838,13 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if err := us.GetReplica().SelectOne(&metrics.ClientsBonuses, queryString, args...); err != nil {
+		var balanceInt *int
+		if err := us.GetReplica().SelectOne(&balanceInt, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		if balanceInt != nil {
+			metrics.ClientsBonuses = *balanceInt
 		}
 
 		metrics.RegisterClientsByDay = additional
