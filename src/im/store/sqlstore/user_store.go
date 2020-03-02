@@ -1809,7 +1809,7 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			return
 		}
 		if discardInt != nil {
-			metrics.ClientsDiscardBonuses = *discardInt
+			metrics.ClientsDiscardBonuses = int(math.Abs(float64(*discardInt)))
 		}
 		totalUsersQuery := us.getQueryBuilder().
 			Select("count(*) AS Count").
