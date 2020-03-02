@@ -1,6 +1,8 @@
 package api4
 
 import (
+	"fmt"
+	"im/mlog"
 	"im/model"
 	"im/utils"
 	"net/http"
@@ -50,7 +52,9 @@ func updateProductsStatuses(c *Context, w http.ResponseWriter, r *http.Request) 
 
 	c.App.Srv.Go(func() {
 		for _, productId := range status.ProductIds {
-			c.App.UpdateProductStatus(productId, status)
+			if _, err := c.App.UpdateProductStatus(productId, status); err != nil {
+				mlog.Warn(fmt.Sprintf("Failed to update Product Status %v", err.Error()))
+			}
 		}
 	})
 

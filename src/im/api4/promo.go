@@ -1,6 +1,8 @@
 package api4
 
 import (
+	"fmt"
+	"im/mlog"
 	"im/model"
 	"im/utils"
 	"net/http"
@@ -45,11 +47,13 @@ func updatePromosStatuses(c *Context, w http.ResponseWriter, r *http.Request) {
 		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
 	}*/
 
-	//c.App.Srv.Go(func() {
-	for _, promoId := range status.PromoIds {
-		c.App.UpdatePromoStatus(promoId, status)
-	}
-	//})
+	c.App.Srv.Go(func() {
+		for _, promoId := range status.PromoIds {
+			if _, err := c.App.UpdatePromoStatus(promoId, status); err != nil {
+				mlog.Warn(fmt.Sprintf("Failed to update Promo Status %v", err.Error()))
+			}
+		}
+	})
 
 	ReturnStatusOK(w)
 }
