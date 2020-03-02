@@ -267,6 +267,7 @@ func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.SetInvalidParam("email")
 		return
 	}
+	application.HasModeration = true
 
 	rapplication, err := c.App.CreateSingleApplication(application)
 	if err != nil {
