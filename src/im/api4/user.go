@@ -412,9 +412,16 @@ func getUsers(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	withoutTeamBool, _ := strconv.ParseBool(withoutTeam)
 	inactiveBool, _ := strconv.ParseBool(inactive)
-	c.RequireAppId()
-	if c.Err != nil {
-		return
+	if c.Params.AppId == model.ME {
+		c.Params.AppId = c.App.Session.AppId
+	}
+
+	if len(c.Params.AppId) == 0 && len(c.App.Session.UserId) == 26 {
+		if user, _ := c.App.GetUser(c.App.Session.UserId); user != nil {
+			c.Params.AppId = user.AppId
+		} else {
+			c.Params.AppId = c.App.Session.AppId
+		}
 	}
 	appId := c.Params.AppId
 	/*if len(appId) == 0 {
