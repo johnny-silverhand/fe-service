@@ -173,7 +173,7 @@ func (a *App) GetAllExtrasPage(page int, perPage int) (*model.ExtraList, *model.
 
 func (a *App) GetExtrasBasket(productIds []string) (*model.ProductList, *model.AppError) {
 
-	result := <-a.Srv.Store.Extra().GetExtraProductsByIds(productIds, true)
+	result := <-a.Srv.Store.Extra().GetExtraProductsByIds(productIds, false)
 
 	if result.Err != nil {
 		return nil, result.Err

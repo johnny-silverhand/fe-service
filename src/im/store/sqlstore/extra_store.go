@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"database/sql"
+	"im/mlog"
 	"im/model"
 	"im/store"
 	"net/http"
@@ -285,18 +286,20 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 			LeftJoin("Extras ex ON (p.Id = ex.ProductId)").
 			Where("p.DeleteAt = ? AND ex.DeleteAt = ?", 0, 0).
 			Where("ex.RefId IN "+keys, params...).
-			OrderBy("ex.Primary DESC")
+			OrderBy("ex.Required DESC")
 
 		queryString, args, err := query.ToSql()
 
 		if err != nil {
 			//result.Err = model.NewAppError("SqlExtraStore.GetExtraProductsByIds", "store.sql_extra.get.app_error", nil, err.Error(), http.StatusInternalServerError)
+			mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", "?"), mlog.Any("err", err))
 			result.Data = list
 			return
 		}
 
 		var products []*model.Product
 		if _, err := s.GetMaster().Select(&products, queryString, args...); err != nil {
+			mlog.Warn("Failed to get extra list for a product", mlog.String("product_id", "?"), mlog.Any("err", err))
 			//result.Err = model.NewAppError("SqlExtraStore.GetExtraProductsByIds", "store.sql_extra.get.app_error", nil, err.Error(), http.StatusInternalServerError)
 			result.Data = list
 			return
