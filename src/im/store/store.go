@@ -634,6 +634,7 @@ type TransactionStore interface {
 	GetByUserId(options model.TransactionGetOptions) StoreChannel
 
 	GetBonusTransactionsForUser(orderUserId string, userId string) StoreChannel
+	GetMetricsForSpy(options model.UserGetOptions, beginAt int64, expireAt int64) StoreChannel
 }
 
 type OrderStore interface {

@@ -122,3 +122,18 @@ func (o *MetricsForBonuses) ToJson() string {
 		return string(b)
 	}
 }
+
+type UserMetricsForSpy struct {
+	OperatorId    string  `json:"operator_id"`
+	OperatorEmail string  `json:"operator_email"`
+	UserId        string  `json:"user_id"`
+	UserEmail     string  `json:"user_email"`
+	Charge        float64 `json:"charge"`
+	Discard       float64 `json:"discard"`
+	Date          string  `json:"date"`
+}
+
+func (o *UserMetricsForSpy) ToJson() string {
+	b, _ := json.Marshal(o)
+	return string(b)
+}

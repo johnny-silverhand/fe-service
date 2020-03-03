@@ -343,3 +343,41 @@ func (s SqlTransactionStore) GetBonusTransactionsForUser(orderUserId string, use
 
 	})
 }
+
+func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, beginAt int64, expireAt int64) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		query := s.getQueryBuilder().
+			Select("o.Id AS OperatorId, o.Email AS OperatorEmail, u.Id AS UserId, u.Email AS UserEmail, FROM_UNIXTIME(t.CreateAt / 1000, '%d.%m.%Y') AS Date, SUM(CASE WHEN t.Value > 0 THEN t.Value ELSE 0 END) Charge, SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) Discard").
+			From("Users u").
+			LeftJoin("Transactions t ON t.UserId = u.Id").
+			Join("Users o ON t.CreatedBy = o.Id").
+			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			GroupBy("u.Id, o.Id, Date").
+			OrderBy("Date DESC").
+			Offset(uint64(options.Page * options.PerPage)).
+			Limit(uint64(options.PerPage))
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetMetricsForSpy", "store.sql_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var metrics []*model.UserMetricsForSpy
+		if _, err := s.GetMaster().Select(&metrics, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlTransactionStore.GetMetricsForSpy", "store.sql_transaction.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		/*list := model.NewUserMetricsForSpyList()
+		list.MakeNonNil()
+		for _, p := range metrics {
+			list.AddItem(p)
+			list.AddOrder(p.OperatorId)
+		}*/
+
+		result.Data = metrics
+	})
+}

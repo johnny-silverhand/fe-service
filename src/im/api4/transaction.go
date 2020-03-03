@@ -131,6 +131,11 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 }
 
 func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireSessionUserId()
+	if c.Err != nil {
+		return
+	}
+
 	transaction := model.TransactionFromJson(r.Body)
 
 	if len(transaction.Code) == 0 || len(transaction.Token) == 0 {
@@ -171,6 +176,7 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 	}
 
 	transaction.Description = "Списание вручную"
+	transaction.CreatedBy = c.App.Session.UserId
 
 	_, err = c.App.DeductionTransaction(transaction)
 	if err != nil {
@@ -182,6 +188,10 @@ func discardTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) 
 }
 
 func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireSessionUserId()
+	if c.Err != nil {
+		return
+	}
 	transaction := model.TransactionFromJson(r.Body)
 
 	/*user, err := c.App.GetUser(c.App.Session.UserId)
@@ -201,6 +211,7 @@ func chargeTransactionUser(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	transaction.Description = "Начисление вручную"
+	transaction.CreatedBy = c.App.Session.UserId
 
 	result, err := c.App.AccrualTransaction(transaction)
 	if err != nil {

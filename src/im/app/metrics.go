@@ -4,6 +4,38 @@ import (
 	"im/model"
 )
 
+func (a *App) GetMetricsForSpy(options model.UserGetOptions, beginAt, expireAt int64) ([]*model.UserMetricsForSpy, *model.AppError) {
+	result := <-a.Srv.Store.Transaction().GetMetricsForSpy(options, beginAt, expireAt)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.UserMetricsForSpy), nil
+}
+
+func (a *App) GetMetricsForOrders(appId string, beginAt, expireAt int64) (*model.MetricsForOrders, *model.AppError) {
+	result := <-a.Srv.Store.Order().GetMetricsForOrders(appId, beginAt, expireAt)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.MetricsForOrders), nil
+}
+
+func (a *App) GetMetricsForRegister(appId string, beginAt, expireAt int64) (*model.MetricsForRegister, *model.AppError) {
+	result := <-a.Srv.Store.User().GetMetricsForRegister(appId, beginAt, expireAt)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.MetricsForRegister), nil
+}
+
+func (a *App) GetMetricsForRating(options model.UserGetOptions) (*model.UserMetricsForRatingList, *model.AppError) {
+	result := <-a.Srv.Store.User().GetMetricsForRating(options)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.UserMetricsForRatingList), nil
+}
+
 func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *model.AppError) {
 
 	var metrics []*model.MetricsForBonuses

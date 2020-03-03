@@ -1728,7 +1728,8 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			From("Users u").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("u.CreateAt >= ? AND u.CreateAt <= ?", beginAt, expireAt).
-			GroupBy("Date")
+			GroupBy("Date").
+			OrderBy("Date ASC")
 
 		queryString, args, err := query.ToSql()
 
@@ -1869,6 +1870,7 @@ func (us SqlUserStore) GetMetricsForRating(options model.UserGetOptions) store.S
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
 			GroupBy("o.UserId").
+			OrderBy("OrdersCount DESC").
 			Offset(uint64(options.Page * options.PerPage)).
 			Limit(uint64(options.PerPage))
 
