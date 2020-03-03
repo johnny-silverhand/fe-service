@@ -1,6 +1,7 @@
 package api4
 
 import (
+	"encoding/json"
 	"im/model"
 	"net/http"
 	"strconv"
@@ -11,7 +12,32 @@ func (api *API) InitMetric() {
 	api.BaseRoutes.Metrics.Handle("/clients", api.ApiSessionRequired(metricsForClients)).Methods("GET")
 	api.BaseRoutes.Metrics.Handle("/orders", api.ApiSessionRequired(metricsForOrders)).Methods("GET")
 	api.BaseRoutes.Metrics.Handle("/ratings", api.ApiSessionRequired(metricsForClientsRating)).Methods("GET")
+	api.BaseRoutes.Metrics.Handle("/bonuses", api.ApiSessionRequired(metricsForBonuses)).Methods("GET")
 
+}
+
+func metricsForBonuses(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+	if c.Err != nil {
+		return
+	}
+
+	if metrics, err := c.App.GetMetricsForBonuses(c.Params.AppId); err != nil {
+		c.Err = err
+		return
+	} else {
+		if metrics == nil {
+			w.Write([]byte("{}"))
+			return
+		}
+		copy := metrics
+		b, err := json.Marshal(&copy)
+		if err != nil {
+			w.Write([]byte("{}"))
+		} else {
+			w.Write([]byte(string(b)))
+		}
+	}
 }
 
 func metricsForClientsRating(c *Context, w http.ResponseWriter, r *http.Request) {

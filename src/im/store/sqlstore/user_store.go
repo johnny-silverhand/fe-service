@@ -386,8 +386,12 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
 	return store.Do(func(result *store.StoreResult) {
 		query := us.usersQuery.
-			OrderBy("u.Username ASC").
-			Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
+			OrderBy("u.Username ASC")
+
+		if options.Page >= 0 && options.PerPage > 0 {
+			query = query.Offset(uint64(options.Page * options.PerPage)).
+				Limit(uint64(options.PerPage))
+		}
 
 		query = applyRoleFilter(query, options.Role, isPostgreSQL)
 
@@ -403,6 +407,10 @@ func (us SqlUserStore) GetAllProfiles(options *model.UserGetOptions) store.Store
 
 		if len(options.Email) > 0 {
 			query = query.Where("u.Email = ? ", options.Email)
+		}
+
+		if options.FilterByInvited || len(options.InvitedBy) > 0 {
+			query = query.Where("u.InvitedBy = ? ", options.InvitedBy)
 		}
 
 		queryString, args, err := query.ToSql()
@@ -1885,5 +1893,40 @@ func (us SqlUserStore) GetMetricsForRating(options model.UserGetOptions) store.S
 			list.AddOrder(p.Id)
 		}
 		result.Data = list
+	})
+}
+
+func (us SqlUserStore) GetMetricsForBonuses(options model.UserGetOptions) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+
+		query := us.getQueryBuilder().
+			Select("u.*, COUNT(o.Payed) AS OrdersCount").
+			From("Users u").
+			LeftJoin("Orders o ON o.UserId = u.Id").
+			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
+			GroupBy("u.Id")
+
+		if options.FilterByInvited || len(options.InvitedBy) > 0 {
+			query = query.Where("u.InvitedBy = ? ", options.InvitedBy)
+		}
+
+		queryString, args, err := query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForBonuses", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		//var users []*model.User
+		var metrics []*model.UserMetricsForRating
+		if _, err := us.GetReplica().Select(&metrics, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForBonuses", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		for _, u := range metrics {
+			u.Sanitize(map[string]bool{})
+		}
+
+		result.Data = metrics
 	})
 }

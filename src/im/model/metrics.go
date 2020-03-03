@@ -106,3 +106,19 @@ func (o *UserMetricsForRatingList) AddItem(user *UserMetricsForRating) {
 
 	o.UserMetricsForRating[user.Id] = user
 }
+
+type MetricsForBonuses struct {
+	Level      int `json:"level"`
+	TotalUsers int `json:"total_users"`
+	TotalPayed int `json:"total_payed"`
+}
+
+func (o *MetricsForBonuses) ToJson() string {
+	copy := *o
+	b, err := json.Marshal(&copy)
+	if err != nil {
+		return ""
+	} else {
+		return string(b)
+	}
+}

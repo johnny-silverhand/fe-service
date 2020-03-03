@@ -576,6 +576,14 @@ func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.App
 	return result.Data.([]*model.User), nil
 }
 
+func (a *App) GetUsersForBonusesMetrics(options *model.UserGetOptions) ([]*model.UserMetricsForRating, *model.AppError) {
+	result := <-a.Srv.Store.User().GetMetricsForBonuses(*options)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.([]*model.UserMetricsForRating), nil
+}
+
 func (a *App) GetUsersPage(options *model.UserGetOptions, asAdmin bool) ([]*model.User, *model.AppError) {
 	users, err := a.GetUsers(options)
 	if err != nil {
