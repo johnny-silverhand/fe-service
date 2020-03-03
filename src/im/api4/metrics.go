@@ -27,13 +27,13 @@ func metricsForBonuses(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		if metrics == nil {
-			w.Write([]byte("{}"))
+			w.Write([]byte("[]"))
 			return
 		}
 		copy := metrics
 		b, err := json.Marshal(&copy)
 		if err != nil {
-			w.Write([]byte("{}"))
+			w.Write([]byte("[]"))
 		} else {
 			w.Write([]byte(string(b)))
 		}
