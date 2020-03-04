@@ -1645,7 +1645,7 @@ func (s SqlPostStore) FindPostWithOrder(orderId string) store.StoreChannel {
 		// sorry for this
 		props = `{"order_id":"` + orderId + `"}`
 
-		if err := s.GetReplica().SelectOne(&post, "SELECT * FROM Posts WHERE Props = :Props AND Type = :Type", map[string]interface{}{"Props": props, "Type": model.POST_WITH_METADATA}); err != nil {
+		if err := s.GetReplica().SelectOne(&post, "SELECT * FROM Posts WHERE Props = :Props AND (Type = :Type OR Type = :TypeInvoice)", map[string]interface{}{"Props": props, "Type": model.POST_WITH_METADATA, "TypeInvoice": model.POST_WITH_INVOICE}); err != nil {
 			if err == sql.ErrNoRows {
 				result.Err = model.NewAppError("SqlPostStore.FindPostWithOrder", "store.sql_post.find_post_with_order.app_error", nil, "order_id="+orderId+", "+err.Error(), http.StatusNotFound)
 			} else {

@@ -698,15 +698,14 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 		}
 
 		query = s.getQueryBuilder().
-			Select("FROM_UNIXTIME(o.CreateAt / 1000, '%d.%m.%Y') AS Date, "+
-				"FROM_UNIXTIME(o.CreateAt / 1000) AS DateTime, "+
+			Select("DATE(FROM_UNIXTIME(o.CreateAt / 1000)) AS Date, "+
 				"count(*) AS Count").
 			From("Orders o").
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("o.CreateAt >= ? AND o.CreateAt <= ?", beginAt, expireAt).
-			GroupBy("Date, DateTime").
-			OrderBy("DateTime ASC")
+			GroupBy("Date").
+			OrderBy("Date ASC")
 		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)

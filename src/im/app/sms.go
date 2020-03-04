@@ -18,9 +18,9 @@ func (a *App) SendVerifySms(phone, locale, msg string) *model.AppError {
 		print(message.Message)
 		fmt.Println(message)
 		//a.sendToSmsProxy(message)
-		/*if phone == `79991892951` {
+		if phone == `79991892951` || phone == `79128717830` || phone == `79127463631` {
 			a.sendToSmsProxy(message)
-		}*/
+		}
 	})
 
 	return nil
