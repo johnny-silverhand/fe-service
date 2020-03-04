@@ -1724,12 +1724,14 @@ func (us SqlUserStore) GetInvitedUsers(userId string) store.StoreChannel {
 func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := us.getQueryBuilder().
-			Select("FROM_UNIXTIME(u.CreateAt / 1000, '%d.%m.%Y') AS Date, count(*) AS Count").
+			Select("FROM_UNIXTIME(u.CreateAt / 1000, '%d.%m.%Y') AS Date, "+
+				"FROM_UNIXTIME(u.CreateAt / 1000) AS DateTime, "+
+				"count(*) AS Count").
 			From("Users u").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("u.CreateAt >= ? AND u.CreateAt <= ?", beginAt, expireAt).
-			GroupBy("Date").
-			OrderBy("Date DESC")
+			GroupBy("Date, DateTime").
+			OrderBy("DateTime ASC")
 
 		queryString, args, err := query.ToSql()
 

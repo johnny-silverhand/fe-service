@@ -678,7 +678,10 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := s.getQueryBuilder().
-			Select("sum(o.Price) AS TotalPrice, sum(o.DiscountValue) AS TotalDiscount, avg(o.Price) AS AvgPrice, sum(Canceled) AS TotalReturn").
+			Select("sum(o.Price) AS TotalPrice, "+
+				"sum(o.DiscountValue) AS TotalDiscount, "+
+				"avg(o.Price) AS AvgPrice, "+
+				"sum(Canceled) AS TotalReturn").
 			From("Orders o").
 			Join("Users u ON u.Id = o.UserId").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
@@ -695,13 +698,15 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 		}
 
 		query = s.getQueryBuilder().
-			Select("FROM_UNIXTIME(o.CreateAt / 1000, '%d.%m.%Y') AS Date, count(*) AS Count").
+			Select("FROM_UNIXTIME(o.CreateAt / 1000, '%d.%m.%Y') AS Date, "+
+				"FROM_UNIXTIME(o.CreateAt / 1000) AS DateTime, "+
+				"count(*) AS Count").
 			From("Orders o").
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("o.CreateAt >= ? AND o.CreateAt <= ?", beginAt, expireAt).
-			GroupBy("Date").
-			OrderBy("Date DESC")
+			GroupBy("Date, DateTime").
+			OrderBy("DateTime ASC")
 		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)

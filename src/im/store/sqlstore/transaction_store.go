@@ -348,14 +348,21 @@ func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, begi
 	return store.Do(func(result *store.StoreResult) {
 
 		query := s.getQueryBuilder().
-			Select("o.Id AS OperatorId, o.Email AS OperatorEmail, u.Id AS UserId, u.Email AS UserEmail, FROM_UNIXTIME(t.CreateAt / 1000, '%d.%m.%Y') AS Date, SUM(CASE WHEN t.Value > 0 THEN t.Value ELSE 0 END) Charge, SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) Discard").
+			Select("o.Id AS OperatorId, "+
+				"o.Email AS OperatorEmail, "+
+				"u.Id AS UserId, "+
+				"u.Email AS UserEmail, "+
+				"FROM_UNIXTIME(t.CreateAt / 1000) AS DateTime, "+
+				"FROM_UNIXTIME(t.CreateAt / 1000, '%d.%m.%Y') AS Date, "+
+				"SUM(CASE WHEN t.Value > 0 THEN t.Value ELSE 0 END) AS Charge, "+
+				"SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) AS Discard").
 			From("Users u").
 			LeftJoin("Transactions t ON t.UserId = u.Id").
 			Join("Users o ON t.CreatedBy = o.Id").
 			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			Where("u.AppId = ? AND o.AppId = ?", options.AppId, options.AppId).
-			GroupBy("u.Id, o.Id, Date").
-			OrderBy("Date DESC").
+			GroupBy("u.Id, o.Id, Date, DateTime").
+			OrderBy("DateTime DESC").
 			Offset(uint64(options.Page * options.PerPage)).
 			Limit(uint64(options.PerPage))
 
