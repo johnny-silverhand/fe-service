@@ -353,6 +353,7 @@ func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, begi
 			LeftJoin("Transactions t ON t.UserId = u.Id").
 			Join("Users o ON t.CreatedBy = o.Id").
 			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("u.AppId", options.AppId).
 			GroupBy("u.Id, o.Id, Date").
 			OrderBy("Date DESC").
 			Offset(uint64(options.Page * options.PerPage)).
