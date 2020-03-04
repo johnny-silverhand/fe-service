@@ -1729,7 +1729,7 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("u.CreateAt >= ? AND u.CreateAt <= ?", beginAt, expireAt).
 			GroupBy("Date").
-			OrderBy("Date ASC")
+			OrderBy("Date DESC")
 
 		queryString, args, err := query.ToSql()
 

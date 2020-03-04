@@ -701,7 +701,7 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
 			Where("o.CreateAt >= ? AND o.CreateAt <= ?", beginAt, expireAt).
 			GroupBy("Date").
-			OrderBy("Date ASC")
+			OrderBy("Date DESC")
 		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
