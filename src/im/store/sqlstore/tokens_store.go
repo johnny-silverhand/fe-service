@@ -67,7 +67,33 @@ func (s SqlTokenStore) GetByToken(tokenString string) store.StoreChannel {
 
 func (s SqlTokenStore) GetByUserInviteToken(userId string) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
-		token := model.Token{}
+		query := s.getQueryBuilder().
+			Select("*").
+			From("Tokens t").
+			Where("t.UserId = ? AND t.Type = ?", userId, model.TOKEN_TYPE_INVITE).
+			OrderBy("t.CreateAt DESC")
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlTokenStore.GetByUserInviteToken", "store.sql_token.get_user_invite_token.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var tokens []*model.Token
+		if _, err := s.GetMaster().Select(&tokens, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlTokenStore.GetByUserInviteToken", "store.sql_token.get_user_invite_token.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if len(tokens) > 1 || len(tokens) == 0 {
+			result.Err = model.NewAppError("SqlTokenStore.GetByUserInviteToken", store.INVITE_TOKEN_NOT_FOUND, nil, "userId="+userId, http.StatusInternalServerError)
+			return
+		}
+
+		result.Data = tokens[0]
+
+		/*token := model.Token{}
 
 		if err := s.GetReplica().SelectOne(&token, "SELECT * FROM Tokens WHERE UserId = :UserId AND Type = :Type ORDER BY CreateAt DESC", map[string]interface{}{"UserId": userId, "Type": model.TOKEN_TYPE_INVITE}); err != nil {
 			if err == sql.ErrNoRows {
@@ -77,7 +103,7 @@ func (s SqlTokenStore) GetByUserInviteToken(userId string) store.StoreChannel {
 			}
 		}
 
-		result.Data = &token
+		result.Data = &token*/
 	})
 }
 

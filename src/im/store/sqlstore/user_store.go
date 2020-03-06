@@ -1725,10 +1725,10 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 	return store.Do(func(result *store.StoreResult) {
 		query := us.getQueryBuilder().
 			Select("DATE(FROM_UNIXTIME(u.CreateAt / 1000)) AS Date, "+
-				"count(*) AS Count").
+				"COUNT(*) AS Count").
 			From("Users u").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
-			Where("u.CreateAt >= ? AND u.CreateAt <= ?", beginAt, expireAt).
+			Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			GroupBy("Date").
 			OrderBy("Date ASC")
 
@@ -1739,22 +1739,25 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			return
 		}
 
-		var additional []*model.AdditionalMetricsForRegister
-		if _, err := us.GetReplica().Select(&additional, queryString, args...); err != nil {
+		var registersByDate []*model.AdditionalMetricsForRegister
+		if _, err := us.GetReplica().Select(&registersByDate, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		q1 := us.getQueryBuilder().
-			Select("u.Id, count(*) Count").
+		subQuery := us.getQueryBuilder().
+			Select("u.Id, COUNT(*) Count").
 			From("Users u").
 			Join("Orders o ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("o.Payed = ?", true).
+			Where("o.Canceled = ?", false).
 			GroupBy("u.Id")
 
 		query = us.getQueryBuilder().
-			Select("count(*) AS ClientsWithOrders").
-			FromSelect(q1, "tbl1")
+			Select("COUNT(*) AS ClientsWithOrders").
+			FromSelect(subQuery, "subQuery")
 
 		queryString, args, err = query.ToSql()
 		if err != nil {
@@ -1768,96 +1771,101 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			return
 		}
 
-		q1 = q1.Where("o.DiscountValue > ?", 0)
+		subQuery = subQuery.
+			Where("o.DiscountValue > ?", 0)
+
 		query = us.getQueryBuilder().
-			Select("count(*) AS ClientsPaidWithBonuses").
-			FromSelect(q1, "tbl2")
+			Select("COUNT(*) AS ClientsPaidWithBonuses").
+			FromSelect(subQuery, "subQuery")
+
 		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		var paidInt *int
-		if err := us.GetReplica().SelectOne(&paidInt, queryString, args...); err != nil {
+
+		var paidCounter *int64
+		if err := us.GetReplica().SelectOne(&paidCounter, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
-		}
-		if paidInt != nil {
-			metrics.ClientsPaidWithBonuses = *paidInt
 		}
 
-		tBaseQuery := us.getQueryBuilder().
-			Select("sum(t.Value) AS Value").
-			From("Transactions t").
-			Join("Users u ON u.Id = t.UserId").
-			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
+		if paidCounter != nil {
+			metrics.ClientsPaidWithBonuses = int(*paidCounter)
+		}
 
-		tCharge := tBaseQuery.Where("t.Value > ?", 0)
-		tDiscard := tBaseQuery.Where("t.Value < ?", 0)
-
-		queryString, args, err = tCharge.ToSql()
-		if err != nil {
-			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		var chargeInt *float64
-		if err := us.GetReplica().SelectOne(&chargeInt, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if chargeInt != nil {
-			metrics.ClientsChargeBonuses = int(math.Round(*chargeInt))
-		}
-		queryString, args, err = tDiscard.ToSql()
-		if err != nil {
-			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		var discardInt *float64
-		if err := us.GetReplica().SelectOne(&discardInt, queryString, args...); err != nil {
-			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if discardInt != nil {
-			metrics.ClientsDiscardBonuses = int(math.Abs(math.Round(*discardInt)))
-		}
-		totalUsersQuery := us.getQueryBuilder().
-			Select("count(*) AS Count").
+		query = us.getQueryBuilder().
+			Select("SUM(CASE WHEN t.Value > 0 THEN t.Value ELSE 0 END) AS Charge, "+
+				"SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) AS Discard").
 			From("Users u").
+			Join("Transactions t ON t.UserId = u.Id").
+			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
-		queryString, args, err = totalUsersQuery.ToSql()
+
+		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		var totalInt *float64
-		if err := us.GetReplica().SelectOne(&totalInt, queryString, args...); err != nil {
+
+		var bonusMetrics struct {
+			Charge  *float64
+			Discard *float64
+		}
+
+		if err := us.GetReplica().SelectOne(&bonusMetrics, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if totalInt != nil {
-			metrics.TotalClients = int(math.Round(*totalInt))
+
+		if bonusMetrics.Charge != nil {
+			metrics.ClientsChargeBonuses = int(math.Round(*bonusMetrics.Charge))
 		}
 
-		totalUsersBalanceQuery := us.getQueryBuilder().
-			Select("sum(u.Balance) AS Balance").
+		if bonusMetrics.Discard != nil {
+			metrics.ClientsDiscardBonuses = int(math.Abs(math.Round(*bonusMetrics.Discard)))
+		}
+
+		query = us.getQueryBuilder().
+			Select("COUNT(*) AS Count").
 			From("Users u").
-			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
-		queryString, args, err = totalUsersBalanceQuery.ToSql()
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt)
+
+		queryString, args, err = query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		var balanceInt *float64
-		if err := us.GetReplica().SelectOne(&balanceInt, queryString, args...); err != nil {
+		var totalCounter *float64
+		if err := us.GetReplica().SelectOne(&totalCounter, queryString, args...); err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if balanceInt != nil {
-			metrics.ClientsBonuses = int(math.Round(*balanceInt))
+		if totalCounter != nil {
+			metrics.TotalClients = int(math.Round(*totalCounter))
 		}
 
-		metrics.RegisterClientsByDay = additional
+		query = us.getQueryBuilder().
+			Select("SUM(u.Balance) AS Balance").
+			From("Users u").
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt)
+		queryString, args, err = query.ToSql()
+		if err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		var balanceSum *float64
+		if err := us.GetReplica().SelectOne(&balanceSum, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if balanceSum != nil {
+			metrics.ClientsBonuses = int(math.Round(*balanceSum))
+		}
+
+		metrics.RegisterClientsByDay = registersByDate
 
 		result.Data = metrics
 	})

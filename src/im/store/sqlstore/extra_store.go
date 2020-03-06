@@ -281,7 +281,7 @@ func (s SqlExtraStore) GetExtraProductsByIds(productIds []string, allowFromCache
 		keys, params := StringsToQueryParams(productIds)
 
 		query := s.getQueryBuilder().
-			Select("p.*").
+			Select("p.*, ex.Required").
 			From("Products p").
 			LeftJoin("Extras ex ON (p.Id = ex.ProductId)").
 			Where("p.DeleteAt = ? AND ex.DeleteAt = ?", 0, 0).

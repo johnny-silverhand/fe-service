@@ -174,7 +174,7 @@ func getProduct(c *Context, w http.ResponseWriter, r *http.Request) {
 
 func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 	//c.RequireCategoryId()
-	if c.Err != nil {
+	/*if c.Err != nil {
 		return
 	}
 	productGetOptions := &model.ProductGetOptions{
@@ -191,7 +191,46 @@ func getProducts(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		w.Write([]byte(products.ToJson()))
+	}*/
+
+	c.RequireAppId()
+
+	if c.Err != nil {
+		return
 	}
+
+	productGetOptions := &model.ProductGetOptions{
+		AppId:      c.Params.AppId,
+		CategoryId: c.Params.CategoryId,
+		OfficeId:   c.Params.OfficeId,
+		Status:     c.Params.Status,
+	}
+
+	if active := r.URL.Query().Get("active"); active != "" {
+		productGetOptions.Active = &c.Params.Active
+	}
+
+	if utils.StringInSlice(c.App.Session.Roles, []string{model.CHANNEL_USER_ROLE_ID, ""}) {
+		productGetOptions.Status = model.PRODUCT_STATUS_ACCEPTED
+		productGetOptions.Active = model.NewBool(true)
+	}
+
+	var list *model.ProductList
+	var err *model.AppError
+	etag := ""
+
+	list, err = c.App.GetProductsPage(c.Params.Page, c.Params.PerPage, productGetOptions)
+
+	if err != nil {
+		c.Err = err
+		return
+	}
+
+	if len(etag) > 0 {
+		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
+	}
+
+	w.Write([]byte(c.App.PrepareProductListForClient(list).ToJson()))
 }
 
 func getExtraProducts(c *Context, w http.ResponseWriter, r *http.Request) {
