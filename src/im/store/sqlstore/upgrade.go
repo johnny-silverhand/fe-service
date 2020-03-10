@@ -798,6 +798,8 @@ func UpgradeDatabaseToVersion526(sqlStore SqlStore) {
 		sqlStore.AlterColumnTypeIfExists("Applications", "PaymentDetails", "text", "text")
 
 		sqlStore.CreateColumnIfNotExists("Transactions", "CreatedBy", "varchar(255)", "varchar(255)", "")
+		sqlStore.CreateColumnIfNotExists("Applications", "RegBonus", "int", "int", "0")
+		sqlStore.CreateColumnIfNotExistsNoDefault("Applications", "ContactDetails", "text", "text")
 
 		//saveSchemaVersion(sqlStore, VERSION_5_26_0)
 	}

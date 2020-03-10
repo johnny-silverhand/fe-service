@@ -1814,6 +1814,19 @@ func verifyUserPhone(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(user.AppId) == 26 {
+		if app, _ := c.App.GetApplication(user.AppId); app != nil {
+			var transaction model.Transaction
+			transaction.AppId = user.AppId
+			transaction.UserId = user.Id
+			transaction.Value = float64(app.RegBonus)
+			transaction.Description = "Начисление за регистрацию"
+			if transaction.Value > 0 {
+				c.App.AccrualTransaction(&transaction)
+			}
+		}
+	}
+
 	if err != nil {
 		c.Err = err
 		return

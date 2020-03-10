@@ -678,14 +678,15 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := s.getQueryBuilder().
-			Select("sum(o.Price) AS TotalPrice, "+
-				"sum(o.DiscountValue) AS TotalDiscount, "+
-				"avg(o.Price) AS AvgPrice, "+
-				"sum(Canceled) AS TotalReturn").
+			Select("SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END) AS TotalPrice, "+
+				"SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.DiscountValue ELSE 0 END) AS TotalDiscount, "+
+				"ROUND(AVG(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END), 2) AS AvgPrice, "+
+				"SUM(CASE WHEN o.Canceled = 1 THEN 1 ELSE 0 END) AS TotalReturn").
 			From("Orders o").
 			Join("Users u ON u.Id = o.UserId").
-			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
-			//Where("o.Payed = ?", true)
+			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
+			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt)
+
 		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlOrderStore.GetMetricsForOrders", "store.sql_order.app_error", nil, err.Error(), http.StatusInternalServerError)
@@ -703,7 +704,7 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 			From("Orders o").
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
-			Where("o.CreateAt >= ? AND o.CreateAt <= ?", beginAt, expireAt).
+			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			GroupBy("Date").
 			OrderBy("Date ASC")
 		queryString, args, err = query.ToSql()

@@ -39,7 +39,9 @@ type Application struct {
 	HasModeration bool  `json:"has_moderation"`
 	BlockedAt     int64 `json:"blocked_at"`
 
-	ModerationCount int `db:"-" json:"moderation_count,omitempty"`
+	ModerationCount int    `db:"-" json:"moderation_count,omitempty"`
+	RegBonus        int    `json:"reg_bonus"`
+	ContactDetails  string `json:"contact_details"`
 }
 
 type ApplicationPatch struct {
@@ -59,6 +61,8 @@ type ApplicationPatch struct {
 	Cashback       *float64 `json:"cashback"`
 	HasModeration  *bool    `json:"has_moderation"`
 	BlockedAt      *int64   `json:"blocked_at"`
+	RegBonus       *int     `json:"reg_bonus"`
+	ContactDetails *string  `json:"contact_details"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -110,6 +114,12 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.BlockedAt != nil {
 		p.BlockedAt = *patch.BlockedAt
+	}
+	if patch.RegBonus != nil {
+		p.RegBonus = *patch.RegBonus
+	}
+	if patch.ContactDetails != nil {
+		p.ContactDetails = *patch.ContactDetails
 	}
 }
 

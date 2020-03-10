@@ -1878,6 +1878,7 @@ func (us SqlUserStore) GetMetricsForRating(options model.UserGetOptions) store.S
 			From("Orders o").
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
+			Where("o.Payed = ?", true).
 			GroupBy("o.UserId").
 			OrderBy("OrdersCount DESC").
 			Offset(uint64(options.Page * options.PerPage)).
