@@ -378,6 +378,9 @@ func (a *App) SetOrderShipped(orderId string) *model.AppError {
 	if result := <-a.Srv.Store.Order().Update(order); result.Err != nil {
 		return result.Err
 	}
+	if result := <-a.Srv.Store.Order().SetOrderPayed(order.Id); result.Err != nil {
+		return result.Err
+	}
 	a.UpdatePostWithOrder(order, false)
 
 	return nil
