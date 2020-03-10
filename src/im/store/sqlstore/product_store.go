@@ -197,6 +197,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 		}
 
 		var officeJoin string = ""
+		var categoryJoin string = ""
 		var whereClause string = ""
 		queryArgs := make(map[string]interface{})
 
@@ -241,6 +242,8 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			}
 			inQuery := strings.Join(inQueryList, ", ")
 			whereClause = whereClause + " p.CategoryId IN (" + inQuery + ") AND "
+		} else {
+			categoryJoin = " INNER JOIN Categories cat ON cat.Id = p.CategoryId "
 		}
 
 		if options.Status != "" {
@@ -256,7 +259,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 		}
 
 		query := "SELECT p.* " +
-			"FROM Products p " + officeJoin +
+			"FROM Products p " + officeJoin + categoryJoin +
 			"WHERE " + whereClause +
 			" p.DeleteAt = 0 " +
 			"LIMIT :Limit OFFSET :Offset"
