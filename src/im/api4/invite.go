@@ -70,9 +70,9 @@ func redirectToStore(c *Context, w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "itms-apps://itunes.apple.com/app/id1492900077", 301)
 	} else if os == "Android" {
 		// TODO брать ид из сущности Application
-		http.Redirect(w, r, "market://details?id=ID", 301)
+		http.Redirect(w, r, "https://play.google.com/store/apps/details?id=ru.AleksandrChikurov.FoodExpIzh", 301)
 	} else {
-		c.SetInvalidParam("invite_id")
+		c.SetInvalidParam(os)
 	}
 
 	//itms-apps://itunes.apple.com/app/<<App ID>>
