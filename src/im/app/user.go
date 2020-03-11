@@ -1126,6 +1126,12 @@ func (a *App) PatchUser(userId string, patch *model.UserPatch, asAdmin bool) (*m
 	user.Patch(patch)
 
 	updatedUser, err := a.UpdateUser(user, true)
+	var channel *model.Channel
+	if channel, _ = a.FindOpennedChannel(user.Id); channel != nil {
+		channel.DisplayName = utils.GenerateChannelName(updatedUser.Nickname, updatedUser.Phone)
+		a.UpdateChannel(channel)
+	}
+
 	if err != nil {
 		return nil, err
 	}
