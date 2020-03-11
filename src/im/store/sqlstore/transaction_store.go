@@ -349,7 +349,7 @@ func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, begi
 
 		query := s.getQueryBuilder().
 			Select("o.Id AS OperatorId, "+
-				"o.Nickname AS OperatorEmail, "+
+				"CONCAT_WS(' ', o.FirstName, o.LastName) AS OperatorEmail, "+
 				"u.Id AS UserId, "+
 				"u.Email AS UserEmail, "+
 				"DATE(FROM_UNIXTIME(t.CreateAt / 1000)) AS Date, "+
