@@ -98,6 +98,6 @@ func getInviteInfoByIp(c *Context, w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.Write([]byte(token.Extra))
+		w.Write([]byte(token.ToJson()))
 	}
 }

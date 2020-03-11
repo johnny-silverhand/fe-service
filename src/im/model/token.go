@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
@@ -13,11 +14,11 @@ const (
 )
 
 type Token struct {
-	Token    string
-	CreateAt int64
-	Type     string
-	Extra    string
-	UserId   string
+	Token    string `json:"token"`
+	CreateAt int64  `json:"-"`
+	Type     string `json:"-"`
+	Extra    string `json:"extra"`
+	UserId   string `json:"-"`
 }
 
 func NewToken(tokentype, extra string) *Token {
@@ -59,4 +60,9 @@ func (t *Token) IsValid() *AppError {
 	}
 
 	return nil
+}
+
+func (t *Token) ToJson() string {
+	b, _ := json.Marshal(t)
+	return string(b)
 }
