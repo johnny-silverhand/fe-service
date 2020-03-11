@@ -100,6 +100,8 @@ func ParamsFromRequest(r *http.Request) *Params {
 
 	if val, ok := props["invite_id"]; ok {
 		params.InviteId = val
+	} else if val := query.Get("invite_id"); val != "" {
+		params.InviteId = val
 	}
 
 	if val, ok := props["token_id"]; ok {

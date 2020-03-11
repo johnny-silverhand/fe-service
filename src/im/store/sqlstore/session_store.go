@@ -1,6 +1,7 @@
 package sqlstore
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -268,4 +269,20 @@ func (me SqlSessionStore) Cleanup(expiryTime int64, batchSize int64) {
 
 		time.Sleep(SESSIONS_CLEANUP_DELAY_MILLISECONDS * time.Millisecond)
 	}
+}
+
+func (me SqlSessionStore) GetSessionByProps(props string, appId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		session := model.Session{}
+
+		if err := me.GetReplica().SelectOne(&session, "SELECT * FROM Sessions WHERE json_extract(Props, '$.IP')= :Props AND AppId = :AppId", map[string]interface{}{"Props": props, "AppId": appId}); err != nil {
+			if err == sql.ErrNoRows {
+				result.Err = model.NewAppError("SqlSessionStore.GetSessionByProps", "store.sql_session.app_error", nil, "", http.StatusNotFound)
+			} else {
+				result.Err = model.NewAppError("SqlSessionStore.GetSessionByProps", "store.sql_session.existing.app_error", nil, "", http.StatusInternalServerError)
+			}
+		} else {
+			result.Data = &session
+		}
+	})
 }

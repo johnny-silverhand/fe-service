@@ -2422,3 +2422,11 @@ func (a *App) sendUpdatedBalanceEvent(userId string, value float64) {
 		a.Publish(message)
 	})
 }
+
+func (a *App) GetUserByInviteId(inviteId string) (*model.User, *model.AppError) {
+	result := <-a.Srv.Store.User().GetByInviteId(inviteId)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	return result.Data.(*model.User), nil
+}

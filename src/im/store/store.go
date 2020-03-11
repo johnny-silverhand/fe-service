@@ -336,6 +336,8 @@ type UserStore interface {
 	GetMetricsForRegister(appId string, beginAt int64, expireAt int64) StoreChannel
 	GetMetricsForRating(options model.UserGetOptions) StoreChannel
 	GetMetricsForBonuses(options model.UserGetOptions) StoreChannel
+
+	GetByInviteId(inviteId string) StoreChannel
 }
 
 type SessionStore interface {
@@ -353,6 +355,7 @@ type SessionStore interface {
 	UpdateAppId(id string, appId string, expiresAt int64) StoreChannel
 	AnalyticsSessionCount() StoreChannel
 	Cleanup(expiryTime int64, batchSize int64)
+	GetSessionByProps(props string, appId string) StoreChannel
 }
 
 type AuditStore interface {

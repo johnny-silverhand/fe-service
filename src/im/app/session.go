@@ -23,6 +23,32 @@ func (a *App) CreateSession(session *model.Session) (*model.Session, *model.AppE
 	return session, nil
 }
 
+func (a *App) GetSessionByProps(props string, appId string) (*model.Session, *model.AppError) {
+	var session *model.Session
+	if sessionResult := <-a.Srv.Store.Session().GetSessionByProps(props, appId); sessionResult.Err == nil {
+		session = sessionResult.Data.(*model.Session)
+
+		if session != nil {
+			/*if session.Token != token {
+				return nil, model.NewAppError("GetSession", "api.context.invalid_token.error", map[string]interface{}{"Token": token, "Error": ""}, "", http.StatusUnauthorized)
+			}*/
+
+			if !session.IsExpired() {
+				a.AddSessionToCache(session)
+			}
+		}
+	} else if sessionResult.Err.StatusCode == http.StatusInternalServerError {
+		return nil, sessionResult.Err
+	}
+
+	if session == nil || session.IsExpired() {
+		//a.RevokeSessionById(session.Id)
+		return nil, model.NewAppError("GetSession", "api.context.invalid_token.error", map[string]interface{}{"Token": nil}, "", http.StatusUnauthorized)
+	}
+
+	return session, nil
+}
+
 func (a *App) GetSession(token string) (*model.Session, *model.AppError) {
 
 	var session *model.Session

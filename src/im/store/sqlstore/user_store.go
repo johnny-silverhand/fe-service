@@ -1942,3 +1942,11 @@ func (us SqlUserStore) GetMetricsForBonuses(options model.UserGetOptions) store.
 		result.Data = metrics
 	})
 }
+
+func (us SqlUserStore) GetByInviteId(inviteId string) store.StoreChannel {
+	return store.Do(func(result *store.StoreResult) {
+		var user *model.User
+		user.MakeNonNil()
+		result.Data = user
+	})
+}
