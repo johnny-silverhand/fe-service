@@ -3,6 +3,8 @@ package api4
 import (
 	"fmt"
 	"github.com/mssola/user_agent"
+
+	//"github.com/mssola/user_agent"
 	"im/model"
 	"net/http"
 )
@@ -53,8 +55,8 @@ func redirectToStore(c *Context, w http.ResponseWriter, r *http.Request) {
 		user.SanitizeProfile(nil)
 	}
 
-	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), IsOAuth: true, AppId: user.AppId}
-	session.GenerateCSRF()
+	session := &model.Session{UserId: user.Id, Roles: user.GetRawRoles(), IsOAuth: false, AppId: user.AppId}
+	//session.GenerateCSRF()
 	session.AddProp("IP", fmt.Sprintf("%s", c.App.IpAddress))
 	session.SetExpireInDays(1)
 
@@ -66,11 +68,12 @@ func redirectToStore(c *Context, w http.ResponseWriter, r *http.Request) {
 
 	ua := user_agent.New(r.UserAgent())
 	os := ua.OSInfo().Name
+	r.Header.Add("Cache-Control", "no-cache")
 	if os == "iPhone OS" || os == "iPhone" {
-		http.Redirect(w, r, "itms-apps://itunes.apple.com/app/id1492900077", 301)
+		http.Redirect(w, r, "itms-apps://itunes.apple.com/app/id1492900077", 307)
 	} else if os == "Android" {
 		// TODO брать ид из сущности Application
-		http.Redirect(w, r, "https://play.google.com/store/apps/details?id=ru.AleksandrChikurov.FoodExpIzh", 301)
+		http.Redirect(w, r, "https://play.google.com/store/apps/details?id=ru.AleksandrChikurov.FoodExpIzh", 307)
 	} else {
 		c.SetInvalidParam(os)
 	}

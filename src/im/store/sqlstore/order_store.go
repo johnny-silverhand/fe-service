@@ -678,10 +678,10 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := s.getQueryBuilder().
-			Select("SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END) AS TotalPrice, "+
-				"SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.DiscountValue ELSE 0 END) AS TotalDiscount, "+
-				"ROUND(AVG(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END), 2) AS AvgPrice, "+
-				"SUM(CASE WHEN o.Canceled = 1 THEN 1 ELSE 0 END) AS TotalReturn").
+			Select("COALESCE(SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END), 0) AS TotalPrice, "+
+				"COALESCE(SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.DiscountValue ELSE 0 END), 0) AS TotalDiscount, "+
+				"COALESCE(ROUND(AVG(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END), 2), 0) AS AvgPrice, "+
+				"COALESCE(SUM(CASE WHEN o.Canceled = 1 THEN 1 ELSE 0 END), 0) AS TotalReturn").
 			From("Orders o").
 			Join("Users u ON u.Id = o.UserId").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
