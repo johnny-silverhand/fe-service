@@ -1777,6 +1777,11 @@ func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if ruser.InvitedBy == user.Id {
+		c.Err = model.NewAppError("ApiUser.VerifyUserInvite", "api.user.verify_user_invite.friend", nil, "", http.StatusBadRequest)
+		return
+	}
+
 	_, err = c.App.PatchUser(user.Id, &model.UserPatch{InvitedBy: &ruser.Id}, false)
 
 	if err != nil {
