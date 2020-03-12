@@ -548,7 +548,7 @@ func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) 
 }
 
 func (a *App) GetUserApplicationByEmail(email string, appId string) (*model.User, *model.AppError) {
-	result := <-a.Srv.Store.User().GetByEmail(email)
+	result := <-a.Srv.Store.User().GetByEmailAppId(email, appId)
 	if result.Err != nil {
 		if result.Err.Id == "store.sql_user.missing_account.const" {
 			result.Err.StatusCode = http.StatusNotFound
@@ -2113,9 +2113,11 @@ func (a *App) VerifyPasswordPhoneNewSend(token *model.Token, user *model.User, n
 	}
 
 	a.Srv.Go(func() {
-
-		if err := a.SendVerifySms(user.Phone, user.Locale, newExtra); err != nil {
-			mlog.Error(err.Error())
+		if app, _ := a.GetApplication(user.AppId); app != nil {
+			str := newExtra + " - ваш код подтверждения для " + app.Name
+			if err := a.SendVerifySms(user.Phone, user.Locale, str); err != nil {
+				mlog.Error(err.Error())
+			}
 		}
 	})
 
@@ -2364,8 +2366,10 @@ func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.Ap
 		return err
 	}
 
-	newPwd := "1234"
-	//newPwd := utils.HashDigit(4)
+	var newPwd string = "1234"
+	if !*a.Config().ServiceSettings.EnableDeveloper {
+		newPwd = utils.HashDigit(4)
+	}
 
 	if err := a.VerifyPasswordSend(token, user, newPwd); err != nil {
 		return err
@@ -2381,8 +2385,11 @@ func (a *App) VerifyPasswordSend(token *model.Token, user *model.User, newExtra 
 	}
 
 	a.Srv.Go(func() {
-		if err := a.SendVerifySms(user.Phone, user.Locale, newExtra); err != nil {
-			mlog.Error(err.Error())
+		if app, _ := a.GetApplication(user.AppId); app != nil {
+			str := newExtra + " - ваш код подтверждения для " + app.Name
+			if err := a.SendVerifySms(user.Phone, user.Locale, str); err != nil {
+				mlog.Error(err.Error())
+			}
 		}
 	})
 

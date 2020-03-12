@@ -42,6 +42,8 @@ type Application struct {
 	ModerationCount int    `db:"-" json:"moderation_count,omitempty"`
 	RegBonus        int    `json:"reg_bonus"`
 	ContactDetails  string `json:"contact_details"`
+
+	Password string `db:"-" json:"password"`
 }
 
 type ApplicationPatch struct {
@@ -63,6 +65,7 @@ type ApplicationPatch struct {
 	BlockedAt      *int64   `json:"blocked_at"`
 	RegBonus       *int     `json:"reg_bonus"`
 	ContactDetails *string  `json:"contact_details"`
+	Password       *string  `json:"password"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -120,6 +123,9 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.ContactDetails != nil {
 		p.ContactDetails = *patch.ContactDetails
+	}
+	if patch.Password != nil {
+		p.Password = *patch.Password
 	}
 }
 

@@ -301,7 +301,24 @@ func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	var emailList []string
+
+	user := &model.User{
+		Username:      rapplication.Email,
+		Password:      rapplication.Password,
+		Email:         rapplication.Email,
+		EmailVerified: true,
+		Nickname:      rapplication.Email,
+		Locale:        "ru",
+		AppId:         rapplication.Id,
+		Roles:         model.SYSTEM_DIRECTOR_ROLE_ID,
+	}
+
+	if ruser, err := c.App.CreateUserWithInviteId(user, rteam.InviteId); err == nil {
+		c.App.AddTeamMember(rteam.Id, ruser.Id)
+		c.App.UpdateTeamMemberRoles(rteam.Id, ruser.Id, "team_user team_admin channel_user")
+	}
+
+	/*var emailList []string
 	emailList = append(emailList, rapplication.Email)
 
 	if len(emailList) == 0 {
@@ -312,7 +329,7 @@ func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 	if err := c.App.InviteNewUsersToTeam(emailList, rteam.Id, c.App.Session.UserId); err != nil {
 		c.Err = err
 		return
-	}
+	}*/
 
 	// Don't sanitize the team here since the user will be a team admin and their session won't reflect that yet
 
@@ -416,6 +433,32 @@ func updateApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 	} else {
 		c.App.SanitizeTeam(c.App.Session, patchedTeam)
 		c.LogAudit(patchedTeam.ToJson())
+	}
+
+	user := &model.UserPatch{
+		Password: patch.Password,
+	}
+
+	if user == nil {
+		c.SetInvalidParam("user")
+		return
+	}
+	var userId string
+	if oldUser, err := c.App.GetUserApplicationByEmail(*patch.Email, c.Params.AppId); err != nil {
+		c.Err = err
+		return
+	} else {
+		userId = oldUser.Id
+		c.App.UpdatePassword(oldUser, *user.Password)
+	}
+
+	if patchedUser, err := c.App.PatchUser(userId, user, true); err != nil {
+		c.Err = err
+		return
+	} else {
+		c.App.SanitizeProfile(patchedUser, true)
+		c.App.VerifyUserEmail(userId, patchedUser.Email)
+		c.LogAudit(patchedUser.ToJson())
 	}
 
 	c.LogAudit("")
