@@ -143,6 +143,19 @@ func (a *App) CreateUserWithToken(user *model.User, pwd string) (*model.Token, *
 		return nil, result.Err
 	}
 
+	if len(user.AppId) == 26 {
+		if app, _ := a.GetApplication(user.AppId); app != nil {
+			var transaction model.Transaction
+			transaction.AppId = user.AppId
+			transaction.UserId = user.Id
+			transaction.Value = float64(app.RegBonus)
+			transaction.Description = "Начисление за регистрацию"
+			if transaction.Value > 0 {
+				a.AccrualTransaction(&transaction)
+			}
+		}
+	}
+
 	esInterface := a.Elasticsearch
 	if esInterface != nil && *a.Config().ElasticsearchSettings.EnableIndexing {
 		a.Srv.Go(func() {
