@@ -1,4 +1,3 @@
-
 package web
 
 import (
@@ -194,7 +193,15 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			utils.RenderWebAppError(c.App.Config(), w, r, c.Err, c.App.AsymmetricSigningKey())
 		}
 
-
 	}
+
+	/*if IsApiCall(c.App, r) || IsWebhookCall(c.App, r) || len(r.Header.Get("X-Mobile-App")) > 0 {
+		if c.App.Session.AppId == c.Params.AppId && len(c.Params.AppId) > 0 {
+			if application, _ := c.App.GetApplication(c.Params.AppId); application != nil && application.BlockedAt > 0 {
+				c.RemoveSessionCookie(w, r)
+				c.Err = model.NewAppError("ServeHTTP", "api.context.session_expired.app_error", nil, "token="+token, http.StatusUnauthorized)
+			}
+		}
+	}*/
 
 }

@@ -444,7 +444,14 @@ func updateApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var userId string
-	if oldUser, err := c.App.GetUserApplicationByEmail(*patch.Email, c.Params.AppId); err != nil {
+	var email string
+
+	if patch.Email != nil {
+		email = *patch.Email
+	} else {
+		email = ""
+	}
+	if oldUser, err := c.App.GetUserApplicationByEmail(email, c.Params.AppId); err != nil {
 		c.Err = err
 		return
 	} else {
