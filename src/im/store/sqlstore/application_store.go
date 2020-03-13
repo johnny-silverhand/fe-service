@@ -305,6 +305,7 @@ func (s SqlApplicationStore) GetApplications(options *model.ApplicationGetOption
 		query := s.getQueryBuilder().
 			Select("A.*").
 			From("Applications A").
+			Where("A.DeleteAt", 0).
 			Offset(uint64(options.Page * options.PerPage)).Limit(uint64(options.PerPage))
 
 		if len(options.Email) > 0 {
