@@ -1879,6 +1879,7 @@ func (us SqlUserStore) GetMetricsForRating(options model.UserGetOptions) store.S
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
 			Where("o.Payed = ?", true).
+			Where("o.Canceled = ?", false).
 			GroupBy("o.UserId").
 			OrderBy("OrdersCount DESC").
 			Offset(uint64(options.Page * options.PerPage)).
@@ -1914,7 +1915,7 @@ func (us SqlUserStore) GetMetricsForBonuses(options model.UserGetOptions) store.
 		query := us.getQueryBuilder().
 			Select("u.*, COUNT(o.Payed) AS OrdersCount").
 			From("Users u").
-			LeftJoin("Orders o ON o.UserId = u.Id").
+			LeftJoin("Orders o ON o.UserId = u.Id AND o.Payed = true AND o.Canceled = false").
 			Where("u.AppId = ? AND u.Roles = ?", options.AppId, model.CHANNEL_USER_ROLE_ID).
 			GroupBy("u.Id")
 

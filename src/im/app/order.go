@@ -175,11 +175,27 @@ func (a *App) UpdateOrder(id string, patch *model.OrderPatch, safeUpdate bool) (
 			if err := a.SetOrderCancel(id); err != nil {
 				return nil, err
 			}
+			result = <-a.Srv.Store.Order().Get(id)
+			if result.Err != nil {
+				return nil, result.Err
+			}
+			rorder := result.Data.(*model.Order)
+			rorder = a.PrepareOrderForClient(rorder, false)
+			a.UpdatePostWithOrder(rorder, false)
+			return rorder, nil
 		case model.ORDER_STATUS_REFUNDED:
 		case model.ORDER_STATUS_SHIPPED:
 			if err := a.SetOrderShipped(id); err != nil {
 				return nil, err
 			}
+			result = <-a.Srv.Store.Order().Get(id)
+			if result.Err != nil {
+				return nil, result.Err
+			}
+			rorder := result.Data.(*model.Order)
+			rorder = a.PrepareOrderForClient(rorder, false)
+			a.UpdatePostWithOrder(rorder, false)
+			return rorder, nil
 		default:
 			return nil, model.NewAppError("UpdateOrder", "app.order.update_order.status.not_found.app_error", map[string]interface{}{"OrderId": id}, "", http.StatusBadRequest)
 		}
