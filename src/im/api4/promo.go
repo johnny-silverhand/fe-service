@@ -187,6 +187,9 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.Err = err
 		return
+	} else if promo.Status != model.PROMO_STATUS_ACCEPTED && promo.Active != true {
+		c.SetInvalidParam("promo is not accepted")
+		return
 	}
 
 	c.App.Srv.Go(func() {
@@ -199,6 +202,12 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 			c.Err = err
 			return
 		} else {
+			var preview string = ""
+			if len(promo.Preview) == 0 {
+				preview = "Вышла новая акция! Зайдите в приложение, чтобы узнать подробности."
+			} else {
+				preview = promo.Preview
+			}
 			for _, user := range users {
 
 				var channel *model.Channel
@@ -211,7 +220,7 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 				}
 
 				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
-					c.App.SendCustomNotifications(user, channel, promo.Preview)
+					c.App.SendCustomNotifications(user, channel, preview)
 				}
 			}
 		}
