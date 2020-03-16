@@ -19,7 +19,7 @@ const (
 	THREAD_ROOT = "root"
 )
 
-func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string, notifyType string) {
+func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string, payload NotificationPayload) {
 	post := &model.Post{Message: msg}
 	post.PreSave()
 	notification := &postNotification{
@@ -33,7 +33,7 @@ func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, 
 		false,
 		false,
 		"",
-		notifyType,
+		payload,
 	)
 }
 
@@ -691,6 +691,11 @@ type postNotification struct {
 	post       *model.Post
 	profileMap map[string]*model.User
 	sender     *model.User
+}
+
+type NotificationPayload struct {
+	Type string
+	Data string
 }
 
 // Returns the name of the channel for this notification. For direct messages, this is the sender's name

@@ -2,6 +2,7 @@ package api4
 
 import (
 	"fmt"
+	"im/app"
 	"im/mlog"
 	"im/model"
 	"im/utils"
@@ -220,7 +221,10 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 				}
 
 				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
-					c.App.SendCustomNotifications(user, channel, preview, "promo")
+					c.App.SendCustomNotifications(user, channel, preview, app.NotificationPayload{
+						Type: "promo",
+						Data: promo.Id,
+					})
 				}
 			}
 		}

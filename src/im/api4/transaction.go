@@ -3,6 +3,7 @@ package api4
 import (
 	"encoding/json"
 	"fmt"
+	"im/app"
 	"im/model"
 	"net/http"
 	"strconv"
@@ -104,9 +105,11 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 				if len(ts.UserId) != 26 {
 					continue
 				}
-
-				if _, err := c.App.AccrualTransaction(&ts); err != nil {
+				var resultId string = ""
+				if rtransaction, err := c.App.AccrualTransaction(&ts); err != nil {
 					continue
+				} else {
+					resultId = rtransaction.Id
 				}
 
 				var channel *model.Channel
@@ -121,7 +124,10 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
 					c.App.SendCustomNotifications(user, channel,
 						"Вам начислены дополнительные баллы! Количество начисленных баллов: "+
-							fmt.Sprintf("%.0f", ts.Value), "transaction")
+							fmt.Sprintf("%.0f", ts.Value), app.NotificationPayload{
+							Type: "transaction",
+							Data: resultId,
+						})
 				}
 			}
 		}

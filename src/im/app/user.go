@@ -2355,7 +2355,10 @@ func (a *App) SendVerifyFromStageTokenPush(userSuppliedTokenString string) *mode
 		}
 
 		if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
-			a.SendCustomNotifications(user, channel, "Код подтверждения: "+token.Extra, "confirm")
+			a.SendCustomNotifications(user, channel, "Код подтверждения: "+token.Extra, NotificationPayload{
+				Type: "confirm",
+				Data: "",
+			})
 		}
 	})
 

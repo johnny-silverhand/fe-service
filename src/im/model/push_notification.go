@@ -45,6 +45,7 @@ type PushNotification struct {
 	OverrideIconUrl  string `json:"override_icon_url"`
 	FromWebhook      string `json:"from_webhook"`
 	Version          string `json:"version"`
+	Data             string `json:"data"`
 }
 
 func (me *PushNotification) ToJson() string {
