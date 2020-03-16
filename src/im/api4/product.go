@@ -50,13 +50,13 @@ func updateProductsStatuses(c *Context, w http.ResponseWriter, r *http.Request) 
 		//c.App.DisableAutoResponder(c.Params.UserId, c.IsSystemAdmin())
 	}*/
 
-	c.App.Srv.Go(func() {
-		for _, productId := range status.ProductIds {
-			if _, err := c.App.UpdateProductStatus(productId, status); err != nil {
-				mlog.Warn(fmt.Sprintf("Failed to update Product Status %v", err.Error()))
-			}
+	//c.App.Srv.Go(func() {
+	for _, productId := range status.ProductIds {
+		if _, err := c.App.UpdateProductStatus(productId, status); err != nil {
+			mlog.Warn(fmt.Sprintf("Failed to update Product Status %v", err.Error()))
 		}
-	})
+	}
+	//})
 
 	ReturnStatusOK(w)
 }
