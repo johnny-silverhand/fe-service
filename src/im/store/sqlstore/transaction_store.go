@@ -351,7 +351,7 @@ func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, begi
 			Select("o.Id AS OperatorId, "+
 				"CONCAT_WS(' ', o.FirstName, o.LastName) AS OperatorEmail, "+
 				"u.Id AS UserId, "+
-				"u.Email AS UserEmail, "+
+				"CONCAT_WS(' ', u.Nickname, u.Phone) AS UserEmail, "+
 				"DATE(FROM_UNIXTIME(t.CreateAt / 1000)) AS Date, "+
 				"SUM(CASE WHEN t.Value > 0 THEN t.Value ELSE 0 END) AS Charge, "+
 				"SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) AS Discard").
