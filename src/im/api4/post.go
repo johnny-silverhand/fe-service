@@ -41,14 +41,69 @@ func createMailingPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	post.UserId = c.App.Session.UserId
-	channels, err := c.App.GetAllChannelsForUser(post.UserId, false)
+	/*channels, err := c.App.GetAllChannelsForUser(post.UserId, false)
+	if err != nil {
+		c.Err = err
+		return
+	}*/
+
+	ruser, err := c.App.GetUser(post.UserId)
 	if err != nil {
 		c.Err = err
 		return
 	}
+	if len(ruser.AppId) != 26 {
+		c.SetInvalidParam("app_id")
+		return
+	}
 
 	c.App.Srv.Go(func() {
-		for _, channel := range *channels {
+
+		if users, err := c.App.GetUsers(&model.UserGetOptions{
+			Role:    model.CHANNEL_USER_ROLE_ID,
+			Page:    0,
+			PerPage: 100000,
+			AppId:   ruser.AppId,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			for _, user := range users {
+				var channel *model.Channel
+				if channel, _ = c.App.FindOpennedChannel(user.Id); channel != nil {
+					c.App.AddChannelMemberIfNeeded(user.Id, channel)
+				} else {
+					if channel, _ = c.App.CreateUnresolvedChannel(user.Id); channel != nil {
+						<-c.App.Srv.Store.ChannelMemberHistory().LogJoinEvent(user.Id, channel.Id, model.GetMillis())
+					}
+				}
+				hasPermission := false
+				if c.App.SessionHasPermissionToChannel(c.App.Session, channel.Id, model.PERMISSION_CREATE_POST) {
+					hasPermission = true
+				} else if channel.Type == model.CHANNEL_OPEN && c.App.SessionHasPermissionToTeam(c.App.Session, channel.TeamId, model.PERMISSION_CREATE_POST_PUBLIC) {
+					hasPermission = true
+				}
+				if !hasPermission {
+					//c.SetPermissionError(model.PERMISSION_CREATE_POST)
+					continue
+				}
+				if post.CreateAt != 0 && !c.App.SessionHasPermissionTo(c.App.Session, model.PERMISSION_MANAGE_SYSTEM) {
+					post.CreateAt = 0
+				}
+				post.ChannelId = channel.Id
+				cpost := *post
+				rp, err := c.App.CreatePostAsUser(c.App.PostWithProxyRemovedFromImageURLs(&cpost), c.App.Session.Id)
+				if err != nil {
+					c.Err = err
+					return
+				}
+				fmt.Println(rp)
+				c.App.SetStatusOnline(c.App.Session.UserId, false)
+				c.App.UpdateLastActivityAtIfNeeded(c.App.Session)
+			}
+		}
+
+		/*for _, channel := range *channels {
 			hasPermission := false
 			if c.App.SessionHasPermissionToChannel(c.App.Session, channel.Id, model.PERMISSION_CREATE_POST) {
 				hasPermission = true
@@ -74,7 +129,7 @@ func createMailingPosts(c *Context, w http.ResponseWriter, r *http.Request) {
 			c.App.SetStatusOnline(c.App.Session.UserId, false)
 			c.App.UpdateLastActivityAtIfNeeded(c.App.Session)
 
-		}
+		}*/
 	})
 
 	w.WriteHeader(http.StatusCreated)
