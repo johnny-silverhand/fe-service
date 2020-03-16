@@ -33,6 +33,15 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
+	application, err := c.App.GetApplication(user.Id)
+	if err != nil {
+		c.Err = err
+		return
+	}
+	if application.Cash == false {
+		c.SetInvalidParam("cash")
+		return
+	}
 
 	if order == nil {
 		c.SetInvalidParam("order")
