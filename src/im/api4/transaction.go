@@ -121,7 +121,7 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
 					c.App.SendCustomNotifications(user, channel,
 						"Вам начислены дополнительные баллы! Количество начисленных баллов: "+
-							fmt.Sprintf("%.0f", ts.Value))
+							fmt.Sprintf("%.0f", ts.Value), "transaction")
 				}
 			}
 		}

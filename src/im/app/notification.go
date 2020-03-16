@@ -19,7 +19,7 @@ const (
 	THREAD_ROOT = "root"
 )
 
-func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string) {
+func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string, notifyType string) {
 	post := &model.Post{Message: msg}
 	post.PreSave()
 	notification := &postNotification{
@@ -33,6 +33,7 @@ func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, 
 		false,
 		false,
 		"",
+		notifyType,
 	)
 }
 

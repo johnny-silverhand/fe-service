@@ -220,7 +220,7 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 				}
 
 				if user.NotifyProps[model.PUSH_NOTIFY_PROP] == model.USER_NOTIFY_ALL && channel != nil {
-					c.App.SendCustomNotifications(user, channel, preview)
+					c.App.SendCustomNotifications(user, channel, preview, "promo")
 				}
 			}
 		}

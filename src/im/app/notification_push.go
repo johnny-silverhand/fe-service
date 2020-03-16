@@ -38,6 +38,7 @@ type PushNotification struct {
 	explicitMention    bool
 	channelWideMention bool
 	replyToThreadType  string
+	customNotifyType   string
 }
 
 func (hub *PushNotificationsHub) GetGoChannelFromUserId(userId string) chan PushNotification {
@@ -48,7 +49,7 @@ func (hub *PushNotificationsHub) GetGoChannelFromUserId(userId string) chan Push
 }
 
 func (a *App) sendPushNotificationCustomSync(post *model.Post, user *model.User, channel *model.Channel, channelName string, senderName string,
-	explicitMention, channelWideMention bool, replyToThreadType string) *model.AppError {
+	explicitMention, channelWideMention bool, replyToThreadType string, customType string) *model.AppError {
 	cfg := a.Config()
 
 	sessions, err := a.getMobileAppSessions(user.Id)
@@ -66,7 +67,7 @@ func (a *App) sendPushNotificationCustomSync(post *model.Post, user *model.User,
 
 	msg.Category = model.CATEGORY_CAN_REPLY
 	msg.Version = model.PUSH_MESSAGE_V2
-	msg.Type = ""
+	msg.Type = customType
 	msg.TeamId = channel.TeamId
 	msg.ChannelId = channel.Id
 	msg.PostId = post.Id
@@ -177,7 +178,8 @@ func (a *App) sendPushNotificationSync(post *model.Post, user *model.User, chann
 	return nil
 }
 
-func (a *App) sendCustomPushNotification(notification *postNotification, user *model.User, explicitMention, channelWideMention bool, replyToThreadType string) {
+func (a *App) sendCustomPushNotification(notification *postNotification, user *model.User, explicitMention, channelWideMention bool,
+	replyToThreadType string, notifyType string) {
 	cfg := a.Config()
 	channel := notification.channel
 	post := notification.post
@@ -194,7 +196,7 @@ func (a *App) sendCustomPushNotification(notification *postNotification, user *m
 
 	c := a.Srv.PushNotificationsHub.GetGoChannelFromUserId(user.Id)
 	c <- PushNotification{
-		notificationType:   NOTIFICATION_TYPE_MESSAGE,
+		notificationType:   NOTIFICATION_TYPE_CUSTOM,
 		post:               post,
 		user:               user,
 		channel:            channel,
@@ -203,6 +205,7 @@ func (a *App) sendCustomPushNotification(notification *postNotification, user *m
 		explicitMention:    explicitMention,
 		channelWideMention: channelWideMention,
 		replyToThreadType:  replyToThreadType,
+		customNotifyType:   notifyType,
 	}
 }
 
@@ -354,6 +357,7 @@ func (a *App) pushNotificationWorker(notifications chan PushNotification) {
 				notification.explicitMention,
 				notification.channelWideMention,
 				notification.replyToThreadType,
+				notification.customNotifyType,
 			)
 		default:
 			mlog.Error(fmt.Sprintf("Invalid notification type %v", notification.notificationType))
