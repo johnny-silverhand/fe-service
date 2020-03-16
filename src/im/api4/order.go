@@ -38,7 +38,7 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	if application.Cash == false {
+	if len(application.AqType) <= 0 && len(application.AqUsername) <= 0 && len(application.AqPassword) <= 0 {
 		c.SetInvalidParam("cash")
 		return
 	}
