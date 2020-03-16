@@ -391,10 +391,10 @@ func (a *App) SetOrderShipped(orderId string) *model.AppError {
 	//order = a.PrepareOrderForClient(order, false)
 	order.Status = model.ORDER_STATUS_SHIPPED
 	order.UpdateAt = model.GetMillis()
-	if result := <-a.Srv.Store.Order().Update(order); result.Err != nil {
+	if result := <-a.Srv.Store.Order().SetOrderPayed(order.Id); result.Err != nil {
 		return result.Err
 	}
-	if result := <-a.Srv.Store.Order().SetOrderPayed(order.Id); result.Err != nil {
+	if result := <-a.Srv.Store.Order().Update(order); result.Err != nil {
 		return result.Err
 	}
 	a.UpdatePostWithOrder(order, false)
