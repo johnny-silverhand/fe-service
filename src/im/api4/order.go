@@ -33,7 +33,7 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	application, err := c.App.GetApplication(user.Id)
+	application, err := c.App.GetApplication(user.AppId)
 	if err != nil {
 		c.Err = err
 		return
