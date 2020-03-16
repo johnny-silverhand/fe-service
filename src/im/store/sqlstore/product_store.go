@@ -242,7 +242,7 @@ func (s SqlProductStore) GetAllPage(offset int, limit int, options *model.Produc
 			}
 			inQuery := strings.Join(inQueryList, ", ")
 			whereClause = whereClause + " p.CategoryId IN (" + inQuery + ") AND "
-		} else {
+		} else if options.Extra == false {
 			categoryJoin = " INNER JOIN Categories cat ON cat.Id = p.CategoryId "
 		}
 
