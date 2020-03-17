@@ -1245,12 +1245,12 @@ func (us SqlUserStore) performSearch(query sq.SelectBuilder, term string, option
 	result := store.StoreResult{}
 
 	// These chars must be removed from the like query.
-	for _, c := range ignoreLikeSearchChar {
+	/*for _, c := range ignoreLikeSearchChar {
 		term = strings.Replace(term, c, "", -1)
-	}
+	}*/
 
 	// These chars must be escaped in the like query.
-	for _, c := range escapeLikeSearchChar {
+	/*for _, c := range escapeLikeSearchChar {
 		term = strings.Replace(term, c, "*"+c, -1)
 	}
 
@@ -1267,19 +1267,21 @@ func (us SqlUserStore) performSearch(query sq.SelectBuilder, term string, option
 		} else {
 			searchType = USER_SEARCH_TYPE_NAMES_NO_FULL_NAME
 		}
-	}
+	}*/
 
 	isPostgreSQL := us.DriverName() == model.DATABASE_DRIVER_POSTGRES
 
 	query = applyRoleFilter(query, options.Role, isPostgreSQL)
 
-	if !options.AllowInactive {
+	query = query.Where("u.Phone = ?", term)
+
+	/*if !options.AllowInactive {
 		query = query.Where("u.DeleteAt = 0")
 	}
 
 	if strings.TrimSpace(term) != "" {
 		query = generateSearchQuery(query, strings.Fields(term), searchType, isPostgreSQL)
-	}
+	}*/
 
 	queryString, args, err := query.ToSql()
 	if err != nil {
@@ -1290,7 +1292,7 @@ func (us SqlUserStore) performSearch(query sq.SelectBuilder, term string, option
 	var users []*model.User
 	if _, err := us.GetReplica().Select(&users, queryString, args...); err != nil {
 		result.Err = model.NewAppError("SqlUserStore.Search", "store.sql_user.search.app_error", nil,
-			fmt.Sprintf("term=%v, search_type=%v, %v", term, searchType, err.Error()), http.StatusInternalServerError)
+			fmt.Sprintf("term=%v, search_type=%v, %v", term, "", err.Error()), http.StatusInternalServerError)
 	} else {
 		for _, u := range users {
 			u.Sanitize(map[string]bool{})
