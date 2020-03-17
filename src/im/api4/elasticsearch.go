@@ -8,8 +8,8 @@ import (
 
 func (api *API) InitElasticsearch() {
 	api.BaseRoutes.Elasticsearch.Handle("/test", api.ApiSessionRequired(testElasticsearch)).Methods("POST")
-	api.BaseRoutes.Elasticsearch.Handle("/purge_indexes", api.ApiSessionRequired(purgeElasticsearchIndexes)).Methods("GET")
-	api.BaseRoutes.Elasticsearch.Handle("/create_indexes", api.ApiSessionRequired(createElasticsearchIndexes)).Methods("GET")
+	api.BaseRoutes.Elasticsearch.Handle("/purge_indexes", api.ApiHandler(purgeElasticsearchIndexes)).Methods("GET")
+	api.BaseRoutes.Elasticsearch.Handle("/create_indexes", api.ApiHandler(createElasticsearchIndexes)).Methods("GET")
 }
 
 func testElasticsearch(c *Context, w http.ResponseWriter, r *http.Request) {
