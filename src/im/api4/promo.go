@@ -188,7 +188,7 @@ func sendPromoPush(c *Context, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.Err = err
 		return
-	} else if promo.Status != model.PROMO_STATUS_ACCEPTED && promo.Active != true {
+	} else if promo.Status != model.PROMO_STATUS_ACCEPTED || promo.Active != true {
 		c.SetInvalidParam("promo is not accepted")
 		return
 	}
