@@ -70,7 +70,7 @@ func (a *App) sendPushNotificationCustomSync(post *model.Post, user *model.User,
 	msg.Type = payload.Type
 	msg.TeamId = channel.TeamId
 	msg.ChannelId = channel.Id
-	msg.PostId = post.Id
+	msg.PostId = payload.PromoId
 	msg.RootId = post.RootId
 	msg.SenderId = post.UserId
 	msg.PromoId = payload.PromoId
