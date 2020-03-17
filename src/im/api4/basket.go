@@ -43,7 +43,16 @@ func getExtraBasket(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.Err = err
 		return
 	}
-	w.Write([]byte(result.ToJson()))
+	list := model.NewProductList()
+	list.MakeNonNil()
+	for i, id := range result.Order {
+		if i > 4 {
+			break
+		}
+		list.AddOrder(id)
+		list.AddProduct(result.Products[id])
+	}
+	w.Write([]byte(list.ToJson()))
 }
 
 func getDiscountLimits(c *Context, w http.ResponseWriter, r *http.Request) {
