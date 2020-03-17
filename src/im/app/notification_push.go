@@ -73,7 +73,7 @@ func (a *App) sendPushNotificationCustomSync(post *model.Post, user *model.User,
 	msg.PostId = post.Id
 	msg.RootId = post.RootId
 	msg.SenderId = post.UserId
-	msg.Data = payload.Data
+	msg.PromoId = payload.PromoId
 
 	contentsConfig := *cfg.EmailSettings.PushNotificationContents
 	if contentsConfig != model.GENERIC_NO_CHANNEL_NOTIFICATION || channel.Type == model.CHANNEL_DIRECT {

@@ -99,8 +99,13 @@ func (a *App) PatchApplication(id string, patch *model.ApplicationPatch) (*model
 	if result.Err != nil {
 		return nil, result.Err
 	}
+	resultTeam := <-a.Srv.Store.Team().GetByName(id)
+	if resultTeam.Err != nil {
+		return nil, resultTeam.Err
+	}
 
 	oldApplication := result.Data.(*model.Application)
+	oldTeam := resultTeam.Data.(*model.Team)
 
 	if oldApplication == nil {
 		err := model.NewAppError("UpdateApplication", "api.application.update_application.find.app_error", nil, "id="+id, http.StatusBadRequest)
@@ -112,9 +117,24 @@ func (a *App) PatchApplication(id string, patch *model.ApplicationPatch) (*model
 		return nil, err
 	}
 
+	if oldTeam == nil {
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.find.app_error", nil, "id="+id, http.StatusBadRequest)
+		return nil, err
+	}
+
+	if oldTeam.DeleteAt != 0 {
+		err := model.NewAppError("UpdateApplication", "api.application.update_application.permissions_details.app_error", map[string]interface{}{"ApplicationId": id}, "", http.StatusBadRequest)
+		return nil, err
+	}
+
 	newApplication := &model.Application{}
 	*newApplication = *oldApplication
 	newApplication.Patch(patch)
+
+	result = <-a.Srv.Store.Application().Update(newApplication)
+	if result.Err != nil {
+		return nil, result.Err
+	}
 
 	if newApplication.Email != oldApplication.Email {
 		if ruser, err := a.GetUserApplicationByEmail(oldApplication.Email, oldApplication.Id); err != nil {
@@ -124,9 +144,31 @@ func (a *App) PatchApplication(id string, patch *model.ApplicationPatch) (*model
 		}
 	}
 
-	result = <-a.Srv.Store.Application().Update(newApplication)
-	if result.Err != nil {
-		return nil, result.Err
+	if len(newApplication.Password) > 0 {
+		if ruser, err := a.GetUserApplicationByEmail(newApplication.Email, newApplication.Id); err != nil {
+			return nil, err
+		} else if err := a.UpdatePassword(ruser, newApplication.Password); err != nil {
+			return nil, err
+		}
+	}
+
+	if newApplication.Name != oldApplication.Name ||
+		newApplication.Description != oldApplication.Description {
+
+		teamPatch := &model.TeamPatch{
+			DisplayName: model.NewString(newApplication.Name),
+			Description: model.NewString(newApplication.Description),
+			CompanyName: model.NewString(newApplication.Name),
+		}
+
+		newTeam := &model.Team{}
+		*newTeam = *oldTeam
+		newTeam.Patch(teamPatch)
+
+		resultTeam = <-a.Srv.Store.Team().Update(newTeam)
+		if resultTeam.Err != nil {
+			return nil, resultTeam.Err
+		}
 	}
 
 	rapplication := result.Data.(*model.Application)
@@ -158,30 +200,6 @@ func (a *App) UpdateApplication(id string, patch *model.ApplicationPatch, safeUp
 	newApplication := &model.Application{}
 	*newApplication = *oldApplication
 	newApplication.Patch(patch)
-
-	/*if newApplication.Name != oldApplication.Name {
-		newApplication.Name = oldApplication.Name
-	}
-
-	if newApplication.Preview != oldApplication.Preview {
-		newApplication.Preview = oldApplication.Preview
-	}
-
-	if newApplication.Description != oldApplication.Description {
-		newApplication.Description = oldApplication.Description
-	}
-
-	if newApplication.Phone != oldApplication.Phone {
-		newApplication.Phone = oldApplication.Phone
-	}
-
-	if newApplication.PaymentDetails != oldApplication.PaymentDetails {
-		newApplication.PaymentDetails = oldApplication.PaymentDetails
-	}
-
-	if newApplication.Settings != oldApplication.Settings {
-		newApplication.Settings = oldApplication.Settings
-	}*/
 
 	if newApplication.Email != oldApplication.Email {
 		if ruser, err := a.GetUserByEmail(oldApplication.Email); err != nil {

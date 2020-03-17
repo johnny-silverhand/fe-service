@@ -105,11 +105,8 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 				if len(ts.UserId) != 26 {
 					continue
 				}
-				var resultId string = ""
-				if rtransaction, err := c.App.AccrualTransaction(&ts); err != nil {
+				if _, err := c.App.AccrualTransaction(&ts); err != nil {
 					continue
-				} else {
-					resultId = rtransaction.Id
 				}
 
 				var channel *model.Channel
@@ -126,7 +123,6 @@ func createMailingTransactions(c *Context, w http.ResponseWriter, r *http.Reques
 						"Вам начислены дополнительные баллы! Количество начисленных баллов: "+
 							fmt.Sprintf("%.0f", ts.Value), app.NotificationPayload{
 							Type: "transaction",
-							Data: resultId,
 						})
 				}
 			}

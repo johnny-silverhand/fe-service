@@ -694,8 +694,8 @@ type postNotification struct {
 }
 
 type NotificationPayload struct {
-	Type string
-	Data string
+	Type    string
+	PromoId string
 }
 
 // Returns the name of the channel for this notification. For direct messages, this is the sender's name
