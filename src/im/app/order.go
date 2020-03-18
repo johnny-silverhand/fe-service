@@ -374,6 +374,9 @@ func (a *App) CalculateBonusForOrder(order *model.Order) *model.AppError {
 }
 
 func (a *App) SetOrderShipped(orderId string) *model.AppError {
+	if result := <-a.Srv.Store.Order().SetOrderPayed(orderId); result.Err != nil {
+		return result.Err
+	}
 
 	result := <-a.Srv.Store.Order().Get(orderId)
 	if result.Err != nil {
@@ -391,9 +394,7 @@ func (a *App) SetOrderShipped(orderId string) *model.AppError {
 	//order = a.PrepareOrderForClient(order, false)
 	order.Status = model.ORDER_STATUS_SHIPPED
 	order.UpdateAt = model.GetMillis()
-	if result := <-a.Srv.Store.Order().SetOrderPayed(order.Id); result.Err != nil {
-		return result.Err
-	}
+
 	if result := <-a.Srv.Store.Order().Update(order); result.Err != nil {
 		return result.Err
 	}
