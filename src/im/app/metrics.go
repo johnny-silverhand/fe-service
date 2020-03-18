@@ -48,7 +48,7 @@ func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *m
 		Role:            model.CHANNEL_USER_ROLE_ID,
 		FilterByInvited: true,
 	}
-	if levels, _ := a.GetAllLevelsPage(0, 10, &appId); levels != nil {
+	/*if levels, _ := a.GetAllLevelsPage(0, 10, &appId); levels != nil {
 		levels.SortByLvl()
 		for _, levelId := range levels.Order {
 			totalPayed = 0
@@ -79,6 +79,44 @@ func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *m
 				TotalPayed: totalPayed,
 			})
 		}
+	}*/
+	/*if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
+		return nil, err
+	}*/
+	var i int = 1
+	for {
+		totalPayed = 0
+		if len(users) > 0 && i != 1 {
+			var newUsersList []*model.UserMetricsForRating
+			for _, user := range users {
+				options.InvitedBy = user.Id
+				if results, _ := a.GetUsersForBonusesMetrics(options); results != nil {
+					for _, result := range results {
+						newUsersList = append(newUsersList, result)
+					}
+				}
+			}
+			users = newUsersList
+		} else {
+			if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
+				return nil, err
+			}
+		}
+		if len(users) == 0 {
+			break
+		}
+		for _, user := range users {
+			if user.OrdersCount > 0 {
+				totalPayed++
+			}
+		}
+		metrics = append(metrics, &model.MetricsForBonuses{
+			Level:      i,
+			TotalUsers: len(users),
+			TotalPayed: totalPayed,
+		})
+
+		i++
 	}
 
 	return metrics, nil
