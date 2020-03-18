@@ -197,6 +197,31 @@ func (me SqlSessionStore) UpdateRoles(userId, roles string) store.StoreChannel {
 
 func (me SqlSessionStore) UpdateDeviceId(id string, deviceId string, expiresAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		query := me.getQueryBuilder().
+			Select("s.*").
+			From("Sessions s").
+			Where("s.Id = ?", id)
+
+		queryString, args, err := query.ToSql()
+
+		if err != nil {
+			result.Err = model.NewAppError("SqlSessionStore.UpdateDeviceId", "store.sql_session.update_device_id.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var session *model.Session
+
+		if err := me.GetMaster().SelectOne(&session, queryString, args...); err != nil {
+			result.Err = model.NewAppError("SqlUserStore.GetMetricsForRegister", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if len(session.AppId) > 0 {
+			if _, err := me.GetMaster().Exec("UPDATE Sessions SET ExpiresAt = :ExpiresAt WHERE AppId = :AppId AND DeviceId = :DeviceId", map[string]interface{}{"DeviceId": deviceId, "AppId": session.AppId, "ExpiresAt": 0}); err != nil {
+				result.Err = model.NewAppError("SqlSessionStore.UpdateDeviceId", "store.sql_session.update_device_id.app_error", nil, err.Error(), http.StatusInternalServerError)
+			}
+		}
+
 		if _, err := me.GetMaster().Exec("UPDATE Sessions SET DeviceId = :DeviceId, ExpiresAt = :ExpiresAt WHERE Id = :Id", map[string]interface{}{"DeviceId": deviceId, "Id": id, "ExpiresAt": expiresAt}); err != nil {
 			result.Err = model.NewAppError("SqlSessionStore.UpdateDeviceId", "store.sql_session.update_device_id.app_error", nil, err.Error(), http.StatusInternalServerError)
 		} else {

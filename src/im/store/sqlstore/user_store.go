@@ -1129,6 +1129,7 @@ func (us SqlUserStore) GetAnyUnreadPostCountForChannel(userId string, channelId 
 func (us SqlUserStore) Search(appId string, term string, options *model.UserSearchOptions) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
 		query := us.usersQuery.
+			Where("AppId = ?", appId).
 			OrderBy("Username ASC").
 			Limit(uint64(options.Limit))
 
