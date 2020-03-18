@@ -276,6 +276,24 @@ func (a *App) DeleteApplication(appId, deleteByID string) (*model.Application, *
 		return nil, result.Err
 	}
 
+	result = <-a.Srv.Store.Team().GetByName(appId)
+	if result.Err != nil {
+		result.Err.StatusCode = http.StatusBadRequest
+		return nil, result.Err
+	}
+	team := result.Data.(*model.Team)
+	if err := a.SoftDeleteTeam(team.Id); err != nil {
+		return nil, err
+	}
+
+	if users, err := a.GetUsers(&model.UserGetOptions{AppId: appId, Page: 0, PerPage: 100000}); err != nil {
+		return nil, err
+	} else {
+		for _, user := range users {
+			a.UpdateActive(user, false)
+		}
+	}
+
 	return application, nil
 }
 
