@@ -17,8 +17,8 @@ import (
 
 // URLS for API endpoints
 const (
-	APIURI        string = "https://web.rbsuat.com"
-	APISandboxURI string = "https://web.rbsuat.com"
+	APIURI        string = "https://pay.alfabank.ru/payment/rest"
+	APISandboxURI string = "https://web.rbsuat.com/ab/rest/"
 )
 
 // ClientConfig is used to set client configuration
