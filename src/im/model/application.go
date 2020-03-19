@@ -44,6 +44,9 @@ type Application struct {
 	ContactDetails  string `json:"contact_details"`
 
 	Password string `db:"-" json:"password"`
+
+	SmsLogin  string `json:"sms_login"`
+	SmsApiKey string `json:"sms_api_key"`
 }
 
 type ApplicationPatch struct {
@@ -66,6 +69,8 @@ type ApplicationPatch struct {
 	RegBonus       *int     `json:"reg_bonus"`
 	ContactDetails *string  `json:"contact_details"`
 	Password       *string  `json:"password"`
+	SmsLogin       *string  `json:"sms_login"`
+	SmsApiKey      *string  `json:"sms_api_key"`
 }
 
 func (p *Application) Patch(patch *ApplicationPatch) {
@@ -126,6 +131,12 @@ func (p *Application) Patch(patch *ApplicationPatch) {
 	}
 	if patch.Password != nil {
 		p.Password = *patch.Password
+	}
+	if patch.SmsLogin != nil {
+		p.SmsLogin = *patch.SmsLogin
+	}
+	if patch.SmsApiKey != nil {
+		p.SmsApiKey = *patch.SmsApiKey
 	}
 }
 

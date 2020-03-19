@@ -799,8 +799,10 @@ func UpgradeDatabaseToVersion526(sqlStore SqlStore) {
 
 		sqlStore.CreateColumnIfNotExists("Transactions", "CreatedBy", "varchar(255)", "varchar(255)", "")
 		sqlStore.CreateColumnIfNotExists("Applications", "RegBonus", "int", "int", "0")
-		sqlStore.CreateColumnIfNotExistsNoDefault("Applications", "ContactDetails", "text", "text")
+		//sqlStore.CreateColumnIfNotExistsNoDefault("Applications", "ContactDetails", "text", "text")
 
+		sqlStore.CreateColumnIfNotExists("Applications", "SmsLogin", "varchar(255)", "varchar(255)", "")
+		sqlStore.CreateColumnIfNotExists("Applications", "SmsApiKey", "varchar(255)", "varchar(255)", "")
 		//saveSchemaVersion(sqlStore, VERSION_5_26_0)
 	}
 }
