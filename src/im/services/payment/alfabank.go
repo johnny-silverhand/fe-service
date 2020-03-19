@@ -3,19 +3,19 @@ package payment
 import (
 	"context"
 	"im/model"
-	"im/services/payment/sberbank"
-	"im/services/payment/sberbank/schema"
+	"im/services/payment/alfabank"
+	"im/services/payment/alfabank/schema"
 	"net/http"
 	"strconv"
 )
 
-type SberBankBackend struct {
+type AlfaBankBackend struct {
 }
 
-func (b *SberBankBackend) sbNew(config sberbank.ClientConfig) (*sberbank.Client, error) {
+func (b *AlfaBankBackend) sbNew(config alfabank.ClientConfig) (*alfabank.Client, error) {
 	cfg := config
 
-	client, err := sberbank.NewClient(&cfg)
+	client, err := alfabank.NewClient(&cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -23,19 +23,19 @@ func (b *SberBankBackend) sbNew(config sberbank.ClientConfig) (*sberbank.Client,
 	return client, nil
 }
 
-func (b *SberBankBackend) TestConnection() *model.AppError {
+func (b *AlfaBankBackend) TestConnection() *model.AppError {
 
 	return nil
 }
 
-func (b *SberBankBackend) RegisterOrder(order *model.Order, config sberbank.ClientConfig) (response *schema.OrderResponse, err *model.AppError) {
+func (b *AlfaBankBackend) RegisterOrder(order *model.Order, config alfabank.ClientConfig) (response *schema.OrderResponse, err *model.AppError) {
 
 	/*sbClnt, err := b.sbNew()
 	if err != nil {
 		return model.NewAppError("TestFileConnection", "api.file.test_connection.s3.connection.app_error", nil, err.Error(), http.StatusInternalServerError)
 	}*/
 
-	var client *sberbank.Client
+	var client *alfabank.Client
 
 	if c, err := b.sbNew(config); err != nil {
 		return nil, model.NewAppError("", "", nil, err.Error(), http.StatusInternalServerError)
@@ -44,7 +44,7 @@ func (b *SberBankBackend) RegisterOrder(order *model.Order, config sberbank.Clie
 	}
 
 	amount := order.Price * 100
-	sbOrder := sberbank.Order{
+	sbOrder := alfabank.Order{
 		OrderNumber: strconv.FormatInt(model.GetMillis(), 10),
 		Amount:      int(amount),
 		Description: "",
@@ -59,17 +59,17 @@ func (b *SberBankBackend) RegisterOrder(order *model.Order, config sberbank.Clie
 
 }
 
-func (b *SberBankBackend) GetOrderStatus(order *model.Order, config sberbank.ClientConfig) (response *schema.OrderStatusResponse, err *model.AppError) {
+func (b *AlfaBankBackend) GetOrderStatus(order *model.Order, config alfabank.ClientConfig) (response *schema.OrderStatusResponse, err *model.AppError) {
 
-	var client *sberbank.Client
+	var client *alfabank.Client
 
 	if c, err := b.sbNew(config); err != nil {
-		return nil, model.NewAppError("services.payment.sberbank", "get_order_status", nil, err.Error(), http.StatusInternalServerError)
+		return nil, model.NewAppError("services.payment.alfabank", "get_order_status", nil, err.Error(), http.StatusInternalServerError)
 	} else {
 		client = c
 	}
 
-	sbOrder := sberbank.Order{
+	sbOrder := alfabank.Order{
 		OrderNumber: order.PaySystemCode,
 	}
 

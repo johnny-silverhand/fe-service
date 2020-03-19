@@ -1,4 +1,4 @@
-package sberbank
+package alfabank
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"im/services/payment/sberbank/schema"
+	"im/services/payment/alfabank/schema"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,8 +17,8 @@ import (
 
 // URLS for API endpoints
 const (
-	APIURI        string = "https://securepayments.sberbank.ru"
-	APISandboxURI string = "https://3dsec.sberbank.ru"
+	APIURI        string = "https://web.rbsuat.com"
+	APISandboxURI string = "https://web.rbsuat.com"
 )
 
 // ClientConfig is used to set client configuration
@@ -176,7 +176,7 @@ func (c *Client) Do(r *http.Request, v interface{}) (*http.Response, error) {
 	if resp.StatusCode >= 400 && resp.StatusCode <= 599 {
 		err = errorFromResponse(resp, body)
 		if err == nil {
-			err = fmt.Errorf("sberbank server responded with status code %d", resp.StatusCode)
+			err = fmt.Errorf("alfabank server responded with status code %d", resp.StatusCode)
 		}
 		return resp, err
 	}
