@@ -90,7 +90,7 @@ var newRestRequest = func(c *Client, ctx context.Context, method, urlPath string
 	body := url.Values{}
 	body.Add("userName", c.Config.UserName)
 	body.Add("password", c.Config.Password)
-	body.Add("currency", strconv.Itoa(c.Config.Currency))
+	//body.Add("currency", strconv.Itoa(c.Config.Currency))
 	body.Add("sessionTimeoutSecs", strconv.Itoa(c.Config.SessionTimeoutSecs))
 
 	if jsonParams != nil {
