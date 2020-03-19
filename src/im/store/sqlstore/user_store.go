@@ -1934,6 +1934,12 @@ func (us SqlUserStore) GetMetricsForBonuses(options model.UserGetOptions) store.
 			query = query.Where("u.InvitedBy = ? ", options.InvitedBy)
 		}
 
+		if options.Invited {
+			query = query.Where("LENGTH(u.InvidedBy) = ? ", 26)
+		} else {
+			query = query.Where("LENGTH(u.InvidedBy) > ? ", 0)
+		}
+
 		queryString, args, err := query.ToSql()
 		if err != nil {
 			result.Err = model.NewAppError("SqlUserStore.GetMetricsForBonuses", "store.sql_user.app_error", nil, err.Error(), http.StatusInternalServerError)
