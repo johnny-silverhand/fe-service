@@ -140,6 +140,9 @@ func (a *App) UpdatePromo(id string, patch *model.PromoPatch, safeUpdate bool) (
 	newPromo := &model.Promo{}
 	*newPromo = *oldPromo
 	newPromo.Patch(patch)
+	if patch.ProductId == nil {
+		newPromo.ProductId = ""
+	}
 
 	if application.HasModeration {
 		newPromo.Active = false
