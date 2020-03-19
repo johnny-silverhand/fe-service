@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/mattermost/gorp"
@@ -1725,6 +1726,13 @@ func (us SqlUserStore) GetInvitedUsers(userId string) store.StoreChannel {
 
 func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		t := time.Now()
+		_, offset := t.Zone()
+		tmBeginAt := time.Unix(0, beginAt*int64(time.Millisecond))
+		tmExpireAt := time.Unix(0, expireAt*int64(time.Millisecond))
+		beginAt = model.GetStartOfDayMillis(tmBeginAt, offset)
+		expireAt = model.GetEndOfDayMillis(tmExpireAt, offset)
+
 		query := us.getQueryBuilder().
 			Select("DATE(FROM_UNIXTIME(u.CreateAt / 1000)) AS Date, "+
 				"COUNT(*) AS Count").
@@ -1752,7 +1760,7 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 			From("Users u").
 			Join("Orders o ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
-			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("o.DeliveryAt BETWEEN ? AND ?", beginAt, expireAt).
 			Where("o.Payed = ?", true).
 			Where("o.Canceled = ?", false).
 			GroupBy("u.Id")
@@ -1801,7 +1809,8 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 				"SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) AS Discard").
 			From("Users u").
 			Join("Transactions t ON t.UserId = u.Id").
-			Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			//Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
 
 		queryString, args, err = query.ToSql()

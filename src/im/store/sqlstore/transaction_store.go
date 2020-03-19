@@ -5,6 +5,7 @@ import (
 	"im/model"
 	"im/store"
 	"net/http"
+	"time"
 )
 
 type SqlTransactionStore struct {
@@ -346,6 +347,12 @@ func (s SqlTransactionStore) GetBonusTransactionsForUser(orderUserId string, use
 
 func (s SqlTransactionStore) GetMetricsForSpy(options model.UserGetOptions, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		t := time.Now()
+		_, offset := t.Zone()
+		tmBeginAt := time.Unix(0, beginAt*int64(time.Millisecond))
+		tmExpireAt := time.Unix(0, expireAt*int64(time.Millisecond))
+		beginAt = model.GetStartOfDayMillis(tmBeginAt, offset)
+		expireAt = model.GetEndOfDayMillis(tmExpireAt, offset)
 
 		query := s.getQueryBuilder().
 			Select("o.Id AS OperatorId, "+
