@@ -2,6 +2,9 @@ package api4
 
 import (
 	"im/model"
+	"im/services/payment"
+	"im/services/payment/alfabank"
+	"im/services/payment/sberbank"
 	"net/http"
 	"strconv"
 )
@@ -15,10 +18,46 @@ func (api *API) InitApplication() {
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(updateApplicationTeam)).Methods("PUT")
 	api.BaseRoutes.Application.Handle("", api.ApiHandler(deleteApplication)).Methods("DELETE")
 
+	api.BaseRoutes.Application.Handle("/payment/test", api.ApiHandler(testPaymentConnection)).Methods("GET")
+
 	api.BaseRoutes.Application.Handle("/offices", api.ApiHandler(getApplicationOffices)).Methods("GET")
 	api.BaseRoutes.Application.Handle("/products", api.ApiHandler(getApplicationProducts)).Methods("GET")
 	api.BaseRoutes.Application.Handle("/promos", api.ApiHandler(getApplicationPromos)).Methods("GET")
 	api.BaseRoutes.Application.Handle("/levels", api.ApiHandler(getApplicationLevels)).Methods("GET")
+}
+
+func testPaymentConnection(c *Context, w http.ResponseWriter, r *http.Request) {
+	c.RequireAppId()
+
+	if c.Err != nil {
+		return
+	}
+	var application *model.Application
+	if app, err := c.App.GetApplication(c.Params.AppId); err != nil {
+		c.Err = err
+		return
+	} else {
+		application = app
+	}
+
+	if application.AqType == model.SBERBANK_AQUIRING_TYPE { //foodexp-api	foodexp
+		var sber payment.SberBankBackend
+		if err := sber.TestConnection(sberbank.ClientConfig{UserName: application.AqUsername, Password: application.AqPassword}); err != nil {
+			c.Err = err
+			return
+		}
+	} else if application.AqType == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+		var alfa payment.AlfaBankBackend
+		if err := alfa.TestConnection(alfabank.ClientConfig{UserName: application.AqUsername, Password: application.AqPassword}); err != nil {
+			c.Err = err
+			return
+		}
+	} else {
+		c.Err = model.NewAppError("TestPaymentConnection", "api.application.test_payment_connection.app_error", nil, "", http.StatusBadRequest)
+		return
+	}
+
+	ReturnStatusOK(w)
 }
 
 func getApplicationLevels(c *Context, w http.ResponseWriter, r *http.Request) {

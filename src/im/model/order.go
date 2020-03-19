@@ -36,7 +36,9 @@ const (
 	// закрытые заказы
 	ORDER_STADY_CLOSED string = "closed"
 
-	PAYMENT_SYSTEM_CASH string = "cash"
+	PAYMENT_SYSTEM_CASH     string = "cash"
+	PAYMENT_SYSTEM_ALFABANK string = "alfabank"
+	PAYMENT_SYSTEM_SBERBANK string = "sberbank"
 )
 
 type Order struct {
@@ -63,6 +65,7 @@ type Order struct {
 	PaySystemSum         float64   `json:"pay_system_sum"`
 	PaySystemCurrency    string    `json:"pay_system_currency"`
 	PaySystemResponseAt  int64     `json:"pay_system_response_at"`
+	PaySystemOrderNum    string    `json:"pay_system_order_num"`
 	CreateAt             int64     `json:"create_at"`
 	UpdateAt             int64     `json:"update_at"`
 	DeleteAt             int64     `json:"delete_at"`
@@ -76,10 +79,12 @@ type Order struct {
 }
 
 type OrderPatch struct {
-	Status        *string `json:"status"`
-	DeliveryAt    *int64  `json:"delivery_at"`
-	PaySystemCode *string `json:"pay_system_code"`
-	Processing    *bool   `json:"processing"`
+	Status            *string `json:"status"`
+	DeliveryAt        *int64  `json:"delivery_at"`
+	PaySystemCode     *string `json:"pay_system_code"`
+	Processing        *bool   `json:"processing"`
+	PaySystemId       *string `json:"pay_system_id"`
+	PaySystemOrderNum *string `json:"pay_system_order_num"`
 }
 
 func (o *Order) Patch(patch *OrderPatch) {
@@ -94,6 +99,12 @@ func (o *Order) Patch(patch *OrderPatch) {
 	}
 	if patch.Processing != nil {
 		o.Processing = *patch.Processing
+	}
+	if patch.PaySystemId != nil {
+		o.PaySystemId = *patch.PaySystemId
+	}
+	if patch.PaySystemOrderNum != nil {
+		o.PaySystemOrderNum = *patch.PaySystemOrderNum
 	}
 }
 
