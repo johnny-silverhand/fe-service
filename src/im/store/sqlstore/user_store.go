@@ -1935,9 +1935,9 @@ func (us SqlUserStore) GetMetricsForBonuses(options model.UserGetOptions) store.
 		}
 
 		if options.Invited {
-			query = query.Where("LENGTH(u.InvidedBy) = ? ", 26)
+			query = query.Where("LENGTH(u.InvitedBy) = ? ", 26)
 		} else {
-			query = query.Where("LENGTH(u.InvidedBy) > ? ", 0)
+			query = query.Where("LENGTH(u.InvitedBy) > ? ", 0)
 		}
 
 		queryString, args, err := query.ToSql()
