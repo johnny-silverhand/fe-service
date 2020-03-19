@@ -1809,8 +1809,8 @@ func (us SqlUserStore) GetMetricsForRegister(appId string, beginAt int64, expire
 				"SUM(CASE WHEN t.Value < 0 THEN t.Value ELSE 0 END) AS Discard").
 			From("Users u").
 			Join("Transactions t ON t.UserId = u.Id").
-			Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
-			//Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			//Where("t.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("u.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID)
 
 		queryString, args, err = query.ToSql()
