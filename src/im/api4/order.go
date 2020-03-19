@@ -1,6 +1,7 @@
 package api4
 
 import (
+	"fmt"
 	"im/model"
 	"im/services/payment"
 	"im/services/payment/alfabank"
@@ -279,9 +280,11 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 			SandboxMode:        true,
 			SiteURL:            siteURL,
 		}); err != nil {
+			fmt.Println(err)
 			c.Err = err
 			return
 		} else {
+			fmt.Println(response.ToJson())
 			c.App.Srv.Go(func() {
 				c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
 			})
@@ -532,9 +535,11 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 			SandboxMode:        true,
 			SiteURL:            siteURL,
 		}); err != nil {
+			fmt.Println(err)
 			c.Err = err
 			return
 		} else {
+			fmt.Println(response.ToJson())
 			c.App.Srv.Go(func() {
 				//c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.)}, false)
 			})
