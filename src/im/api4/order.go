@@ -3,6 +3,9 @@ package api4
 import (
 	"im/model"
 	"im/services/payment"
+	"im/services/payment/alfabank"
+	"im/services/payment/sberbank"
+	"im/services/payment/sberbank/currency"
 	"net/http"
 )
 
@@ -242,16 +245,52 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		application = app
 	}
 
-	var sber payment.SberBankBackend
-	if response, err := sber.RegisterOrder(application, order); err != nil {
-		c.Err = err
-		return
-	} else {
-		c.App.Srv.Go(func() {
-			c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
-		})
+	var siteURL string
+	siteURL = *c.App.Config().ServiceSettings.SiteURL
 
-		w.Write([]byte(response.ToJson()))
+	if application.AqType == model.SBERBANK_AQUIRING_TYPE { //foodexp-api	foodexp
+		var sber payment.SberBankBackend
+		if response, err := sber.RegisterOrder(order, sberbank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        true,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else if application.AqType == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+		var alfa payment.AlfaBankBackend
+		if response, err := alfa.RegisterOrder(order, alfabank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        true,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else {
+		c.Err = model.NewAppError("GetPaymentOrderUrl", "api.order.get_payment_order_url.app_error", nil, "", http.StatusBadRequest)
+		return
 	}
 
 	/*if response, err := registerOrder(order); err != nil {
@@ -459,8 +498,56 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 		application = app
 	}
 
-	var sber payment.SberBankBackend
-	if response, err := sber.GetOrderStatus(application, order); err != nil {
+	var siteURL string
+	siteURL = *c.App.Config().ServiceSettings.SiteURL
+
+	if application.AqType == model.SBERBANK_AQUIRING_TYPE { // foodexp-api	foodexp
+		var sber payment.SberBankBackend
+		if response, err := sber.GetOrderStatus(order, sberbank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        true,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				//c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.)}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else if application.AqType == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+		var alfa payment.AlfaBankBackend
+		if response, err := alfa.GetOrderStatus(order, alfabank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        true,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				//c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.)}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else {
+		c.Err = model.NewAppError("GetPaymentOrderStatus", "api.order.get_payment_order_status.app_error", nil, "", http.StatusBadRequest)
+		return
+	}
+
+	/*var sber payment.SberBankBackend
+	if response, err := sber.GetOrderStatus(order); err != nil {
 		c.Err = err
 		return
 	} else {
@@ -473,7 +560,7 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
-
+	*/
 	ReturnStatusOK(w)
 }
 

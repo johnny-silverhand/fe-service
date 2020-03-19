@@ -6,6 +6,9 @@ import (
 	"net/http"
 )
 
+const SBERBANK_AQUIRING_TYPE = "sberbank"
+const ALFABANK_AQUIRING_TYPE = "alfabank"
+
 type Application struct {
 	Id string `json:"id"`
 
