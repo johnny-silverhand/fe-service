@@ -20,6 +20,11 @@ const (
 )
 
 func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, msg string, payload NotificationPayload) {
+	if app, err := a.GetApplication(user.AppId); err != nil {
+		return
+	} else if app.BlockedAt > 0 {
+		return
+	}
 	post := &model.Post{Message: msg}
 	post.PreSave()
 	notification := &postNotification{
@@ -40,6 +45,11 @@ func (a *App) SendCustomNotifications(user *model.User, channel *model.Channel, 
 func (a *App) SendNotifications(post *model.Post, team *model.Team, channel *model.Channel, sender *model.User, parentPostList *model.PostList) ([]string, error) {
 	// Do not send notifications in archived channels
 	if channel.DeleteAt > 0 {
+		return []string{}, nil
+	}
+	if app, err := a.GetApplication(sender.AppId); err != nil {
+		return []string{}, nil
+	} else if app.BlockedAt > 0 {
 		return []string{}, nil
 	}
 
