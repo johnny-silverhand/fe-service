@@ -43,16 +43,18 @@ func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *m
 	var err *model.AppError
 	var totalPayed int
 
-	options := &model.UserGetOptions{
-		AppId:           appId,
-		Role:            model.CHANNEL_USER_ROLE_ID,
-		FilterByInvited: true,
-	}
-	/*if levels, _ := a.GetAllLevelsPage(0, 10, &appId); levels != nil {
-		levels.SortByLvl()
-		for _, levelId := range levels.Order {
+	/*
+
+		options := &model.UserGetOptions{ // ВАРИАНТ УРОВНЕЙ ИЗ ТЕХ. ЗАДАНИЯ
+				AppId:           appId,
+				Role:            model.CHANNEL_USER_ROLE_ID,
+				FilterByInvited: true,
+			}
+
+		var i int = 1 // ВАРИАНТ УРОВНЕЙ ИЗ ТЕХ. ЗАДАНИЯ
+		for {
 			totalPayed = 0
-			if len(users) > 0 {
+			if len(users) > 0 && i != 1 {
 				var newUsersList []*model.UserMetricsForRating
 				for _, user := range users {
 					options.InvitedBy = user.Id
@@ -63,10 +65,13 @@ func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *m
 					}
 				}
 				users = newUsersList
-			} else if levels.Levels[levelId].Lvl == 1 {
+			} else {
 				if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
 					return nil, err
 				}
+			}
+			if len(users) == 0 {
+				break
 			}
 			for _, user := range users {
 				if user.OrdersCount > 0 {
@@ -74,50 +79,50 @@ func (a *App) GetMetricsForBonuses(appId string) ([]*model.MetricsForBonuses, *m
 				}
 			}
 			metrics = append(metrics, &model.MetricsForBonuses{
-				Level:      int(levels.Levels[levelId].Lvl),
+				Level:      i,
 				TotalUsers: len(users),
 				TotalPayed: totalPayed,
 			})
-		}
-	}*/
-	/*if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
-		return nil, err
-	}*/
-	var i int = 1
-	for {
-		totalPayed = 0
-		if len(users) > 0 && i != 1 {
-			var newUsersList []*model.UserMetricsForRating
-			for _, user := range users {
-				options.InvitedBy = user.Id
-				if results, _ := a.GetUsersForBonusesMetrics(options); results != nil {
-					for _, result := range results {
-						newUsersList = append(newUsersList, result)
-					}
-				}
-			}
-			users = newUsersList
-		} else {
-			if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
-				return nil, err
-			}
-		}
-		if len(users) == 0 {
-			break
-		}
-		for _, user := range users {
-			if user.OrdersCount > 0 {
-				totalPayed++
-			}
-		}
-		metrics = append(metrics, &model.MetricsForBonuses{
-			Level:      i,
-			TotalUsers: len(users),
-			TotalPayed: totalPayed,
-		})
 
-		i++
+			i++
+		}*/
+
+	options := &model.UserGetOptions{
+		AppId:   appId,
+		Role:    model.CHANNEL_USER_ROLE_ID,
+		Invited: false,
 	}
+
+	totalPayed = 0
+	if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		if user.OrdersCount > 0 {
+			totalPayed++
+		}
+	}
+	metrics = append(metrics, &model.MetricsForBonuses{
+		Level:      1,
+		TotalUsers: len(users),
+		TotalPayed: totalPayed,
+	})
+
+	options.Invited = true
+	totalPayed = 0
+	if users, err = a.GetUsersForBonusesMetrics(options); err != nil {
+		return nil, err
+	}
+	for _, user := range users {
+		if user.OrdersCount > 0 {
+			totalPayed++
+		}
+	}
+	metrics = append(metrics, &model.MetricsForBonuses{
+		Level:      2,
+		TotalUsers: len(users),
+		TotalPayed: totalPayed,
+	})
 
 	return metrics, nil
 }

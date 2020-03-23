@@ -31,6 +31,7 @@ type ClientConfig struct {
 	endpoint           string
 	token              string
 	SandboxMode        bool
+	SiteURL            string
 }
 
 // Client is a client to SB API

@@ -677,6 +677,13 @@ func (s SqlOrderStore) Count(options model.OrderCountOptions) store.StoreChannel
 
 func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt int64) store.StoreChannel {
 	return store.Do(func(result *store.StoreResult) {
+		t := time.Now()
+		_, offset := t.Zone()
+		tmBeginAt := time.Unix(0, beginAt*int64(time.Millisecond))
+		tmExpireAt := time.Unix(0, expireAt*int64(time.Millisecond))
+		beginAt = model.GetStartOfDayMillis(tmBeginAt, offset)
+		expireAt = model.GetEndOfDayMillis(tmExpireAt, offset)
+
 		query := s.getQueryBuilder().
 			Select("COALESCE(SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.Price ELSE 0 END), 0) AS TotalPrice, "+
 				"COALESCE(SUM(CASE WHEN o.Payed = 1 AND o.Canceled = 0 THEN o.DiscountValue ELSE 0 END), 0) AS TotalDiscount, "+
@@ -685,7 +692,7 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 			From("Orders o").
 			Join("Users u ON u.Id = o.UserId").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
-			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt)
+			Where("o.DeliveryAt BETWEEN ? AND ?", beginAt, expireAt)
 
 		queryString, args, err := query.ToSql()
 		if err != nil {
@@ -704,7 +711,7 @@ func (s SqlOrderStore) GetMetricsForOrders(appId string, beginAt int64, expireAt
 			From("Orders o").
 			Join("Users u ON o.UserId = u.Id").
 			Where("u.AppId = ? AND u.Roles = ?", appId, model.CHANNEL_USER_ROLE_ID).
-			Where("o.CreateAt BETWEEN ? AND ?", beginAt, expireAt).
+			Where("o.DeliveryAt BETWEEN ? AND ?", beginAt, expireAt).
 			GroupBy("Date").
 			OrderBy("Date ASC")
 		queryString, args, err = query.ToSql()

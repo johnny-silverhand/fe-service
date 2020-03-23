@@ -140,6 +140,9 @@ func (a *App) UpdatePromo(id string, patch *model.PromoPatch, safeUpdate bool) (
 	newPromo := &model.Promo{}
 	*newPromo = *oldPromo
 	newPromo.Patch(patch)
+	if patch.ProductId == nil {
+		newPromo.ProductId = ""
+	}
 
 	if application.HasModeration {
 		newPromo.Active = false
@@ -179,7 +182,15 @@ func (a *App) PreparePromoForClient(originalPromo *model.Promo, isNewPromo bool)
 		mlog.Warn("Failed to get files for a product", mlog.String("product_id", originalPromo.Id), mlog.Any("err", err))
 	} else {
 		promo.Media = fileInfos
+	}
 
+	if product, _ := a.GetProduct(promo.ProductId); product != nil &&
+		product.Active == true &&
+		product.Status == model.PRODUCT_STATUS_ACCEPTED {
+
+		promo.ProductId = product.Id
+	} else {
+		promo.ProductId = ""
 	}
 	//promo.Metadata.Images = a.getCategoryForPromo(promo)
 

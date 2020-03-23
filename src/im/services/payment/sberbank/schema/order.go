@@ -76,3 +76,12 @@ func (o *OrderResponse) ToJson() string {
 		return string(b)
 	}
 }
+
+func (o *OrderStatusResponse) ToJson() string {
+	b, err := json.Marshal(&o)
+	if err != nil {
+		return ""
+	} else {
+		return string(b)
+	}
+}

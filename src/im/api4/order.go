@@ -1,9 +1,15 @@
 package api4
 
 import (
+	"im/mlog"
 	"im/model"
 	"im/services/payment"
+	"im/services/payment/alfabank"
+	"im/services/payment/sberbank"
+	"im/services/payment/sberbank/currency"
+	"im/utils"
 	"net/http"
+	"strconv"
 )
 
 func (api *API) InitOrder() {
@@ -24,7 +30,6 @@ func (api *API) InitOrder() {
 }
 
 func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
-	//var user *model.User
 	var err *model.AppError
 	order := model.OrderFromJson(r.Body)
 
@@ -63,33 +68,6 @@ func createInvoice(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*if list, err := c.App.GetAllLevelsPage(0, 60, &user.AppId); err == nil {
-		list.SortByLvl()
-
-		if u, e := c.App.GetUser(user.InvitedBy); e == nil {
-			for _, id := range list.Order {
-				accural := math.Floor(result.Price * (list.Levels[id].Value / 100))
-
-				transaction := &model.Transaction{
-					UserId:      u.Id,
-					OrderId:     result.Id,
-					Description: fmt.Sprintf("Начисление по заказу № %s \n", result.FormatOrderNumber()),
-					Value:       accural,
-					Type:        model.TRANSACTION_TYPE_BONUS,
-				}
-
-				if transaction.Value > 0 {
-					c.App.AccrualTransaction(transaction)
-				}
-
-				if u, e = c.App.GetUser(u.InvitedBy); e != nil {
-					break
-				}
-			}
-		}
-
-	}*/
-
 	w.Write([]byte(result.ToJson()))
 }
 
@@ -117,32 +95,12 @@ func getOrdersStats(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
-	//c.RequireUserId()
 	if c.Err != nil {
 		return
 	}
 
 	typeOrder := r.URL.Query().Get("type")
-	/*afterOrder := r.URL.Query().Get("after")
-	beforeOrder := r.URL.Query().Get("before")
-	sinceString := r.URL.Query().Get("since")*/
 	sort := r.URL.Query().Get("sort")
-
-	/*var since int64
-	var parseError error
-
-	if len(sinceString) > 0 {
-		since, parseError = strconv.ParseInt(sinceString, 10, 64)
-		if parseError != nil {
-			c.SetInvalidParam("since")
-			return
-		}
-	}*/
-
-	/*	if !c.App.SessionHasPermissionToChannel(c.Session, c.Params.ChannelId, model.PERMISSION_READ_CHANNEL) {
-		c.SetPermissionError(model.PERMISSION_READ_CHANNEL)
-		return
-	}*/
 
 	var list *model.OrderList
 	var err *model.AppError
@@ -172,26 +130,12 @@ func getAllOrders(c *Context, w http.ResponseWriter, r *http.Request) {
 		orderGetOptions.Status = model.ORDER_STADY_CURRENT
 	}
 
-	/*if since > 0 {
-		list, err = c.App.GetAllOrdersSince(since, orderGetOptions)
-	} else if len(afterOrder) > 0 {
-
-		list, err = c.App.GetAllOrdersAfterOrder(afterOrder, orderGetOptions)
-	} else if len(beforeOrder) > 0 {
-
-		list, err = c.App.GetAllOrdersBeforeOrder(beforeOrder, orderGetOptions)
-	} else {*/
 	list, err = c.App.GetAllOrdersPage(orderGetOptions)
-	/*}*/
 
 	if err != nil {
 		c.Err = err
 		return
 	}
-
-	/*	if len(etag) > 0 {
-		w.Header().Set(model.HEADER_ETAG_SERVER, etag)
-	}*/
 
 	w.Write([]byte(c.App.PrepareOrderListForClient(list).ToJson()))
 }
@@ -242,33 +186,54 @@ func getPaymentOrderUrl(c *Context, w http.ResponseWriter, r *http.Request) {
 		application = app
 	}
 
-	var sber payment.SberBankBackend
-	if response, err := sber.RegisterOrder(application, order); err != nil {
-		c.Err = err
-		return
-	} else {
-		c.App.Srv.Go(func() {
-			c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemCode: model.NewString(response.OrderId)}, false)
-		})
+	var siteURL string
+	siteURL = *c.App.Config().ServiceSettings.SiteURL
+	sandboxMode := *c.App.Config().ServiceSettings.EnableDeveloper
 
-		w.Write([]byte(response.ToJson()))
+	if application.AqType == model.SBERBANK_AQUIRING_TYPE { //foodexp-api	foodexp
+		var sber payment.SberBankBackend
+		if response, err := sber.RegisterOrder(order, sberbank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        sandboxMode,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemId: model.NewString(model.SBERBANK_AQUIRING_TYPE), PaySystemCode: model.NewString(response.OrderId), PaySystemOrderNum: model.NewString(strconv.FormatInt(model.GetMillis(), 10))}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else if application.AqType == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+		var alfa payment.AlfaBankBackend
+		if response, err := alfa.RegisterOrder(order, alfabank.ClientConfig{
+			UserName:           application.AqUsername,
+			Password:           application.AqPassword,
+			Currency:           currency.RUB,
+			Language:           "ru",
+			SessionTimeoutSecs: 1200,
+			SandboxMode:        sandboxMode,
+			SiteURL:            siteURL,
+		}); err != nil {
+			c.Err = err
+			return
+		} else {
+			c.App.Srv.Go(func() {
+				c.App.UpdateOrder(order.Id, &model.OrderPatch{PaySystemId: model.NewString(model.ALFABANK_AQUIRING_TYPE), PaySystemCode: model.NewString(response.OrderId), PaySystemOrderNum: model.NewString(strconv.FormatInt(model.GetMillis(), 10))}, false)
+			})
+
+			w.Write([]byte(response.ToJson()))
+		}
+	} else {
+		c.Err = model.NewAppError("GetPaymentOrderUrl", "api.order.get_payment_order_url.app_error", nil, "", http.StatusBadRequest)
+		return
 	}
-
-	/*if response, err := registerOrder(order); err != nil {
-		c.Err = err
-		return
-	} else {
-		c.App.Srv.Go(func() {
-			order.PaySystemCode = *response.OrderId
-			c.App.UpdateOrder(order, false)
-		})
-
-		/*c.App.Srv.Go(func() {
-			c.App.SetOrderPayed(c.Params.OrderId)
-		})
-
-		w.Write([]byte(response.ToJson()))
-	}*/
 
 }
 
@@ -334,19 +299,12 @@ func createOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		user, _ = c.App.GetUser(order.UserId)
 	}
 
-	/*	if (order.Positions == nil) {
-		c.SetInvalidParam("positions")
-		return
-	}*/
-
 	result, err := c.App.CreateOrder(order)
 
 	if err != nil {
 		c.Err = err
 		return
 	}
-
-	/**/
 
 	w.Write([]byte(result.ToJson()))
 }
@@ -363,18 +321,6 @@ func deleteOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*if c.App.Session.UserId == order.UserId {
-		if !c.App.SessionHasPermissionToChannel(c.App.Session, order.ChannelId, model.PERMISSION_DELETE_POST) {
-			c.SetPermissionError(model.PERMISSION_DELETE_POST)
-			return
-		}
-	} else {
-		if !c.App.SessionHasPermissionToChannel(c.App.Session, order.ChannelId, model.PERMISSION_DELETE_OTHERS_POSTS) {
-			c.SetPermissionError(model.PERMISSION_DELETE_OTHERS_POSTS)
-			return
-		}
-	}*/
-
 	if _, err := c.App.DeleteOrder(c.Params.OrderId, c.App.Session.UserId); err != nil {
 		c.Err = err
 		return
@@ -384,24 +330,6 @@ func deleteOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 }
 
 func getUserOrders(c *Context, w http.ResponseWriter, r *http.Request) {
-	/*c.RequireUserId()
-	if c.Err != nil {
-		return
-	}
-
-	var list *model.OrderList
-	var err *model.AppError
-	//etag := ""
-
-	list, err = c.App.GetUserOrders(c.Params.UserId, c.Params.Page, c.Params.PerPage, "")
-
-	if err != nil {
-		c.Err = err
-		return
-	}
-
-	w.Write([]byte(list.ToJson()))*/
-
 	c.RequireUserId()
 	c.RequireAppId()
 	if c.Err != nil {
@@ -435,44 +363,125 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 	if c.Err != nil {
 		return
 	}
+	c.App.Srv.Go(func() {
+		order, err := c.App.GetOrder(c.Params.OrderId)
 
-	order, err := c.App.GetOrder(c.Params.OrderId)
+		if err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		}
 
-	if err != nil {
-		c.Err = err
-		return
-	}
+		var appId string
+		if user, err := c.App.GetUser(order.UserId); err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		} else {
+			appId = user.AppId
+		}
 
-	var appId string
-	if user, err := c.App.GetUser(order.UserId); err != nil {
-		c.Err = err
-		return
-	} else {
-		appId = user.AppId
-	}
+		var application *model.Application
+		if app, err := c.App.GetApplication(appId); err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		} else {
+			application = app
+		}
 
-	var application *model.Application
-	if app, err := c.App.GetApplication(appId); err != nil {
-		c.Err = err
-		return
-	} else {
-		application = app
-	}
+		var msg string
+		var siteURL string
+		siteURL = *c.App.Config().ServiceSettings.SiteURL
+		sandboxMode := *c.App.Config().ServiceSettings.EnableDeveloper
 
-	var sber payment.SberBankBackend
-	if response, err := sber.GetOrderStatus(application, order); err != nil {
-		c.Err = err
-		return
-	} else {
+		if order.PaySystemId == model.SBERBANK_AQUIRING_TYPE { // foodexp-api	foodexp
+			var sber payment.SberBankBackend
+			if response, err := sber.GetOrderStatus(order, sberbank.ClientConfig{
+				UserName:           application.AqUsername,
+				Password:           application.AqPassword,
+				Currency:           currency.RUB,
+				Language:           "ru",
+				SessionTimeoutSecs: 1200,
+				SandboxMode:        sandboxMode,
+				SiteURL:            siteURL,
+			}); err != nil {
+				mlog.Warn(err.Error())
+			} else {
+				if response.OrderStatus == payment.SBERBANK_ORDER_STATUS_PAYED {
+					c.App.UpdateOrder(order.Id, &model.OrderPatch{Status: model.NewString(model.ORDER_STATUS_AWAITING_FULFILLMENT)}, false)
 
-		c.App.Srv.Go(func() {
-			c.App.SetOrderPayed(c.Params.OrderId, response)
-		})
-	}
+					msg = "Оплата банковской картой "
+					msg += response.CardAuthInfo.MaskedPan
+					msg += ". № заказа " + order.FormatOrderNumber()
 
-	if c.Err != nil {
-		return
-	}
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+				} else {
+					msg = "Оплата банковской картой не произведена"
+					msg += ". № заказа " + order.FormatOrderNumber()
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+				}
+			}
+		} else if order.PaySystemId == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+			var alfa payment.AlfaBankBackend
+			if response, err := alfa.GetOrderStatus(order, alfabank.ClientConfig{
+				UserName:           application.AqUsername,
+				Password:           application.AqPassword,
+				Currency:           currency.RUB,
+				Language:           "ru",
+				SessionTimeoutSecs: 1200,
+				SandboxMode:        sandboxMode,
+				SiteURL:            siteURL,
+			}); err != nil {
+				mlog.Warn(err.Error())
+			} else {
+				if response.OrderStatus == payment.ALFABANK_ORDER_STATUS_PAYED {
+					c.App.UpdateOrder(order.Id, &model.OrderPatch{Status: model.NewString(model.ORDER_STATUS_AWAITING_FULFILLMENT)}, false)
+
+					msg = "Оплата банковской картой "
+					msg += response.CardAuthInfo.MaskedPan
+					msg += ". № заказа " + order.FormatOrderNumber()
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+
+				} else {
+					msg = "Оплата банковской картой не произведена"
+					msg += ". № заказа " + order.FormatOrderNumber()
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+				}
+			}
+		}
+	})
 
 	ReturnStatusOK(w)
 }
@@ -480,13 +489,172 @@ func getPaymentOrderStatus(c *Context, w http.ResponseWriter, r *http.Request) {
 func cancelOrder(c *Context, w http.ResponseWriter, r *http.Request) {
 	c.RequireOrderId()
 
-	c.App.Srv.Go(func() {
-		c.App.SetOrderCancel(c.Params.OrderId)
-	})
-
 	if c.Err != nil {
 		return
 	}
+
+	c.App.Srv.Go(func() {
+		order, err := c.App.GetOrder(c.Params.OrderId)
+
+		if err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		}
+		var msg string
+		if order.PaySystemId == model.PAYMENT_SYSTEM_CASH || !utils.StringInSlice(order.PaySystemId, []string{model.PAYMENT_SYSTEM_ALFABANK, model.PAYMENT_SYSTEM_SBERBANK}) {
+			if err := c.App.SetOrderCancel(c.Params.OrderId); err != nil {
+				c.Err = err
+				mlog.Warn(err.Error())
+				return
+			}
+			msg = "Заказ № " + order.FormatOrderNumber() + " отменен."
+
+			post := &model.Post{
+				UserId:   order.UserId,
+				Message:  msg,
+				CreateAt: model.GetMillis() + 1,
+				Type:     model.POST_WITH_TRANSACTION,
+			}
+
+			c.App.CreatePostWithTransaction(post, false)
+			return
+		} /* else if !utils.StringInSlice(order.PaySystemId, []string{model.PAYMENT_SYSTEM_ALFABANK, model.PAYMENT_SYSTEM_SBERBANK}) {
+			c.Err = model.NewAppError("CancelOrder", "api.order.cancel_order.app_error", nil, "", http.StatusBadRequest)
+			mlog.Warn(c.Err.Error())
+			return
+		}*/
+
+		var appId string
+		if user, err := c.App.GetUser(order.UserId); err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		} else {
+			appId = user.AppId
+		}
+
+		var application *model.Application
+		if app, err := c.App.GetApplication(appId); err != nil {
+			c.Err = err
+			mlog.Warn(err.Error())
+			return
+		} else {
+			application = app
+		}
+
+		var siteURL string
+		siteURL = *c.App.Config().ServiceSettings.SiteURL
+		sandboxMode := *c.App.Config().ServiceSettings.EnableDeveloper
+
+		if order.PaySystemId == model.SBERBANK_AQUIRING_TYPE { // foodexp-api	foodexp
+			var sber payment.SberBankBackend
+			if response, err := sber.GetReverseOrderResponse(order, sberbank.ClientConfig{
+				UserName:           application.AqUsername,
+				Password:           application.AqPassword,
+				Currency:           currency.RUB,
+				Language:           "ru",
+				SessionTimeoutSecs: 1200,
+				SandboxMode:        sandboxMode,
+				SiteURL:            siteURL,
+			}); err != nil {
+				c.Err = err
+				mlog.Warn(err.Error())
+				return
+			} else {
+				if response.ErrorCode == payment.SBERBANK_REVERSE_ORDER_STATUS_OK {
+					c.App.UpdateOrder(order.Id, &model.OrderPatch{Status: model.NewString(model.ORDER_STATUS_DECLINED)}, false)
+
+					msg = "Оплата банковской картой по транзакции: "
+					msg += response.OrderId + " отменена"
+					msg += ". № заказа " + order.FormatOrderNumber()
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+				} else {
+					mlog.Warn(response.ToJson())
+
+					if err := c.App.SetOrderCancel(c.Params.OrderId); err != nil {
+						c.Err = err
+						mlog.Warn(err.Error())
+						return
+					}
+					msg = "Заказ № " + order.FormatOrderNumber() + " отменен."
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+					return
+				}
+			}
+		} else if order.PaySystemId == model.ALFABANK_AQUIRING_TYPE { // yktours-api	yktours*?1
+			var alfa payment.AlfaBankBackend
+			if response, err := alfa.GetReverseOrderResponse(order, alfabank.ClientConfig{
+				UserName:           application.AqUsername,
+				Password:           application.AqPassword,
+				Currency:           currency.RUB,
+				Language:           "ru",
+				SessionTimeoutSecs: 1200,
+				SandboxMode:        sandboxMode,
+				SiteURL:            siteURL,
+			}); err != nil {
+				c.Err = err
+				mlog.Warn(err.Error())
+				return
+			} else {
+				if response.ErrorCode == payment.ALFABANK_REVERSE_ORDER_STATUS_OK {
+					c.App.UpdateOrder(order.Id, &model.OrderPatch{Status: model.NewString(model.ORDER_STATUS_DECLINED)}, false)
+
+					msg = "Оплата банковской картой по транзакции: "
+					msg += response.OrderId + " отменена"
+					msg += ". № заказа " + order.FormatOrderNumber()
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+				} else {
+					mlog.Warn(response.ToJson())
+
+					if err := c.App.SetOrderCancel(c.Params.OrderId); err != nil {
+						c.Err = err
+						mlog.Warn(err.Error())
+						return
+					}
+					msg = "Заказ № " + order.FormatOrderNumber() + " отменен."
+
+					post := &model.Post{
+						UserId:   order.UserId,
+						Message:  msg,
+						CreateAt: model.GetMillis() + 1,
+						Type:     model.POST_WITH_TRANSACTION,
+					}
+
+					c.App.CreatePostWithTransaction(post, false)
+					return
+				}
+			}
+		} else {
+			c.Err = model.NewAppError("CancelOrder", "api.order.cancel_order.app_error", nil, "", http.StatusBadRequest)
+			mlog.Warn(c.Err.Error())
+			return
+		}
+	})
 
 	ReturnStatusOK(w)
 }

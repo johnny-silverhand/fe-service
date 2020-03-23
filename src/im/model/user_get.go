@@ -27,6 +27,7 @@ type UserGetOptions struct {
 	Email string
 	// Filters the users
 	FilterByInvited bool
+	Invited         bool
 	// Filters the users
 	InvitedBy string
 }

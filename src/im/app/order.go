@@ -208,9 +208,7 @@ func (a *App) UpdateOrder(id string, patch *model.OrderPatch, safeUpdate bool) (
 	rorder := result.Data.(*model.Order)
 	rorder = a.PrepareOrderForClient(rorder, false)
 
-	if oldOrder.DeliveryAt != newOrder.DeliveryAt {
-		a.UpdatePostWithOrder(rorder, false)
-	}
+	a.UpdatePostWithOrder(rorder, false)
 
 	return rorder, nil
 }
@@ -459,6 +457,18 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 		return result.Err
 	} else {
 
+		if order.DiscountValue > 0 {
+			transaction := &model.Transaction{
+				UserId:      order.UserId,
+				OrderId:     order.Id,
+				Description: fmt.Sprintf("Возврат по заказу № %s \n", order.FormatOrderNumber()),
+				Value:       math.Floor(order.DiscountValue),
+			}
+
+			_, err := a.AccrualTransaction(transaction)
+			fmt.Println(err)
+		}
+
 		/*a.DeductionTransaction(&model.Transaction{
 			OrderId:     order.Id,
 			UserId:      order.UserId,
@@ -466,7 +476,7 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 			Description: "Отмена транзакции № " + strconv.FormatInt(order.CreateAt, 10),
 		})*/
 
-		if order.PaySystemId != model.PAYMENT_SYSTEM_CASH {
+		/*if utils.StringInSlice(order.PaySystemId, []string{model.PAYMENT_SYSTEM_ALFABANK, model.PAYMENT_SYSTEM_SBERBANK}) {
 
 			post := &model.Post{
 				UserId:   order.UserId,
@@ -487,7 +497,7 @@ func (a *App) SetOrderCancel(orderId string) *model.AppError {
 			}
 
 			a.CreatePostWithTransaction(post, false)
-		}
+		}*/
 
 		a.UpdatePostWithOrder(order, false)
 

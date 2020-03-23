@@ -2124,7 +2124,7 @@ func (a *App) VerifyPasswordPhoneNewSend(token *model.Token, user *model.User, n
 			if len(s.AppName) > 0 {
 				str += " для " + s.AppName
 			}
-			if err := a.SendVerifySms(user.Phone, user.Locale, str); err != nil {
+			if err := a.SendVerifySms(user.Phone, user.AppId, str); err != nil {
 				mlog.Error(err.Error())
 			}
 		}
@@ -2406,7 +2406,7 @@ func (a *App) VerifyPasswordSend(token *model.Token, user *model.User, newExtra 
 			if len(s.AppName) > 0 {
 				str += " для " + s.AppName
 			}
-			if err := a.SendVerifySms(user.Phone, user.Locale, str); err != nil {
+			if err := a.SendVerifySms(user.Phone, user.AppId, str); err != nil {
 				mlog.Error(err.Error())
 			}
 		}
