@@ -1782,6 +1782,72 @@ func verifyUserInvite(c *Context, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/// https://trello.com/c/GxCEQGjQ/311-промокоды
+	var ids []string
+	var iid string = ruser.InvitedBy
+	for {
+		if len(iid) == 0 {
+			break
+		}
+		if u, err := c.App.GetUser(iid); err != nil {
+			break
+		} else {
+			ids = append(ids, u.Id)
+			iid = u.InvitedBy
+		}
+	}
+
+	if utils.StringInSlice(user.Id, ids) {
+		c.Err = model.NewAppError("ApiUser.VerifyUserInvite", "api.user.verify_user_invite.friend", nil, "", http.StatusBadRequest)
+		return
+	}
+
+	/*var invited []string
+	if users, err := c.App.GetInvitedUsers(user.Id); err != nil {
+		c.Err = err
+		return
+	} else {
+		for _, u := range users {
+			invited = append(invited, u.Id)
+		}
+	}
+	if users, err := c.App.GetInvitedUsers(ruser.Id); err != nil {
+		c.Err = err
+		return
+	} else {
+		for _, u := range users {
+			invited = append(invited, u.Id)
+		}
+	}
+	var list []string
+	copy(list, invited)
+	for {
+		var newList []string
+		for _, id := range list {
+			if users, _ := c.App.GetInvitedUsers(id); users != nil {
+				for _, u := range users {
+					newList = append(newList, u.Id)
+				}
+			}
+		}
+		list = []string{}
+		if len(newList) == 0 {
+			break
+		}
+		for _, id := range newList {
+			list = append(list, id)
+			invited = append(invited, id)
+		}
+		if len(list) == 0 {
+			break
+		}
+	}
+
+	if utils.StringInSlice(user.Id, invited) {
+		c.Err = model.NewAppError("ApiUser.VerifyUserInvite", "api.user.verify_user_invite.friend", nil, "", http.StatusBadRequest)
+		return
+	}*/
+
 	_, err = c.App.PatchUser(user.Id, &model.UserPatch{InvitedBy: &ruser.Id}, false)
 
 	if err != nil {
