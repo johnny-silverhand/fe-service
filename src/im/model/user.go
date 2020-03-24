@@ -762,3 +762,8 @@ func IsValidLocale(locale string) bool {
 
 	return true
 }
+
+func (u *User) Clone() *User {
+	copy := *u
+	return &copy
+}

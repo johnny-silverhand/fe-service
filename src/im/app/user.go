@@ -535,7 +535,12 @@ func (a *App) GetInvitedUsers(userId string) ([]*model.User, *model.AppError) {
 }
 
 func (a *App) GetUser(userId string) (*model.User, *model.AppError) {
-	return a.Srv.Store.User().Get(userId)
+	if user, err := a.Srv.Store.User().Get(userId); err != nil {
+		return nil, err
+	} else {
+		user = a.PrepareUserForClient(user, false)
+		return user, nil
+	}
 }
 
 func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) {
@@ -544,7 +549,9 @@ func (a *App) GetUserByUsername(username string) (*model.User, *model.AppError) 
 		result.Err.StatusCode = http.StatusNotFound
 		return nil, result.Err
 	}
-	return result.Data.(*model.User), nil
+	user := result.Data.(*model.User)
+	user = a.PrepareUserForClient(user, false)
+	return user, nil
 }
 
 func (a *App) GetUserApplicationByEmail(email string, appId string) (*model.User, *model.AppError) {
@@ -557,7 +564,9 @@ func (a *App) GetUserApplicationByEmail(email string, appId string) (*model.User
 		result.Err.StatusCode = http.StatusBadRequest
 		return nil, result.Err
 	}
-	return result.Data.(*model.User), nil
+	user := result.Data.(*model.User)
+	user = a.PrepareUserForClient(user, false)
+	return user, nil
 }
 
 func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
@@ -570,7 +579,9 @@ func (a *App) GetUserByEmail(email string) (*model.User, *model.AppError) {
 		result.Err.StatusCode = http.StatusBadRequest
 		return nil, result.Err
 	}
-	return result.Data.(*model.User), nil
+	user := result.Data.(*model.User)
+	user = a.PrepareUserForClient(user, false)
+	return user, nil
 }
 
 func (a *App) GetUserByAuth(authData *string, authService string) (*model.User, *model.AppError) {
@@ -578,7 +589,9 @@ func (a *App) GetUserByAuth(authData *string, authService string) (*model.User, 
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	return result.Data.(*model.User), nil
+	user := result.Data.(*model.User)
+	user = a.PrepareUserForClient(user, false)
+	return user, nil
 }
 
 func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.AppError) {
@@ -586,7 +599,13 @@ func (a *App) GetUsers(options *model.UserGetOptions) ([]*model.User, *model.App
 	if result.Err != nil {
 		return nil, result.Err
 	}
-	return result.Data.([]*model.User), nil
+	users := result.Data.([]*model.User)
+	var preparedList []*model.User
+	for _, u := range users {
+		u = a.PrepareUserForClient(u, false)
+		preparedList = append(preparedList, u)
+	}
+	return preparedList, nil
 }
 
 func (a *App) GetUsersForBonusesMetrics(options *model.UserGetOptions) ([]*model.UserMetricsForRating, *model.AppError) {
@@ -2480,4 +2499,13 @@ func (a *App) GetUserByInviteId(inviteId string) (*model.User, *model.AppError) 
 		return nil, result.Err
 	}
 	return result.Data.(*model.User), nil
+}
+
+func (a *App) PrepareUserForClient(originalUser *model.User, isNewUser bool) *model.User {
+	user := originalUser.Clone()
+	i := strings.Index(user.Email, "@")
+	if i == -1 {
+		user.Email = ""
+	}
+	return user
 }
