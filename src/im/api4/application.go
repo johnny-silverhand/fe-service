@@ -357,6 +357,20 @@ func createApplicationTeam(c *Context, w http.ResponseWriter, r *http.Request) {
 		c.App.UpdateTeamMemberRoles(rteam.Id, ruser.Id, "team_user team_admin channel_user")
 	}
 
+	c.App.Srv.Go(func() {
+		testUser := &model.User{
+			Nickname:      model.TEST_USER_NICKNAME,
+			Roles:         model.CHANNEL_USER_ROLE_ID,
+			Phone:         model.TEST_USER_PHONE,
+			PhoneVerified: true,
+			AppId:         application.Id,
+		}
+		var pwd string = model.TEST_USER_PASSWD
+		if token, _ := c.App.CreateUserWithToken(testUser, pwd); token != nil {
+			c.App.VerifyFromStageToken(token.Token, pwd)
+		}
+	})
+
 	/*var emailList []string
 	emailList = append(emailList, rapplication.Email)
 

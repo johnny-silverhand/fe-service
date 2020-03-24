@@ -1687,7 +1687,10 @@ func resetStageTokenByPhone(c *Context, w http.ResponseWriter, r *http.Request) 
 	}
 
 	//pwd := "1234"                                   //utils.HashDigit(4)
-	pwd := utils.HashDigit(4)
+	var pwd string = utils.HashDigit(4)
+	if phone == model.TEST_USER_PHONE {
+		pwd = model.TEST_USER_PASSWD
+	}
 	token, err := c.App.CreateStageToken(user, pwd) /*pwd*/
 
 	if err := c.App.SendVerifyFromStageToken(token.Token); err != nil {

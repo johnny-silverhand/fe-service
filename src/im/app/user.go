@@ -2381,6 +2381,9 @@ func (a *App) SendVerifyFromStageToken(userSuppliedTokenString string) *model.Ap
 	if !*a.Config().ServiceSettings.EnableDeveloper {
 		newPwd = utils.HashDigit(4)
 	}
+	if user.Phone == model.TEST_USER_PHONE {
+		newPwd = model.TEST_USER_PASSWD
+	}
 
 	if err := a.VerifyPasswordSend(token, user, newPwd); err != nil {
 		return err
@@ -2396,6 +2399,9 @@ func (a *App) VerifyPasswordSend(token *model.Token, user *model.User, newExtra 
 	}
 
 	a.Srv.Go(func() {
+		if user.Phone == model.TEST_USER_PHONE {
+			return
+		}
 		if app, _ := a.GetApplication(user.AppId); app != nil {
 			type Settings struct {
 				AppName string `json:"app_name"`
