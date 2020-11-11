@@ -32,8 +32,6 @@ func (a *App) SendVerifySms(phone, locale, msg string) *model.AppError {
 
 func (a *App) sendToSmsProxy(login, apiKey string, msg model.SmsNotification) {
 
-	//client := smsaero.NewClient("ivan@russianit.ru", "mmRjD5mOoMkvVsuIAMiVwX6i9czQ", "", "")
-	//client := smsaero.NewClient("amgraal@mail.ru", "QxXk6d6055rG7bgttUUeQEtHrsmn", "", "")
 	client := smsaero.NewClient(login, apiKey, "", "")
 	msgAero := smsaero.MessageRequest{
 		Numbers: []string{msg.Phone},
